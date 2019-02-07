@@ -1,0 +1,24 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+
+description: an entry in the sample sheet
+properties:
+    nanopore_run_id:
+        type: string
+        description: ID for the nanopore run. Can contain multiple sample IDs.
+    sample_id:
+        type: string
+        description: Sample ID for individual sample.
+    guuid:
+        type: string
+        description: GUUID identifier for the Illumina sequencing of this sample.
+    nanopore_barcode:
+        type: string
+        pattern: "barcode[0-1][0-9]"
+        description: Nanopore barcode number used if multiplexed.
+    flowcell_version:
+        type: string
+        pattern: "^R[0-9]\\.[0-9]"
+        description: Nanopore flowcell chemistry version used.
+
+required:
+    - sample_id

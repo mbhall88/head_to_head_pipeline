@@ -1,0 +1,5 @@
+__default__:
+    name      : "{rule}.{wildcards}"
+    output    : "logs/cluster_{rule}.{wildcards}.o"
+    error     : "logs/cluster_{rule}.{wildcards}.e"
+    queue     : "research-rh74"

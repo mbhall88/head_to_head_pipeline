@@ -1,0 +1,5 @@
+samples: "docs/madagascar_id_mappings.csv"
+basecall:
+    threads: 32
+    memory: 10000
+    container: "analysis/containers/guppycpu.simg"
