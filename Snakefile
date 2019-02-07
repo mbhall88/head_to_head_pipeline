@@ -16,10 +16,7 @@ configfile: "config.yaml"
 validate(config, "analysis/schemas/config.schema.yaml")
 
 samples = pd.read_csv(config["samples"]).set_index(["region", "nanopore_run_id", "sample_id"], drop=False)
-samples.sort_index(inplace=True, level=2)
 validate(samples, "analysis/schemas/samples.schema.yaml")
-
-print(set(samples.xs(('madagascar', 'madagascar_tb_controls_4')).loc[ : , 'flowcell_version']))
 
 #======================================================
 # Functions and Classes
@@ -44,11 +41,14 @@ def barcode_parser(barcodes_string: str) -> List[str]:
 #======================================================
 RULES_DIR = Path("analysis/rules")
 
+regions = set(samples["region"])
+runs = set(samples.dropna(subset=['nanopore_run_id'])["nanopore_run_id"])
 #======================================================
 # Rules
 #======================================================
 rule all:
     input:
+        expand("analysis/{region}/nanopore/{run}/basecalling/combined.fastq", region=regions, run=runs)
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))

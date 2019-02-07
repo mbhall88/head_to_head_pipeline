@@ -11,7 +11,7 @@ def determine_config_model(wildcards, input, output, threads, resources):
 
     flowcell_ver = next(run_flowcell)
 
-   if flowcell_ver.starswith("R9.5"):
+    if flowcell_ver.starswith("R9.5"):
         return "dna_r9.5_450bps.cfg"
     elif flowcell.startswith("R9.4"):
         return "dna_r9.4.1_450bps.cfg" 
