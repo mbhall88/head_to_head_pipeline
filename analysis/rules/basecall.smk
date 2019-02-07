@@ -1,6 +1,23 @@
+ class InvalidFlowcell(Exception):
+     __module__ = Exception.__module__
+
+
 def determine_config_model(wildcards, input, output, threads, resources):
     """dna_r9.4.1_450bps.cfg"""
-    pass
+    run_flowcell = set(samples.xs((wildcards.region, wildcards.run)).loc[ : , 'flowcell_version'])
+    
+    if len(run_flowcell) != 1:
+        raise InvalidFlowcell("Multiple flowcell versions found for the same run - {}".format(wildcards.run))
+
+    flowcell_ver = next(run_flowcell)
+
+   if flowcell_ver.starswith("R9.5"):
+        return "dna_r9.5_450bps.cfg"
+    elif flowcell.startswith("R9.4"):
+        return "dna_r9.4.1_450bps.cfg" 
+    else:
+        raise InvalidFlowcell("Currently only support flowcells beginning with R9.4 or R9.5. You provided {}".format(flowcell_ver))
+    
 
 rule basecall:
     input:

@@ -1,4 +1,4 @@
-samples: "docs/madagascar_id_mappings.csv"
+samples: "docs/samples.csv"
 basecall:
     threads: 32
     memory: 10000

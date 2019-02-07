@@ -15,8 +15,11 @@ min_version("5.1.0")
 configfile: "config.yaml"
 validate(config, "analysis/schemas/config.schema.yaml")
 
-samples = pd.read_csv(config["samples"]).set_index(["nanopore_run_id", "sample_id"], drop=False)
+samples = pd.read_csv(config["samples"]).set_index(["region", "nanopore_run_id", "sample_id"], drop=False)
+samples.sort_index(inplace=True, level=2)
 validate(samples, "analysis/schemas/samples.schema.yaml")
+
+print(set(samples.xs(('madagascar', 'madagascar_tb_controls_4')).loc[ : , 'flowcell_version']))
 
 #======================================================
 # Functions and Classes
