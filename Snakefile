@@ -18,6 +18,11 @@ validate(config, "analysis/schemas/config.schema.yaml")
 samples = pd.read_csv(config["samples"]).set_index(["region", "nanopore_run_id", "sample_id"], drop=False)
 validate(samples, "analysis/schemas/samples.schema.yaml")
 
+
+empty = ("madagscar_tb_aug_4", "madagscar_tb_aug_3", "madagascar_tb_mdr_control_7", "madagscar_tb_aug_2", "madagscar_tb_aug_1", "madagscar_tb_aug_6", "madagscar_tb_aug_5")
+samples = samples[~samples.nanopore_run_id.isin(empty)]
+print(samples)
+
 #======================================================
 # Functions and Classes
 #======================================================
@@ -48,7 +53,7 @@ runs = set(samples.dropna(subset=['nanopore_run_id'])["nanopore_run_id"])
 #======================================================
 rule all:
     input:
-        expand("analysis/{region}/nanopore/{run}/basecalling/combined.fastq", region=regions, run=runs)
+        expand("analysis/{region}/nanopore/{run}/basecalled.fastq", region=regions, run=runs)
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
