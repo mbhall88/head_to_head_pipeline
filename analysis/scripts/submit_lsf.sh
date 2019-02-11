@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-CLUSTER_CMD=("bsub -n {threads} -R \"select[mem>resources.mem_mb}] rusage[mem=resources.mem_mb}] span[hosts=1]\" -M {resources.mem_mb} -o {cluster.output} -e {cluster.error} -J {cluster.name} -q {cluster.queue}")
+CLUSTER_CMD=("bsub -n {threads} -R \"select[mem>{resources.mem_mb}] rusage[mem={resources.mem_mb}] span[hosts=1]\" -M {resources.mem_mb} -o {cluster.output} -e {cluster.error} -J {cluster.name} -q {cluster.queue}")
 JOB_NAME="$1"
 LOG_DIR=analysis/logs/
 
