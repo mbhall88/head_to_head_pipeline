@@ -9,14 +9,13 @@ def determine_demultiplex_action(wildcards, input, output, threads, resources):
     expected_barcodes = df["nanopore_barcode"]
     is_multiplexed = any(expected_barcodes.isnull())
 
-    result = {
-        "df": df,
-        "out_dir": out_dir,
-        "classification_path": out_dir / "classifications.txt",
-        "is_multiplexed": is_multiplexed,
-        "expected_barcodes": set(expected_barcodes),
-    }
-    return result
+    return (
+        df,
+        out_dir,
+        out_dir / "classifications.txt",
+        is_multiplexed,
+        set(expected_barcodes),
+    )
 
 
 
@@ -33,16 +32,16 @@ rule demultiplex:
     singularity:
         config["demultiplex"]["container"]
     params:
-        option = determine_demultiplex_action
+        df, out_dir, classification_path, is_multiplexed, expected_barcodes = determine_demultiplex_action
     log:
         "analysis/logs/demultiplex_{region}_{run}.log"
     shell:
         """
-        bash ../scripts/demultiplex.sh {params.option['is_multiplexed']} \
+        bash ../scripts/demultiplex.sh {params.is_multiplexed} \
             {input.fast5s} \
-            {params.option['classification_path']} \
+            {params.classification_path} \
             {input.fastq} \
-            {params.option['out_dir']} \
+            {params.out_dir} \
             {output} 2> {log}
         """
 
@@ -56,15 +55,15 @@ rule fix_filenames:
     resources:
         mem_mb = 500
     params:
-        option = determine_demultiplex_action
+        df, out_dir, classification_path, is_multiplexed, expected_barcodes = determine_demultiplex_action
     log:
         "analysis/logs/fix_filenames_{region}_{run}.log"
     run:
-        df = params.option['df']
-        out_dir = params.option['out_dir']
-        if params.option['is_multiplexed']:
+        df = params.df
+        out_dir = params.out_dir
+        if params.is_multiplexed:
             # change names to sample IDs and remove redundant barcode
-            expected_barcodes = params.option['expected_barcodes']
+            expected_barcodes = params.expected_barcodes
             for fq in list(out_dir.rglob("*.fastq.gz")):
                 barcode = fq.stem.split(".")[0]
                 if barcode in expected_barcodes:
