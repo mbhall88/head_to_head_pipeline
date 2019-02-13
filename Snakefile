@@ -25,19 +25,6 @@ samples = samples[~samples.nanopore_run_id.isin(empty)]
 #======================================================
 # Functions and Classes
 #======================================================
-class InvalidBarcode(Exception):
-    __module__ = Exception.__module__
-
-
-def barcode_parser(barcodes_string: str) -> List[str]:
-    """Parses the barcodes string and ensures they follow correct format"""
-    msg = "Barcode must be of the form BC01. That is, BC followed by 2 digits."
-    regex = r"\bBC\d{2}\b"
-    barcodes = barcodes_string.split()
-    for barcode in barcodes:
-        if not (len(barcode) == 4 and re.match(regex, barcode)):
-            raise InvalidBarcode(barcode + "\n" + msg)
-    return barcodes
 
 
 #======================================================
@@ -56,4 +43,3 @@ rule all:
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
-

@@ -3,9 +3,9 @@
 
 
 def determine_config_model(wildcards, input, output, threads, resources):
-    """dna_r9.4.1_450bps.cfg"""
+    """Function to determine the config file required for a given sample."""
     run_flowcell = list(set(samples.xs((wildcards.region, wildcards.run)).loc[ : , 'flowcell_version']))
-    
+
     if len(run_flowcell) != 1:
         raise InvalidFlowcell("Multiple flowcell versions found for the same run - {}".format(wildcards.run))
 
@@ -14,10 +14,10 @@ def determine_config_model(wildcards, input, output, threads, resources):
     if flowcell_ver.startswith("R9.5"):
         return "dna_r9.5_450bps.cfg"
     elif flowcell_ver.startswith("R9.4"):
-        return "dna_r9.4.1_450bps.cfg" 
+        return "dna_r9.4.1_450bps.cfg"
     else:
         raise InvalidFlowcell("Currently only support flowcells beginning with R9.4 or R9.5. You provided {}".format(flowcell_ver))
-    
+
 
 rule basecall:
     input:
