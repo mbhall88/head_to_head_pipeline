@@ -5,11 +5,11 @@ rule demultiplex:
         fast5s = "data/{region}/nanopore/{run}/f5s",
         fastq = "analysis/{region}/nanopore/{run}/basecalled.fastq"
     output:
-        d["{region}"]["{run}"]
+        "analysis/{region}/nanopore/{run}/demultiplex/COMPLETE"
     params:
         out_dir = "analysis/{region}/nanopore/{run}/demultiplex/"
     log:
-        "analysis/logs/demultiplex_{region}_{run}_{sample_id}.log"
+        "analysis/logs/demultiplex_{region}_{run}.log"
     run:
         from pathlib import Path
 
@@ -22,21 +22,18 @@ rule demultiplex:
             classification_path = Path(params.out_dir) / "classifications.txt"
             # deepbinner classify
             shell(
-                """deepbinner classify
-                    --native {input.fast5s} > {classification_path} 2> {log}"""
-                    )
+                "deepbinner classify --native {input.fast5s} > {classification_path} 2> {log}"
+            )
             # deepbinner bin
             shell(
-                """deepbinner bin --classes {classifications_path}
-                    --reads {input.fastq}
-                    --out_dir {params.out_dir} 2> {log}"""
-                )
+                "deepbinner bin --classes {classifications_path} --reads {input.fastq} --out_dir {params.out_dir} 2> {log}"
+            )
             # change names to sample IDs and remove redundant barcode
             expected_barcodes = set(expected_barcodes)
             for fq in list(Path(params.out_dir).rglob("*.fastq.gz")):
-                barcode = fq.stem.split('.')[0]
+                barcode = fq.stem.split(".")[0]
                 if barcode in expected_barcodes:
-                    sample_id = df[df["nanopore_barcode"]==barcode].iloc[0]["sample_id"]
+                    sample_id = df[df["nanopore_barcode"] == barcode].iloc[0]["sample_id"]
                     new_fname = Path(params.out_dir) / (sample_id + ".fastq.gz")
                     fq.replace(new_fname)
                 else:
@@ -46,9 +43,16 @@ rule demultiplex:
             # copy basecalled fastq to demultiplexed folder with name of sample ID
             sample_id = df["sample_id"]
             if len(sample_id) > 1:
-                raise ValueError("{} {} is not barcoded but has multiple sample IDs: {}".format(wildcards.region, wildcards.run, sample_id))
+                raise ValueError(
+                    "{} {} is not barcoded but has multiple sample IDs: {}".format(
+                        wildcards.region, wildcards.run, sample_id
+                    )
+                )
 
-            shell("gzip -c {input.fastq} > {output} 2> {log}")
+            shell("gzip -c {input.fastq} > {params.out_dir}/{sample_id[0]}.fastq.gz 2> {log}")
+
+        shell("touch {output}")
+
 
 
 

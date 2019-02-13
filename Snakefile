@@ -41,12 +41,11 @@ samples = samples[~samples.nanopore_run_id.isin(empty)]
 # Global variables
 # ======================================================
 RULES_DIR = Path("analysis/rules")
-
 regions = set(samples["region"])
 runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
 basecall_fastq = set()
-demultiplex_fastqs = []
+demultiplex_output = set()
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
     if pd.isnull(run_id):
@@ -58,43 +57,19 @@ for index, row in samples.iterrows():
             region=region, run=run_id
         )
     )
-    demultiplex_fastqs.append(
-        "analysis/{region}/nanopore/{run}/demultiplex/{sample_id}.fastq.gz".format(
-            region=region, run=run_id, sample_id=sample_id
+    demultiplex_output.add(
+        "analysis/{region}/nanopore/{run}/demultiplex/COMPLETE".format(
+            region=region, run=run_id
         )
     )
 
-d = {}
-for index, row in samples.iterrows():
-    run_id = row["nanopore_run_id"]
-    if pd.isnull(run_id):
-        continue
-    region = row["region"]
-    sample_id = row["sample_id"]
-    if region in d:
-        if run_id in d[region]:
-            d[region][run_id].append(sample_id)
-        else:
-            d[region][run_id] = [sample_id]
-    else:
-        d[region] = {run_id: [sample_id]}
-
-a = []
-for region, run_d in d.items():
-
-    for run_id, ls in run_d.items():
-        b = []
-        for sample in ls:
-            b.append("analysis/{region}/nanopore/{run}/demultiplex/{sample_id}.fastq.gz".format(
-                region=region, run=run_id, sample_id=sample))
-        a.append(b)
 # ======================================================
 # Rules
 # ======================================================
 
 rule all:
     input:
-        a
+        demultiplex_output
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
