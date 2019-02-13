@@ -16,7 +16,7 @@ rule demultiplex:
     log:
         "analysis/logs/demultiplex_{region}_{run}.log"
     script:
-        "analysis/scripts/demultiplex.py"
+        "../scripts/demultiplex.py"
 
 
 
