@@ -38,7 +38,7 @@ rule demultiplex:
         "analysis/logs/demultiplex_{region}_{run}.log"
     shell:
         """
-        bash ../scripts/demultiplex.sh {params.option[is_multiplexed]} \
+        bash analysis/scripts/demultiplex.sh {params.option[is_multiplexed]} \
             {input.fast5s} \
             {params.option[classification_path]} \
             {input.fastq} \
