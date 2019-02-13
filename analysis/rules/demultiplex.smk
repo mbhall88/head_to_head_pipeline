@@ -9,7 +9,7 @@ rule demultiplex:
     params:
         out_dir = "analysis/{region}/nanopore/{run}/demultiplex/"
     log:
-        "analysis/logs/demultiplex_{region}_{run}.log"
+        "analysis/logs/demultiplex_{region}_{run}_{sample_id}.log"
     run:
         from pathlib import Path
 
