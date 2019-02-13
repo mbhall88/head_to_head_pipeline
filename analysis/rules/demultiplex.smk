@@ -7,7 +7,7 @@ def determine_demultiplex_action(wildcards, input, output, threads, resources):
     )
 
     expected_barcodes = df["nanopore_barcode"]
-    is_multiplexed = any(expected_barcodes.isnull())
+    is_multiplexed = not any(expected_barcodes.isnull())
 
     result = {
         "df": df,
