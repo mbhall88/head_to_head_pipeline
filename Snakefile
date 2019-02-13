@@ -75,3 +75,4 @@ rule all:
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
+include: str(RULES_DIR.joinpath("demultiplex.smk"))
