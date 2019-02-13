@@ -56,7 +56,7 @@ for index, row in samples.iterrows():
         )
     )
     demultiplex_output.add(
-        "analysis/{region}/nanopore/{run}/demultiplex/COMPLETE".format(
+        "analysis/{region}/nanopore/{run}/demultiplex/FIX_NAMES_COMPLETE".format(
             region=region, run=run_id
         )
     )
