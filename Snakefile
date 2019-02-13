@@ -24,9 +24,7 @@ validate(samples, "analysis/schemas/samples.schema.yaml")
 empty = (
     "madagscar_tb_aug_4",
     "madagscar_tb_aug_3",
-    "madagascar_tb_mdr_control_7",
     "madagscar_tb_aug_2",
-    "madagscar_tb_aug_1",
     "madagscar_tb_aug_6",
     "madagscar_tb_aug_5",
 )
