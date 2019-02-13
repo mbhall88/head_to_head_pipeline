@@ -15,6 +15,6 @@ if [[ $is_multiplexed = "True" ]]; then
     deepbinner bin --classes "$classification_path" \
         --reads "$fastq" \
         --out_dir "$out_dir"
-
+fi
 
 touch "$output"

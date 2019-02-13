@@ -1,18 +1,23 @@
 def determine_demultiplex_action(wildcards, input, output, threads, resources):
     df = samples.loc[(wildcards.region, wildcards.run)]
-    out_dir = Path("analysis/{region}/nanopore/{run}/demultiplex/".format(region=wildcards.region, run=wildcards.run))
+    out_dir = Path(
+        "analysis/{region}/nanopore/{run}/demultiplex/".format(
+            region=wildcards.region, run=wildcards.run
+        )
+    )
 
     expected_barcodes = df["nanopore_barcode"]
     is_multiplexed = any(expected_barcodes.isnull())
 
     result = {
         "df": df,
-        "out_dir" = out_dir,
+        "out_dir": out_dir,
         "classification_path": out_dir / "classifications.txt",
         "is_multiplexed": is_multiplexed,
-        "expected_barcodes": set(expected_barcodes)
+        "expected_barcodes": set(expected_barcodes),
     }
     return result
+
 
 
 rule demultiplex:
