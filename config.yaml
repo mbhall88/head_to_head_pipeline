@@ -1,5 +1,10 @@
-samples: "docs/samples.csv"
-basecall:
-    threads: 32
-    memory: 16000
+samples    : "docs/samples.csv"
+basecall   :
+    threads  : 32
+    memory   : 16000
     container: "analysis/containers/guppycpu.simg"
+
+demultiplex:
+    threads  : 16
+    memory   : 16000
+    container: "shub://mbhall88/Singularity_recipes:deepbinnercpu"

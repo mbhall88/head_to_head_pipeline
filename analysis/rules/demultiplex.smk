@@ -1,11 +1,15 @@
-
-
 rule demultiplex:
     input:
         fast5s = "data/{region}/nanopore/{run}/f5s",
         fastq = "analysis/{region}/nanopore/{run}/basecalled.fastq"
     output:
         "analysis/{region}/nanopore/{run}/demultiplex/COMPLETE"
+    threads:
+        config["demultiplex"]["threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: attempt * config["demultiplex"]["memory"]
+    singularity:
+        config["demultiplex"]["container"]
     params:
         out_dir = "analysis/{region}/nanopore/{run}/demultiplex/"
     log:
