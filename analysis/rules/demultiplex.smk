@@ -5,7 +5,7 @@ rule demultiplex:
         fast5s = "data/{region}/nanopore/{run}/f5s",
         fastq = "analysis/{region}/nanopore/{run}/basecalled.fastq"
     output:
-        d[wildcards.region][wildcards.run]
+        d["{region}"]["{run}"]
     params:
         out_dir = "analysis/{region}/nanopore/{run}/demultiplex/"
     log:
