@@ -10,7 +10,20 @@ properties:
   basecall:
     type: object
     properties:
-        threads: 
+        threads:
+            type: number
+            default: 1
+        memory:
+            type: number
+            default: 4000
+        container:
+            type: string
+    required:
+        - container
+  demultiplex:
+    type: object
+    properties:
+        threads:
             type: number
             default: 1
         memory:
@@ -24,4 +37,4 @@ properties:
 required:
   - samples
   - basecall
-
+  - demultiplex
