@@ -82,6 +82,8 @@ rule fix_filenames:
                         wildcards.region, wildcards.run, sample_id
                     )
                 )
-
-            shell("gzip -c {input.fastq} > {out_dir}/{sample_id[0]}.fastq.gz 2> {log}")
+            fastq = "analysis/{region}/nanopore/{run}/basecalled.fastq".format(
+                region=wildcards.region, run=wildcards.run
+            )
+            shell("gzip -c {fastq} > {out_dir}/{sample_id[0]}.fastq.gz 2> {log}")
         shell("touch {output}")
