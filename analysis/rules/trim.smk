@@ -1,7 +1,6 @@
 rule trim:
     input:
-        "analysis/{region}/nanopore/{run}/demultiplex/FIX_NAMES_COMPLETE",
-        fastq = "analysis/{region}/nanopore/{run}/demultiplex/{sample}.fastq.gz"
+        "analysis/{region}/nanopore/{run}/demultiplex/FIX_NAMES_COMPLETE"
     output:
         "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz"
     threads:
@@ -11,14 +10,14 @@ rule trim:
     singularity:
         config["trim"]["container"]
     params:
-        "--discard_middle ",
-        "--format auto "
+        fastq = "analysis/{region}/nanopore/{run}/demultiplex/{sample}.fastq.gz",
     log:
         "analysis/logs/trim_{region}_{run}_{sample}.log"
     shell:
         """
-        porechop --input {input}  \
+        porechop --input {params.fastq}  \
             --output {output} \
             --threads {threads} \
-            {params} > {log}
+            --format auto \
+            --discard_middle > {log}
         """
