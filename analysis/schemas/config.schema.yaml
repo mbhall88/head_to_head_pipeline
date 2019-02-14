@@ -1,40 +1,57 @@
-$schema: "http://json-schema.org/draft-07/schema#"
+$schema:                      "http://json-schema.org/draft-07/schema#"
 
-description: snakemake configuration file
+description:                  snakemake configuration file
 
-type: object
+type:                         object
 
 properties:
-  samples:
-    type: string
-  basecall:
-    type: object
+    samples:
+        type:                 string
+
+    basecall:
+        type:                 object
     properties:
         threads:
-            type: number
-            default: 1
+            type:             number
+            default:          1
         memory:
-            type: number
-            default: 4000
+            type:             number
+            default:          4000
         container:
-            type: string
+            type:             string
     required:
         - container
-  demultiplex:
-    type: object
+
+    demultiplex:
+    type:                     object
     properties:
         threads:
-            type: number
-            default: 1
+            type:             number
+            default:          1
         memory:
-            type: number
-            default: 4000
+            type:             number
+            default:          4000
         container:
-            type: string
+            type:             string
     required:
         - container
+
+    trim:
+      type:                   object
+      properties:
+          threads:
+              type:           number
+              default:        1
+          memory:
+              type:           number
+              default:        4000
+          container:
+              type:           string
+      required:
+          - container
 
 required:
   - samples
   - basecall
   - demultiplex
+  - trim
