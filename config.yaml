@@ -1,4 +1,4 @@
-samples    : "docs/samples.csv"
+samples    :   "docs/samples.csv"
 basecall   :
     threads  : 32
     memory   : 16000
