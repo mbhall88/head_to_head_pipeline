@@ -50,7 +50,7 @@ rule combine_fastq:
         "analysis/{region}/nanopore/{run}/basecalled.fastq"
     threads: 1
     resources:
-        mem_mb = 1000
+        mem_mb = 500
     params:
         fastqs = lambda wildcards, input: input[0] + "/*.fastq"
     log:
