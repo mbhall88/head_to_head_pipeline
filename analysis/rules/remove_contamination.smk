@@ -34,6 +34,8 @@ rule index_decontamination_db:
     params:
         preset = config["index_decontamination_db"]["preset"],
         split  = config["index_decontamination_db"]["split"]
+    singularity:
+        config["index_decontamination_db"]["container"]
     log:
         "analysis/logs/index_decontamination_db.log"
     shell:

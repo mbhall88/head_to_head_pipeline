@@ -24,3 +24,4 @@ index_decontamination_db:
     memory :                  16000
     preset :                  "map-ont"
     split  :                  "10G"
+    container:                "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"

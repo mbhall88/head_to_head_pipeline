@@ -80,6 +80,10 @@ properties:
         split:
             type:    string
             default: "4G"
+        container:
+            type: string
+    required:
+        -container
 
 
 required:
@@ -88,3 +92,4 @@ required:
   - demultiplex
   - trim
   - download_decontamination_db
+  - index_decontamination_db
