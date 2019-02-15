@@ -51,8 +51,26 @@ properties:
     required:
         - container
 
+  download_decontamination_db:
+    type:            object
+    properties:
+        threads:
+            type:    number
+            default: 1
+        memory:
+            type:    number
+            default: 1000
+        perl_script:
+            type:    string
+        out_dir:
+            type:    string
+    required:
+        - perl_script
+        - out_dir
+
 required:
   - samples
   - basecall
   - demultiplex
   - trim
+  - download_decontamination_db
