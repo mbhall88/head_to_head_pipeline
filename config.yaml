@@ -19,3 +19,8 @@ download_decontamination_db:
     memory :                  1000
     perl_script :             "analysis/scripts/make_pipeline_reference_files.pl"
     out_dir :                 "data/decontamination_db/"
+
+index_decontamination_db:
+    memory :                  16000
+    preset :                  "map-ont"
+    split  :                  "10G"

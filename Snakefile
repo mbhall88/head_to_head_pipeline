@@ -78,3 +78,4 @@ rule all:
 include: str(RULES_DIR.joinpath("basecall.smk"))
 include: str(RULES_DIR.joinpath("demultiplex.smk"))
 include: str(RULES_DIR.joinpath("trim.smk"))
+include: str(RULES_DIR.joinpath("remove_contamination.smk"))

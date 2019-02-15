@@ -68,6 +68,20 @@ properties:
         - perl_script
         - out_dir
 
+  index_decontamination_db:
+    type:            object
+    properties:
+        memory:
+            type:    number
+            default: 16000
+        preset:
+            type:    string
+            default: "map-ont"
+        split:
+            type:    string
+            default: "4G"
+
+
 required:
   - samples
   - basecall

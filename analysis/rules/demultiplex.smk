@@ -23,7 +23,7 @@ def determine_demultiplex_action(wildcards, input, output, threads, resources):
 rule demultiplex:
     input:
         fast5s = "data/{region}/nanopore/{run}/f5s",
-        fastq = "analysis/{region}/nanopore/{run}/basecalled.fastq"
+        fastq  = "analysis/{region}/nanopore/{run}/basecalled.fastq"
     output:
         "analysis/{region}/nanopore/{run}/demultiplex/DEMULTIPLEX_COMPLETE"
     threads:
