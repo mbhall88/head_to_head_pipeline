@@ -72,7 +72,8 @@ for index, row in samples.iterrows():
 
 rule all:
     input:
-        to_trim
+        to_trim,
+        "data/decontamination_db/remove_contam.{}.mmi".format(config["index_decontamination_db"]["preset"])
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
