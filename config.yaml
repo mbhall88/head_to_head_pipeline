@@ -6,7 +6,7 @@ basecall   :
 
 demultiplex:
     threads  : 16
-    memory   : 16000
+    memory   : 4000
     container: "shub://mbhall88/Singularity_recipes:deepbinnercpu"
 
 trim       :
