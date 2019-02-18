@@ -16,7 +16,7 @@ rule download_decontamination_db:
     shell:
         """
         bash analysis/scripts/make_decontamination_db.sh {params.script} \
-            {params.outdir} \
+            {params.out_dir} \
             {output.fasta} \
             output.metadata 2> {log}
         """
