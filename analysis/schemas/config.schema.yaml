@@ -83,7 +83,7 @@ properties:
         container:
             type: string
     required:
-        -container
+        - container
 
   mapping:
     type:            object
@@ -97,7 +97,7 @@ properties:
         container:
             type: string
     required:
-        -container
+        - container
 
 required:
   - samples
