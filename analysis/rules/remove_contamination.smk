@@ -45,24 +45,33 @@ rule index_decontamination_db:
             -d {output.index} \
             {input} 2> {log}
         """
-#
-# rule map_minimap2:
-#     input:
-#         config["tb_reference"],
-#         "data/porechopped/{sample}.fastq.gz"
-#
-#     output:
-#         temp("data/mapped/{sample}.bam")
-#     threads:
-#         config["threads"]
-#     log:
-#         "logs/minimap2_{sample}.log"
-#     singularity:
-#         config["containers"]["nanoporeqc"]
-#     shell:
-#         "(minimap2 -t {threads} -ax map-ont {input} | "
-#         "samtools view -b - > {output}) 2> {log}"
-#
+
+rule mapping:
+    input:
+        index = rules.index_decontamination_db.output.index,
+        query = "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz"
+    output:
+        temp("analysis/{region}/nanopore/{run}/mapped/{sample}.sam")
+    threads:
+        config["mapping"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["mapping"]["memory"]
+            )
+    params:
+        preset = config["index_decontamination_db"]["preset"],
+    singularity:
+        config["mapping"]["container"]
+    log:
+        "analysis/logs/mapping_{region}_{run}_{sample}.log"
+    shell:
+        """
+        minimap2 -t {threads} \
+            -ax {params.preset} \
+            {input.index} \
+            {input.query} > {output} 2> {log}
+        """
+
 #
 # rule samtools_sort:
 #     input:

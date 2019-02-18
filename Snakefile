@@ -44,7 +44,7 @@ runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
 basecall_fastq = set()
 demultiplex_output = set()
-to_trim = []
+to_map = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
     if pd.isnull(run_id):
@@ -61,8 +61,8 @@ for index, row in samples.iterrows():
             region=region, run=run_id
         )
     )
-    to_trim.append(
-        "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz".format(
+    to_map.append(
+        "analysis/{region}/nanopore/{run}/mapped/{sample}.sam".format(
         region=region, run=run_id, sample=sample_id
     ))
 
@@ -72,8 +72,7 @@ for index, row in samples.iterrows():
 
 rule all:
     input:
-        to_trim,
-        "data/decontamination_db/remove_contam.{}.mmi".format(config["index_decontamination_db"]["preset"])
+        to_map,
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))

@@ -85,6 +85,19 @@ properties:
     required:
         -container
 
+  mapping:
+    type:            object
+    properties:
+        memory:
+            type:    number
+            default: 16000
+        threads:
+            type:    number
+            default: 1
+        container:
+            type: string
+    required:
+        -container
 
 required:
   - samples
@@ -93,3 +106,4 @@ required:
   - trim
   - download_decontamination_db
   - index_decontamination_db
+  - mapping
