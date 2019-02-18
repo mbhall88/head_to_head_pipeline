@@ -30,3 +30,8 @@ mapping:
     threads:                  16
     memory:                   16000
     container:                "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
+
+sort:
+    threads:                  16
+    memory:                   16000
+    container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"

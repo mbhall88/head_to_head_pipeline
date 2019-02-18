@@ -99,6 +99,20 @@ properties:
     required:
         - container
 
+  sort:
+    type:            object
+    properties:
+        memory:
+            type:    number
+            default: 4000
+        threads:
+            type:    number
+            default: 1
+        container:
+            type: string
+    required:
+        - container
+
 required:
   - samples
   - basecall
@@ -107,3 +121,4 @@ required:
   - download_decontamination_db
   - index_decontamination_db
   - mapping
+  - sort

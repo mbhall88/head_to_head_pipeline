@@ -72,20 +72,22 @@ rule mapping:
             {input.query} > {output} 2> {log}
         """
 
-#
-# rule samtools_sort:
-#     input:
-#         "data/mapped/{sample}.bam"
-#     output:
-#         "data/sorted/{sample}_sorted.bam"
-#     threads:
-#         config["threads"]
-#     log:
-#         "logs/samtools_sort_{sample}.log"
-#     singularity:
-#         config["containers"]["nanoporeqc"]
-#     shell:
-#         "samtools sort -@ {threads} {input} 2> {log} > {output}"
+
+rule sort:
+    input:
+        "analysis/{region}/nanopore/{run}/mapped/{sample}.sam"
+    output:
+        "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam"
+    threads:
+        config["sort"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["sort"]["memory"]
+            )
+    singularity:
+        config["sort"]["container"]
+    shell:
+        "samtools sort -@ {threads} {input} 2> {log} > {output}"
 #
 #
 # rule samtools_index:
