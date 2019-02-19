@@ -38,7 +38,7 @@ sort:
 
 index_bams:
     threads:                  1
-    memory:                   1000
+    memory:                   300
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 filter:
