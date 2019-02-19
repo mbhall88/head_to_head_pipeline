@@ -4,16 +4,16 @@ JOB_NAME="$1"
 LOG_DIR=analysis/logs/
 
 bsub -R "select[mem>1000] rusage[mem=1000]" \
-  -M 1000 \
-  -o "$LOG_DIR"/cluster_"$JOB_NAME".o \
-  -e "$LOG_DIR"/cluster_"$JOB_NAME".e \
-  -J "$JOB_NAME" \
-  -q research-rh74 \
-  snakemake --use-singularity \
+    -M 1000 \
+    -o "$LOG_DIR"/cluster_"$JOB_NAME".o \
+    -e "$LOG_DIR"/cluster_"$JOB_NAME".e \
+    -J "$JOB_NAME" \
+    -q research-rh74 \
+    snakemake --use-singularity \
+    --use-conda \
     --cluster-config cluster.yaml \
     --jobs 500 \
     --restart-times 3 \
     --cluster "${CLUSTER_CMD[@]}"
 
 exit 0
-
