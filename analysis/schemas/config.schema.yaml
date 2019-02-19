@@ -138,11 +138,8 @@ properties:
             default:            1
         container:
             type:               string
-        env:
-            type:               string
     required:
         - container
-        - env
 
 required:
   - samples

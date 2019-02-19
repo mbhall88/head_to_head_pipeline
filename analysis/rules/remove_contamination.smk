@@ -127,7 +127,7 @@ rule filter:
     singularity:
         config["filter"]["container"]
     conda:
-        config["filter"]["env"]
+        "../envs/filter.yaml"
     log:
         "analysis/logs/filter_{region}_{run}_{sample}.log"
     script:
