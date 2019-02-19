@@ -3,5 +3,5 @@ channels:
     - bioconda
 dependencies:
     - pysam
-    - pandas
     - numpy
+    - pandas
