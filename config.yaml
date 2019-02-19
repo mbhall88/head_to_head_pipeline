@@ -43,5 +43,5 @@ index_bams:
 
 filter:
     threads:                  1
-    memory:                   8000
+    memory:                   1000
     container:                "docker://continuumio/miniconda3"
