@@ -35,3 +35,15 @@ sort:
     threads:                  16
     memory:                   16000
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
+
+index_bams:
+    threads:                  1
+    memory:                   1000
+    container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
+
+filter:
+    threads:                  1
+    memory:                   8000
+    container:                "docker://continuumio/miniconda3"
+    env:                      "analysis/envs/filter.yaml"
+    script:                   "analysis/scripts/filter.py"

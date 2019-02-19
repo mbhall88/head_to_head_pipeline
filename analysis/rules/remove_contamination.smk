@@ -86,30 +86,49 @@ rule sort:
             )
     singularity:
         config["sort"]["container"]
+    log:
+        "analysis/logs/sort_{region}_{run}_{sample}.log"
     shell:
         "samtools sort -@ {threads} {input} 2> {log} > {output}"
-#
-#
-# rule samtools_index:
-#     input:
-#         "data/sorted/{sample}_sorted.bam"
-#     output:
-#         "data/sorted/{sample}_sorted.bam.bai"
-#     log:
-#         "logs/samtools_index_{sample}.log"
-#     singularity:
-#         config["containers"]["nanoporeqc"]
-#     shell:
-#         "samtools index -b {input} 2> {log}"
-#
-# rule bam_to_fastq:
-#     input:
-#         "data/sorted/{sample}_sorted.bam"
-#     output:
-#         "data/filtered/{sample}_filtered.fastq.gz"
-#     log:
-#         "logs/bam_to_fastq_{sample}.log"
-#     singularity:
-#         config["containers"]["nanoporeqc"]
-#     shell:
-#         "(samtools fastq -F 0x4 {input} | gzip > {output}) 2> {log}"
+
+
+rule index_bams:
+    input:
+        "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam"
+    output:
+        "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai"
+    threads:
+        config["index_bams"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["index_bams"]["memory"]
+            )
+    singularity:
+        config["index_bams"]["container"]
+    log:
+        "analysis/logs/index_bams_{region}_{run}_{sample}.log"
+    shell:
+        "samtools index -b {input} 2> {log}"
+
+
+rule filter:
+    input:
+        bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
+        index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
+        metadata = rules.download_decontamination_db.output.metadata,
+    output:
+        fastq = "analysis/{region}/nanopore/{run}/filtered/{sample}.filtered.fastq.gz"
+    threads:
+        config["filter"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["filter"]["memory"]
+            )
+    singularity:
+        config["filter"]["container"]
+    conda:
+        config["filter"]["env"]
+    log:
+        "analysis/logs/filter_{region}_{run}_{sample}.log"
+    script:
+        config["filter"]["script"]

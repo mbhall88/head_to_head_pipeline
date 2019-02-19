@@ -44,7 +44,7 @@ runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
 basecall_fastq = set()
 demultiplex_output = set()
-to_sort = []
+filtered = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -54,8 +54,8 @@ for index, row in samples.iterrows():
     region = row["region"]
     sample_id = row["sample_id"]
 
-    to_sort.append(
-        "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam".format(
+    filtered.append(
+        "analysis/{region}/nanopore/{run}/filtered/{sample}.filtered.fastq.gz".format(
         region=region, run=run_id, sample=sample_id
     ))
 
@@ -65,7 +65,7 @@ for index, row in samples.iterrows():
 
 rule all:
     input:
-        to_sort,
+        filtered,
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))

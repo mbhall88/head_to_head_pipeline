@@ -1,117 +1,151 @@
-$schema:             "http://json-schema.org/draft-07/schema#"
+$schema:                        "http://json-schema.org/draft-07/schema#"
 
-description:         snakemake configuration file
+description:                    snakemake configuration file
 
-type:                object
+type:                           object
 
 properties:
 
   samples:
-    type:            string
+    type:                       string
 
   basecall:
-    type:            object
+    type:                       object
     properties:
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         memory:
-            type:    number
-            default: 4000
+            type:               number
+            default:            4000
         container:
-            type:    string
+            type:               string
     required:
         - container
 
   demultiplex:
-    type:            object
+    type:                       object
     properties:
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         memory:
-            type:    number
-            default: 4000
+            type:               number
+            default:            4000
         container:
-            type:    string
+            type:               string
     required:
         - container
 
   trim:
-    type:            object
+    type:                       object
     properties:
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         memory:
-            type:    number
-            default: 4000
+            type:               number
+            default:            4000
         container:
-            type:    string
+            type:               string
     required:
         - container
 
   download_decontamination_db:
-    type:            object
+    type:                       object
     properties:
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         memory:
-            type:    number
-            default: 1000
+            type:               number
+            default:            1000
         perl_script:
-            type:    string
+            type:               string
         out_dir:
-            type:    string
+            type:               string
     required:
         - perl_script
         - out_dir
 
   index_decontamination_db:
-    type:            object
+    type:                       object
     properties:
         memory:
-            type:    number
-            default: 16000
+            type:               number
+            default:            16000
         preset:
-            type:    string
-            default: "map-ont"
+            type:               string
+            default:            "map-ont"
         split:
-            type:    string
-            default: "4G"
+            type:               string
+            default:            "4G"
         container:
-            type: string
+            type:               string
     required:
         - container
 
   mapping:
-    type:            object
+    type:                       object
     properties:
         memory:
-            type:    number
-            default: 16000
+            type:               number
+            default:            16000
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         container:
-            type: string
+            type:               string
     required:
         - container
 
   sort:
-    type:            object
+    type:                       object
     properties:
         memory:
-            type:    number
-            default: 4000
+            type:               number
+            default:            4000
         threads:
-            type:    number
-            default: 1
+            type:               number
+            default:            1
         container:
-            type: string
+            type:               string
     required:
         - container
+
+  index_bams:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+    required:
+        - container
+
+  filter:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+        env:
+            type:               string
+        script:
+            type:               string
+    required:
+        - container
+        - env
+        - script
 
 required:
   - samples
@@ -122,3 +156,5 @@ required:
   - index_decontamination_db
   - mapping
   - sort
+  - index_bams
+  - filter
