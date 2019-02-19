@@ -131,4 +131,4 @@ rule filter:
     log:
         "analysis/logs/filter_{region}_{run}_{sample}.log"
     script:
-        config["filter"]["script"]
+        "../scripts/filter.py"

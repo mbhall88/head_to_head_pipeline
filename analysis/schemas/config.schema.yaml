@@ -140,12 +140,9 @@ properties:
             type:               string
         env:
             type:               string
-        script:
-            type:               string
     required:
         - container
         - env
-        - script
 
 required:
   - samples

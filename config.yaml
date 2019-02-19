@@ -46,4 +46,3 @@ filter:
     memory:                   8000
     container:                "docker://continuumio/miniconda3"
     env:                      "analysis/envs/filter.yaml"
-    script:                   "analysis/scripts/filter.py"
