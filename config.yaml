@@ -33,7 +33,7 @@ mapping:
 
 sort:
     threads:                  16
-    memory:                   16000
+    memory:                   4000
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 index_bams:
