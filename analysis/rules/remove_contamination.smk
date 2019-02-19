@@ -111,6 +111,8 @@ rule index_bams:
         "samtools index -b {input} 2> {log}"
 
 
+singularity:
+    config["filter"]["container"]
 rule filter:
     input:
         bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
@@ -124,8 +126,6 @@ rule filter:
         mem_mb = (
             lambda wildcards, attempt: attempt * config["filter"]["memory"]
             )
-    singularity:
-        config["filter"]["container"]
     conda:
         config["filter"]["env"]
     log:
