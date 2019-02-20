@@ -1,7 +1,27 @@
+rule create_taxonomy_lookup:
+    input:
+        metadata = rules.download_decontamination_db.output.metadata
+    output:
+        taxonomy = "data/decontamination_db/taxonomy.json"
+    threads:
+        config["create_taxonomy_lookup"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["create_taxonomy_lookup"]["memory"]
+            )
+    params:
+        email = config["create_taxonomy_lookup"]["email"],
+        api_key = config["create_taxonomy_lookup"]["api_key"],
+    singularity:
+        config["create_taxonomy_lookup"]["container"]
+    script:
+        "../create_taxonomy_lookup.py"
+
 rule generate_krona_input:
     input:
         bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
         bam_index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
+        taxonomy = rules.create_taxonomy_lookup.output.taxonomy
     output:
         "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt"
     threads:

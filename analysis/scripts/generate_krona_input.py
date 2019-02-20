@@ -1,40 +1,11 @@
-import random
-import string
-import time
 from collections import Counter
-from urllib.error import HTTPError
-
+import json
 import pysam
-from Bio import Entrez, SeqIO
-
-
-def get_taxonomy(accession: str):
-    """Fetch taxonomy information for a given accession ID.
-    :param accession: Accession ID
-    :return: A list representing the taxonomy for the accession ID
-
-    https://stackoverflow.com/a/28355078/5299417"""
-    random_user = ''.join(random.choice(string.ascii_lowercase)
-                          for _ in range(10))
-    Entrez.email = "{}@gmail.com".format(random_user)
-    while True:
-        try:
-            handle = Entrez.efetch(db="nucleotide", id=accession,
-                                   rettype="gb", retmode="text")
-            break
-        except HTTPError:
-            time.sleep(10)
-            continue
-
-    record = SeqIO.read(handle, "genbank")
-    taxonomy = record.annotations["taxonomy"]
-    taxonomy.extend([record.annotations["organism"]])
-    return taxonomy
 
 
 def get_ena_accession(accession_string):
     """Extract the accession ID from a header string"""
-    return accession_string.split("|")[-1]
+    return accession_string.split("|")[1]
 
 
 def get_organism_assignments(bamfile: str):
@@ -53,23 +24,28 @@ def get_organism_assignments(bamfile: str):
     return organism_assignments
 
 
-def get_krona_entry(accession: str, count: int):
+def get_krona_entry(accession: str, count: int, lookup_table):
     """Generate a row entry for a text file required to plot in krona."""
     if accession == "UNMAPPED":
         return "{count}\tUnmapped".format(count=count)
     else:
         if accession.startswith("ENA"):
             accession = get_ena_accession(accession)
-        taxonomy = "\t".join(get_taxonomy(accession))
+        taxonomy = "\t".join(lookup_table[accession])
         return "{count}\t{taxonomy}".format(count=count, taxonomy=taxonomy)
 
+def load_json(fname):
+    with open(fname, 'r') as f_in:
+        data = json.loads(f_in.read(), fp)
+    return data[0]
 
 def run():
     organism_assignments = get_organism_assignments(snakemake.input.bam)
+    lookup_table = load_json(snakemake.input.taxonomy)
 
     with open(snakemake.output[0], "w") as f_out:
         for accession, count in organism_assignments.items():
-            krona_entry = get_krona_entry(accession, count)
+            krona_entry = get_krona_entry(accession, count, lookup_table)
             print(krona_entry, f_out)
 
 
