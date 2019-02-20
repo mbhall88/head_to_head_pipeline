@@ -1,9 +1,11 @@
+import random
+import string
+import time
 from collections import Counter
+from urllib.error import HTTPError
 
 import pysam
 from Bio import Entrez, SeqIO
-
-Entrez.email = "dummy@gmail.com"
 
 
 def get_taxonomy(accession: str):
@@ -12,8 +14,18 @@ def get_taxonomy(accession: str):
     :return: A list representing the taxonomy for the accession ID
 
     https://stackoverflow.com/a/28355078/5299417"""
-    handle = Entrez.efetch(db="nucleotide", id=accession,
-                           rettype="gb", retmode="text")
+    random_user = ''.join(random.choice(string.ascii_lowercase)
+                          for _ in range(10))
+    Entrez.email = "{}@gmail.com".format(random_user)
+    while True:
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=accession,
+                                   rettype="gb", retmode="text")
+            break
+        except HTTPError:
+            time.sleep(10)
+            continue
+
     record = SeqIO.read(handle, "genbank")
     taxonomy = record.annotations["taxonomy"]
     taxonomy.extend([record.annotations["organism"]])
@@ -54,7 +66,8 @@ def get_krona_entry(accession: str, count: int):
 
 def test_krona_entry():
     assert get_krona_entry("UNMAPPED", 3) == "3\tUnmapped"
-    assert get_krona_entry("ENA|BBHB01000083|BBHB01000083.1", 5) == "5\tBacteria\tActinobacteria\tCorynebacteriales\tMycobacteriaceae\tMycobacterium\tMycobacterium marinum str. Europe"
+    assert get_krona_entry("ENA|BBHB01000083|BBHB01000083.1",
+                           5) == "5\tBacteria\tActinobacteria\tCorynebacteriales\tMycobacteriaceae\tMycobacterium\tMycobacterium marinum str. Europe"
 
 
 def run():
