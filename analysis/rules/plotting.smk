@@ -14,6 +14,8 @@ rule create_taxonomy_lookup:
         api_key = config["create_taxonomy_lookup"]["api_key"],
     singularity:
         config["create_taxonomy_lookup"]["container"]
+    conda:
+        "../envs/pysam.yaml"
     script:
         "../scripts/create_taxonomy_lookup.py"
 

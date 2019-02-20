@@ -47,7 +47,7 @@ mykrobe:
 create_taxonomy_lookup:
     email:                     "mbhall88@gmail.com"
     api_key:                   "c877ee0c1775159151bbb884c961fddcb308"
-    container:                 "docker://quay.io/biocontainers/biopython:1.70--np112py36_1"
+    container:                 "docker://continuumio/miniconda3"
 
 generate_krona_input:
     container:                 "docker://quay.io/biocontainers/pysam:0.15.2--py36h1671916_1"
