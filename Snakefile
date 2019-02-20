@@ -58,7 +58,7 @@ for index, row in samples.iterrows():
         "analysis/{region}/nanopore/{run}/mykrobe/{sample}.mykrobe.{ext}".format(
         region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
     ))
-    mykrobe_files.append(
+    krona_files.append(
         "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
         region=region, run=run_id, sample=sample_id
     ))
