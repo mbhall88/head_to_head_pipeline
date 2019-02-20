@@ -47,6 +47,7 @@ filter:
     container:                "docker://continuumio/miniconda3"
 
 mykrobe:
+    memory:                   1500
     container:                "shub://mbhall88/Singularity_recipes:mykrobe"
     species:                  "tb"
     output_format:            "json"
