@@ -3,7 +3,7 @@ rule generate_krona_input:
         bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
         bam_index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
     output:
-        temp("analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt")
+        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt"
     threads:
         config["generate_krona_input"]["threads"]
     resources:
