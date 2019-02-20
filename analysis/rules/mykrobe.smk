@@ -22,6 +22,7 @@ rule mykrobe:
         mykrobe predict {wildcards.sample} \
             {params.species} \
             --tmp {params.tmp_dir} \
+            --skeleton_dir {params.tmp_dir} \
             --ont \
             --seq {input} \
             --output {output} \
