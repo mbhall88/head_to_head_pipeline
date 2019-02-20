@@ -42,8 +42,6 @@ index_bams:
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 filter:
-    threads:                  1
-    memory:                   1000
     container:                "docker://continuumio/miniconda3"
 
 mykrobe:
@@ -51,3 +49,6 @@ mykrobe:
     container:                "shub://mbhall88/Singularity_recipes:mykrobe"
     species:                  "tb"
     output_format:            "json"
+
+generate_krona_input:
+    container:                "docker://continuumio/miniconda3"

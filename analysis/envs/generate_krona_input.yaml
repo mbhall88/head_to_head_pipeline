@@ -1,0 +1,5 @@
+channels:
+    - bioconda
+dependencies:
+    - biopython=1.72
+    - pysam=0.15.0

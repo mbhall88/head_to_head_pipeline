@@ -128,7 +128,5 @@ rule filter:
         config["filter"]["container"]
     conda:
         "../envs/filter.yaml"
-    log:
-        "analysis/logs/filter_{region}_{run}_{sample}.log"
     script:
         "../scripts/filter.py"

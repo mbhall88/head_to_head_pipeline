@@ -162,6 +162,20 @@ properties:
         - species
         - output_format
 
+  generate_krona_input:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            500
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+    required:
+        - container
+
 required:
   - samples
   - basecall
@@ -174,3 +188,4 @@ required:
   - index_bams
   - filter
   - mykrobe
+  - generate_krona_input
