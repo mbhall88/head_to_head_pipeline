@@ -18,7 +18,7 @@ def get_accessions(fname: str):
             if accession.startswith("ENA"):
                 accession = get_ena_accession(accession)
             if accession not in accessions:
-                accessions[accession] = [category]
+                accessions[accession] = [category, accession]
 
     return accessions
 

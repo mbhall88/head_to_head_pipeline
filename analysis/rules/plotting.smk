@@ -15,7 +15,7 @@ rule create_taxonomy_lookup:
     singularity:
         config["create_taxonomy_lookup"]["container"]
     script:
-        "../create_taxonomy_lookup.py"
+        "../scripts/create_taxonomy_lookup.py"
 
 rule generate_krona_input:
     input:
