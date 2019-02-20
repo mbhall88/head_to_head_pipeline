@@ -6,7 +6,6 @@ basecall   :
 
 demultiplex:
     threads  :                16
-    memory   :                4000
     container:                "shub://mbhall88/Singularity_recipes:deepbinnercpu"
 
 trim       :
@@ -15,14 +14,10 @@ trim       :
     container:                "docker://quay.io/biocontainers/porechop:0.2.3_seqan2.1.1--py36h2d50403_3"
 
 download_decontamination_db:
-    threads :                 1
-    memory :                  1000
     perl_script :             "analysis/scripts/make_pipeline_reference_files.pl"
     out_dir :                 "data/decontamination_db/"
 
 index_decontamination_db:
-    memory :                  16000
-    preset :                  "map-ont"
     split  :                  "10G"
     container:                "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
 
@@ -37,7 +32,6 @@ sort:
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 index_bams:
-    threads:                  1
     memory:                   300
     container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
@@ -52,3 +46,6 @@ mykrobe:
 
 generate_krona_input:
     container:                "docker://continuumio/miniconda3"
+
+plot_sample_composition:
+    container:                "docker://quay.io/biocontainers/krona:2.7--pl526_2"

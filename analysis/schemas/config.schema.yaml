@@ -90,7 +90,7 @@ properties:
     properties:
         memory:
             type:               number
-            default:            16000
+            default:            4000
         threads:
             type:               number
             default:            1
@@ -104,7 +104,7 @@ properties:
     properties:
         memory:
             type:               number
-            default:            4000
+            default:            1000
         threads:
             type:               number
             default:            1
@@ -176,6 +176,20 @@ properties:
     required:
         - container
 
+  plot_sample_composition:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            500
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+    required:
+        - container
+
 required:
   - samples
   - basecall
@@ -189,3 +203,4 @@ required:
   - filter
   - mykrobe
   - generate_krona_input
+  - plot_sample_composition

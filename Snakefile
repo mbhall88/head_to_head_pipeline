@@ -44,6 +44,7 @@ runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 basecall_fastq = set()
 demultiplex_output = set()
 mykrobe_files = []
+krona_files = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -57,6 +58,11 @@ for index, row in samples.iterrows():
         "analysis/{region}/nanopore/{run}/mykrobe/{sample}.mykrobe.{ext}".format(
         region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
     ))
+    mykrobe_files.append(
+        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
+        region=region, run=run_id, sample=sample_id
+    ))
+
 
 # ======================================================
 # Rules
@@ -72,3 +78,4 @@ include: str(RULES_DIR.joinpath("demultiplex.smk"))
 include: str(RULES_DIR.joinpath("trim.smk"))
 include: str(RULES_DIR.joinpath("remove_contamination.smk"))
 include: str(RULES_DIR.joinpath("mykrobe.smk"))
+include: str(RULES_DIR.joinpath("plotting.smk"))
