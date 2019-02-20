@@ -26,5 +26,5 @@ rule mykrobe:
             --ont \
             --seq {input} \
             --output {output} \
-            --format {params.output_format}
+            --format {params.output_format} 2> {log}
         """
