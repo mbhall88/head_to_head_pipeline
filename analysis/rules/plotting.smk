@@ -15,7 +15,7 @@ rule create_taxonomy_lookup:
     singularity:
         config["create_taxonomy_lookup"]["container"]
     conda:
-        "../envs/pysam.yaml"
+        "../envs/create_taxonomy_lookup.yaml"
     script:
         "../scripts/create_taxonomy_lookup.py"
 
