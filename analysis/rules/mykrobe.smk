@@ -19,6 +19,7 @@ rule mykrobe:
         "analysis/logs/mykrobe_{region}_{run}_{sample}.log"
     shell:
         """
+        rm -rf {params.tmp_dir}
         mykrobe predict {wildcards.sample} \
             {params.species} \
             --tmp {params.tmp_dir} \
