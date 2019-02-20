@@ -50,7 +50,7 @@ create_taxonomy_lookup:
     container:                 "docker://quay.io/biocontainers/biopython:1.70--np112py36_1"
 
 generate_krona_input:
-    container:                 "docker://continuumio/miniconda3"
+    container:                 "docker://quay.io/biocontainers/pysam:0.15.2--py36h1671916_1"
 
 plot_sample_composition:
     container:                 "docker://quay.io/biocontainers/krona:2.7--pl526_2"

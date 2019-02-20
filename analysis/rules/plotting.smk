@@ -32,8 +32,6 @@ rule generate_krona_input:
             )
     singularity:
         config["generate_krona_input"]["container"]
-    conda:
-        "../envs/generate_krona_input.yaml"
     script:
         "../scripts/generate_krona_input.py"
 
