@@ -54,7 +54,7 @@ for index, row in samples.iterrows():
     sample_id = row["sample_id"]
 
     mykrobe_files.append(
-        "analysis/{region}/nanopore/{run}/mykrobe/{sample}/{sample}.{ext}".format(
+        "analysis/{region}/nanopore/{run}/mykrobe/{sample}.mykrobe.{ext}".format(
         region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
     ))
 

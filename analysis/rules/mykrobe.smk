@@ -2,7 +2,7 @@ rule mykrobe:
     input:
         "analysis/{region}/nanopore/{run}/filtered/{sample}.filtered.fastq.gz"
     output:
-        "analysis/{{region}}/nanopore/{{run}}/mykrobe/{{sample}}/{{sample}}.{ext}".format(ext=config["mykrobe"]["output_format"])
+        "analysis/{{region}}/nanopore/{{run}}/mykrobe/{{sample}}.mykrobe.{ext}".format(ext=config["mykrobe"]["output_format"])
     threads:
         config["mykrobe"]["threads"]
     resources:
@@ -11,7 +11,7 @@ rule mykrobe:
             )
     params:
         species = config["mykrobe"]["species"],
-        tmp_dir = "analysis/{region}/nanopore/{run}/mykrobe/{sample}/mykrobe_tmp_dir",
+        tmp_dir = "analysis/{region}/nanopore/{run}/mykrobe/tmp_dirs/{sample}",
         output_format = config["mykrobe"]["output_format"],
     singularity:
         config["mykrobe"]["container"]
