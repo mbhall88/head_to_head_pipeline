@@ -64,12 +64,6 @@ def get_krona_entry(accession: str, count: int):
         return "{count}\t{taxonomy}".format(count=count, taxonomy=taxonomy)
 
 
-def test_krona_entry():
-    assert get_krona_entry("UNMAPPED", 3) == "3\tUnmapped"
-    assert get_krona_entry("ENA|BBHB01000083|BBHB01000083.1",
-                           5) == "5\tBacteria\tActinobacteria\tCorynebacteriales\tMycobacteriaceae\tMycobacterium\tMycobacterium marinum str. Europe"
-
-
 def run():
     organism_assignments = get_organism_assignments(snakemake.input.bam)
 
@@ -81,5 +75,4 @@ def run():
 
 # ========================================================================
 # ========================================================================
-test_krona_entry()
 run()
