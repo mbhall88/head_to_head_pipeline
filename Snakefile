@@ -5,7 +5,6 @@ from typing import List
 import pandas as pd
 from snakemake.utils import min_version, validate
 
-# Snakemake version when Singularity support was added
 min_version("5.1.0")
 
 
@@ -44,7 +43,7 @@ runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
 basecall_fastq = set()
 demultiplex_output = set()
-filtered = []
+mykrobe_files = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -54,9 +53,9 @@ for index, row in samples.iterrows():
     region = row["region"]
     sample_id = row["sample_id"]
 
-    filtered.append(
-        "analysis/{region}/nanopore/{run}/filtered/{sample}.filtered.fastq.gz".format(
-        region=region, run=run_id, sample=sample_id
+    mykrobe_files.append(
+        "analysis/{region}/nanopore/{run}/mykrobe/{sample}/{sample}.{ext}".format(
+        region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
     ))
 
 # ======================================================
@@ -65,10 +64,11 @@ for index, row in samples.iterrows():
 
 rule all:
     input:
-        filtered,
+        mykrobe_files,
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
 include: str(RULES_DIR.joinpath("demultiplex.smk"))
 include: str(RULES_DIR.joinpath("trim.smk"))
 include: str(RULES_DIR.joinpath("remove_contamination.smk"))
+include: str(RULES_DIR.joinpath("mykrobe.smk"))

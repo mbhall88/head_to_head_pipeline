@@ -45,3 +45,8 @@ filter:
     threads:                  1
     memory:                   1000
     container:                "docker://continuumio/miniconda3"
+
+mykrobe:
+    container:                "shub://mbhall88/Singularity_recipes:mykrobe"
+    species:                  "tb"
+    output_format:            "json"

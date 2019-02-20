@@ -141,6 +141,27 @@ properties:
     required:
         - container
 
+  mykrobe:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+        species:
+            type:               string
+        output_format:
+            type:               string
+            patter:             "json|csv"
+    required:
+        - container
+        - species
+        - output_format
+
 required:
   - samples
   - basecall
@@ -152,3 +173,4 @@ required:
   - sort
   - index_bams
   - filter
+  - mykrobe
