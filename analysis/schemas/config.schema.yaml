@@ -247,3 +247,4 @@ required:
   - plot_sample_composition
   - qc_plot
   - stats
+  - report
