@@ -46,8 +46,7 @@ demultiplex_output = set()
 mykrobe_files = []
 krona_files = []
 qc_plots = []
-pre_stats = []
-post_stats = []
+stats = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -69,11 +68,11 @@ for index, row in samples.iterrows():
         "analysis/{region}/nanopore/{run}/plotting/qc/{sample}.qc.pdf".format(
         region=region, run=run_id, sample=sample_id
     ))
-    pre_stats.append(
+    stats.append(
         "analysis/{region}/nanopore/{run}/stats/{sample}.pre_filter.stats.txt".format(
         region=region, run=run_id, sample=sample_id
     ))
-    post_stats.append(
+    stats.append(
         "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt".format(
         region=region, run=run_id, sample=sample_id
     ))
@@ -88,8 +87,7 @@ rule all:
         mykrobe_files,
         krona_files,
         qc_plots,
-        pre_stats,
-        post_stats
+        stats
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
@@ -98,3 +96,4 @@ include: str(RULES_DIR.joinpath("trim.smk"))
 include: str(RULES_DIR.joinpath("remove_contamination.smk"))
 include: str(RULES_DIR.joinpath("mykrobe.smk"))
 include: str(RULES_DIR.joinpath("plotting.smk"))
+include: str(RULES_DIR.joinpath("report.smk"))
