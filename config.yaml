@@ -6,7 +6,7 @@ basecall   :
 
 demultiplex:
     threads  :                16
-    container:                "shub://mbhall88/Singularity_recipes:deepbinnercpu"
+    container:                "shub://mbhall88/Singularity_recipes:deepbinnercpu@e4b1f8c8539516b85a765cce97ce0422"
 
 trim       :
     threads  :                16
@@ -40,7 +40,7 @@ filter:
 
 mykrobe:
     memory:                   1500
-    container:                "shub://mbhall88/Singularity_recipes:mykrobe"
+    container:                "shub://mbhall88/Singularity_recipes:mykrobe@42b5d17d11b08db0df5ee21dd12bc1f0"
     species:                  "tb"
     output_format:            "json"
 
@@ -49,3 +49,7 @@ generate_krona_input:
 
 plot_sample_composition:
     container:                "docker://quay.io/biocontainers/krona:2.7--pl526_2"
+
+qc_plot:
+    memory:                   8000
+    container:                "shub://mbhall88/Singularity_recipes:pistis@c0161afb485b937f58e38f7bf16c7966"

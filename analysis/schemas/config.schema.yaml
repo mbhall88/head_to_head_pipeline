@@ -190,6 +190,23 @@ properties:
     required:
         - container
 
+  qc_plot:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+        downsample:
+            type:               number
+            default:            0
+        container:
+            type:               string
+    required:
+        - container
+
 required:
   - samples
   - basecall
@@ -204,3 +221,4 @@ required:
   - mykrobe
   - generate_krona_input
   - plot_sample_composition
+  - qc_plot

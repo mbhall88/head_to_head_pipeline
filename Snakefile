@@ -45,6 +45,7 @@ basecall_fastq = set()
 demultiplex_output = set()
 mykrobe_files = []
 krona_files = []
+qc_plots = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -59,9 +60,14 @@ for index, row in samples.iterrows():
         region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
     ))
     krona_files.append(
-        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt".format(
+        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
         region=region, run=run_id, sample=sample_id
     ))
+    qc_plots.append(
+        "analysis/{region}/nanopore/{run}/plotting/qc/{sample}.qc.pdf".format(
+        region=region, run=run_id, sample=sample_id
+    ))
+
 
 
 # ======================================================
@@ -72,6 +78,7 @@ rule all:
     input:
         mykrobe_files,
         krona_files,
+        qc_plots
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
