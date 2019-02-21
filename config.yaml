@@ -55,8 +55,8 @@ qc_plot:
     container:                "shub://mbhall88/Singularity_recipes:pistis@c0161afb485b937f58e38f7bf16c7966"
 
 stats:
-    threads:                  4
-    memory:                   32000
+    threads:                  1
+    memory:                   8000
     container:                "docker://quay.io/biocontainers/nanostat:1.1.2--py36_1"
 
 report:
