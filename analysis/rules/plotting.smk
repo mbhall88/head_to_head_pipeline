@@ -39,7 +39,7 @@ rule plot_sample_composition:
         ktImportText {input} -o {output} 2> {log}
         """
 
-# 
+
 # rule qc_plot:
 #     input:
 #         fastq = "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz",
