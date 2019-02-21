@@ -2,7 +2,7 @@ rule generate_krona_input:
     input:
         bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
         bam_index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
-        metadata = metadata = rules.download_decontamination_db.output.metadata
+        metadata = rules.download_decontamination_db.output.metadata
     output:
         "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt"
     threads:
