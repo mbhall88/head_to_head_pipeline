@@ -41,12 +41,7 @@ RULES_DIR = Path("analysis/rules")
 regions = set(samples["region"])
 runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
-basecall_fastq = set()
-demultiplex_output = set()
-mykrobe_files = []
-krona_files = []
-qc_plots = []
-stats = []
+files = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
 
@@ -56,32 +51,27 @@ for index, row in samples.iterrows():
     region = row["region"]
     sample_id = row["sample_id"]
 
-    mykrobe_files.append(
+    files.extend([
         "analysis/{region}/nanopore/{run}/mykrobe/{sample}.mykrobe.{ext}".format(
-        region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
-    ))
-    krona_files.append(
+            region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
+        ),
         "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
-        region=region, run=run_id, sample=sample_id
-    ))
-    qc_plots.append(
+            region=region, run=run_id, sample=sample_id
+        ),
         "analysis/{region}/nanopore/{run}/plotting/qc/{sample}.qc.pdf".format(
-        region=region, run=run_id, sample=sample_id
-    ))
-    stats.append(
+            region=region, run=run_id, sample=sample_id
+        ),
         "analysis/{region}/nanopore/{run}/stats/{sample}.pre_filter.stats.txt".format(
-        region=region, run=run_id, sample=sample_id
-    ))
-    stats.append(
+            region=region, run=run_id, sample=sample_id
+        ),
         "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt".format(
-        region=region, run=run_id, sample=sample_id
-    ))
+            region=region, run=run_id, sample=sample_id
+        )])
 
 
 # ======================================================
 # Rules
 # ======================================================
-files = mykrobe_files + krona_files + qc_plots + stats
 rule all:
     input:
         files
