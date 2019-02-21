@@ -45,7 +45,7 @@ mykrobe:
     output_format:            "json"
 
 generate_krona_input:
-    container:                "docker://quay.io/biocontainers/pysam:0.15.2--py36h1671916_1"
+    container:                "docker://continuumio/miniconda3"
 
 plot_sample_composition:
     container:                "docker://quay.io/biocontainers/krona:2.7--pl526_2"
