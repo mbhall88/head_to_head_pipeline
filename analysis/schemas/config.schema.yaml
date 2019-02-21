@@ -162,26 +162,6 @@ properties:
         - species
         - output_format
 
-  create_taxonomy_lookup:
-    type:                       object
-    properties:
-        memory:
-            type:               number
-            default:            1000
-        threads:
-            type:               number
-            default:            1
-        container:
-            type:               string
-        api_key:
-            type:               string
-        email:
-            type:               string
-    required:
-        - container
-        - email
-        - api_key
-
   generate_krona_input:
     type:                       object
     properties:
@@ -222,6 +202,5 @@ required:
   - index_bams
   - filter
   - mykrobe
-  - create_taxonomy_lookup
   - generate_krona_input
   - plot_sample_composition

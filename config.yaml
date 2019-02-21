@@ -1,56 +1,51 @@
-samples    :                   "docs/samples.csv"
+samples    :                  "docs/samples.csv"
 basecall   :
-    threads  :                 32
-    memory   :                 16000
-    container:                 "analysis/containers/guppycpu.simg"
+    threads  :                32
+    memory   :                16000
+    container:                "analysis/containers/guppycpu.simg"
 
 demultiplex:
-    threads  :                 16
-    container:                 "shub://mbhall88/Singularity_recipes:deepbinnercpu"
+    threads  :                16
+    container:                "shub://mbhall88/Singularity_recipes:deepbinnercpu"
 
 trim       :
-    threads  :                 16
-    memory   :                 8000
-    container:                 "docker://quay.io/biocontainers/porechop:0.2.3_seqan2.1.1--py36h2d50403_3"
+    threads  :                16
+    memory   :                8000
+    container:                "docker://quay.io/biocontainers/porechop:0.2.3_seqan2.1.1--py36h2d50403_3"
 
 download_decontamination_db:
-    perl_script :              "analysis/scripts/make_pipeline_reference_files.pl"
-    out_dir :                  "data/decontamination_db/"
+    perl_script :             "analysis/scripts/make_pipeline_reference_files.pl"
+    out_dir :                 "data/decontamination_db/"
 
 index_decontamination_db:
-    split  :                   "10G"
-    container:                 "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
+    split  :                  "10G"
+    container:                "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
 
 mapping:
-    threads:                   16
-    memory:                    16000
-    container:                 "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
+    threads:                  16
+    memory:                   16000
+    container:                "docker://quay.io/biocontainers/minimap2:2.15--h84994c4_1"
 
 sort:
-    threads:                   16
-    memory:                    4000
-    container:                 "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
+    threads:                  16
+    memory:                   4000
+    container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 index_bams:
-    memory:                    300
-    container:                 "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
+    memory:                   300
+    container:                "docker://quay.io/biocontainers/samtools:1.9--h57cc563_6"
 
 filter:
-    container:                 "docker://continuumio/miniconda3"
+    container:                "docker://continuumio/miniconda3"
 
 mykrobe:
-    memory:                    1500
-    container:                 "shub://mbhall88/Singularity_recipes:mykrobe"
-    species:                   "tb"
-    output_format:             "json"
-
-create_taxonomy_lookup:
-    email:                     "mbhall88@gmail.com"
-    api_key:                   "c877ee0c1775159151bbb884c961fddcb308"
-    container:                 "docker://continuumio/miniconda3"
+    memory:                   1500
+    container:                "shub://mbhall88/Singularity_recipes:mykrobe"
+    species:                  "tb"
+    output_format:            "json"
 
 generate_krona_input:
-    container:                 "docker://quay.io/biocontainers/pysam:0.15.2--py36h1671916_1"
+    container:                "docker://quay.io/biocontainers/pysam:0.15.2--py36h1671916_1"
 
 plot_sample_composition:
-    container:                 "docker://quay.io/biocontainers/krona:2.7--pl526_2"
+    container:                "docker://quay.io/biocontainers/krona:2.7--pl526_2"

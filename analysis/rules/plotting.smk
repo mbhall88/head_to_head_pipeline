@@ -1,29 +1,8 @@
-rule create_taxonomy_lookup:
-    input:
-        metadata = rules.download_decontamination_db.output.metadata
-    output:
-        taxonomy = "data/decontamination_db/taxonomy.json"
-    threads:
-        config["create_taxonomy_lookup"]["threads"]
-    resources:
-        mem_mb = (
-            lambda wildcards, attempt: attempt * config["create_taxonomy_lookup"]["memory"]
-            )
-    params:
-        email = config["create_taxonomy_lookup"]["email"],
-        api_key = config["create_taxonomy_lookup"]["api_key"],
-    singularity:
-        config["create_taxonomy_lookup"]["container"]
-    conda:
-        "../envs/create_taxonomy_lookup.yaml"
-    script:
-        "../scripts/create_taxonomy_lookup.py"
-
 rule generate_krona_input:
     input:
         bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
         bam_index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
-        taxonomy = rules.create_taxonomy_lookup.output.taxonomy
+        metadata = metadata = rules.download_decontamination_db.output.metadata
     output:
         "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.txt"
     threads:
@@ -34,8 +13,11 @@ rule generate_krona_input:
             )
     singularity:
         config["generate_krona_input"]["container"]
+    conda:
+        "../envs/generate_krona_input.yaml"
     script:
         "../scripts/generate_krona_input.py"
+
 
 rule plot_sample_composition:
     input:
