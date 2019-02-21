@@ -60,4 +60,4 @@ stats:
     container:                "docker://quay.io/biocontainers/nanostat:1.1.2--py36_1"
 
 report:
-    memory:                   500
+    memory:                   300
