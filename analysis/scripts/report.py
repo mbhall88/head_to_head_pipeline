@@ -130,6 +130,7 @@ Processing Steps
 5. Plotting of the sample compostion after alignment to this database was performed with Krona_. The plot can be found in `compostion_plot`_.
 6. All reads which did not map to TB or NTMs were filtered out. Prior to filtering there were {num_reads_pre_filter} reads. After filtering there remains {num_reads_post_filter}. This means {percent_reads_mapped}% of reads mapped to TB/NTMs. For more statistics on the post-filtered reads see `stats_post_filter`_. For quality control plots of the reads after this step (and read percent identity to the database) see `qc_plot`_. Stats were produced with NanoStat_ and plots with Pistis_.
 7. `Mykrobe predict`_ was run on the filtered fastq files to predict drug susceptiblity.
+
 Mykrobe Analysis
 ===================================
 **Phylogenetic group:** {phylo_group}
