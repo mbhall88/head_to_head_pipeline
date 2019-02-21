@@ -27,22 +27,20 @@ validate(samples, "analysis/schemas/samples.schema.yaml")
 # Global variables
 # ======================================================
 RULES_DIR = Path("analysis/rules")
-regions = set(samples["region"])
-runs = set(samples.dropna(subset=["nanopore_run_id"])["nanopore_run_id"])
 
 files = []
 for index, row in samples.iterrows():
     run_id = row["nanopore_run_id"]
-
     if pd.isnull(run_id):
         continue
-
     region = row["region"]
     sample_id = row["sample_id"]
-
     files.extend([
         "analysis/{region}/nanopore/{run}/report/{sample}.report.html".format(
             region=region, run=run_id, sample=sample_id
+        ),
+        "analysis/{region}/nanopore/{run}/basecalling".format(
+            region=region, run=run_id
         )])
 
 
