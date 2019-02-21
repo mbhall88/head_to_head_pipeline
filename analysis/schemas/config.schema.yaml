@@ -221,6 +221,16 @@ properties:
     required:
         - container
 
+  report:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+
 required:
   - samples
   - basecall

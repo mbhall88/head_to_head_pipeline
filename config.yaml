@@ -58,3 +58,6 @@ stats:
     threads:                  4
     memory:                   16000
     container:                "docker://quay.io/biocontainers/nanostat:1.1.2--py36_1"
+
+report:
+    memory:                   500

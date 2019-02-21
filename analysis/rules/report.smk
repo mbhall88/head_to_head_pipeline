@@ -21,6 +21,7 @@ rule stats_pre_filter:
             --threads {threads} 2> {log}
         """
 
+
 rule stats_post_filter:
     input:
         fastq = "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz",
@@ -42,3 +43,26 @@ rule stats_post_filter:
             --name {output} \
             --threads {threads} 2> {log}
         """
+
+
+rule report:
+    input:
+        qc_plot = "analysis/{region}/nanopore/{run}/plotting/qc/{sample}.qc.pdf",
+        stats_pre_filter = "analysis/{region}/nanopore/{run}/stats/{sample}.pre_filter.stats.txt",
+        stats_post_filter = "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt",
+        mykrobe = "analysis/{{region}}/nanopore/{{run}}/mykrobe/{{sample}}.mykrobe.{ext}".format(ext=config["mykrobe"]["output_format"]),
+        trim_log = "analysis/logs/trim_{region}_{run}_{sample}.log",
+    output:
+        "analysis/{region}/nanopore/{run}/report/{sample}.report.html"
+    threads:
+        config["report"]["threads"]
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: attempt * config["report"]["memory"]
+            )
+    params:
+        sample="{sample}"
+    log:
+        "analysis/logs/report_{region}_{run}_{sample}.log"
+    script:
+        "../scripts/report.py"
