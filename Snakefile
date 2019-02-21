@@ -18,17 +18,6 @@ samples = pd.read_csv(config["samples"]).set_index(
     ["region", "nanopore_run_id", "sample_id"], drop=False
 )
 validate(samples, "analysis/schemas/samples.schema.yaml")
-
-
-empty = (
-    "madagscar_tb_aug_4",
-    "madagscar_tb_aug_3",
-    "madagscar_tb_aug_2",
-    "madagscar_tb_aug_6",
-    "madagscar_tb_aug_5",
-)
-samples = samples[~samples.nanopore_run_id.isin(empty)]
-
 # ======================================================
 # Functions and Classes
 # ======================================================
