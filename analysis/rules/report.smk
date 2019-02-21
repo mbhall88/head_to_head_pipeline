@@ -1,7 +1,6 @@
 rule stats_pre_filter:
     input:
-        bam = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam",
-        bam_index = "analysis/{region}/nanopore/{run}/mapped/{sample}.sorted.bam.bai",
+        "analysis/{region}/nanopore/{run}/demultiplex/FIX_NAMES_COMPLETE"
     output:
         "analysis/{region}/nanopore/{run}/stats/{sample}.pre_filter.stats.txt",
     threads:
@@ -10,13 +9,15 @@ rule stats_pre_filter:
         mem_mb = (
             lambda wildcards, attempt: attempt * config["stats"]["memory"]
             )
+    params:
+        fastq = "analysis/{region}/nanopore/{run}/demultiplex/{sample}.fastq.gz"
     singularity:
         config["stats"]["container"]
     log:
         "analysis/logs/stats_pre_filter_{region}_{run}_{sample}.log"
     shell:
         """
-        NanoStat --bam {input.bam} \
+        NanoStat --fastq {params.fastq} \
             --name {output} \
             --threads {threads} 2> {log}
         """
