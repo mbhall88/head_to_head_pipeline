@@ -38,9 +38,6 @@ for index, row in samples.iterrows():
     files.extend([
         "analysis/{region}/nanopore/{run}/report/{sample}.report.html".format(
             region=region, run=run_id, sample=sample_id
-        ),
-        "analysis/{region}/nanopore/{run}/basecalling".format(
-            region=region, run=run_id
         )])
 
 

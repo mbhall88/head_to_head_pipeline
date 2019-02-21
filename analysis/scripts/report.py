@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from pathlib import Path
 from snakemake.utils import report
 
 
@@ -116,11 +117,22 @@ lineage, _, __ = get_lineage_string(data)
 with open(snakemake.input.trim_log, 'r') as log_file:
     trim_log = log_file.read()
 
+pre_filter_stats_text = Path(snakemake.input.stats_pre_filter).read_text()
+post_filter_stats_text = Path(snakemake.input.stats_post_filter).read_text()
 
 report("""
 ===================================
 Report for {sample}
 ===================================
+
+Pre-filter statistics
+===================================
+{pre_filter_stats_text}
+
+Post-filter statistics
+===================================
+{post_filter_stats_text}
+
 Processing Steps
 ===================================
 1. Fast5 files were basecalled with Guppy.
