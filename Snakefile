@@ -81,13 +81,10 @@ for index, row in samples.iterrows():
 # ======================================================
 # Rules
 # ======================================================
-
+files = mykrobe_files + krona_files + qc_plots + stats
 rule all:
     input:
-        mykrobe_files,
-        krona_files,
-        qc_plots,
-        stats
+        files
 
 # the snakemake files that run the different parts of the pipeline
 include: str(RULES_DIR.joinpath("basecall.smk"))
