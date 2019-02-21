@@ -53,6 +53,8 @@ rule report:
         stats_post_filter = "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt",
         mykrobe = "analysis/{{region}}/nanopore/{{run}}/mykrobe/{{sample}}.mykrobe.{ext}".format(ext=config["mykrobe"]["output_format"]),
         trim_log = "analysis/logs/trim_{region}_{run}_{sample}.log",
+        demultiplex_log = "analysis/logs/demultiplex_{region}_{run}.log",
+        composition_plot = "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html",
     output:
         "analysis/{region}/nanopore/{run}/report/{sample}.report.html"
     threads:

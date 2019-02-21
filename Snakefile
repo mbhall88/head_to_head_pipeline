@@ -52,19 +52,7 @@ for index, row in samples.iterrows():
     sample_id = row["sample_id"]
 
     files.extend([
-        "analysis/{region}/nanopore/{run}/mykrobe/{sample}.mykrobe.{ext}".format(
-            region=region, run=run_id, sample=sample_id, ext=config["mykrobe"]["output_format"]
-        ),
-        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
-            region=region, run=run_id, sample=sample_id
-        ),
-        "analysis/{region}/nanopore/{run}/plotting/qc/{sample}.qc.pdf".format(
-            region=region, run=run_id, sample=sample_id
-        ),
-        "analysis/{region}/nanopore/{run}/stats/{sample}.pre_filter.stats.txt".format(
-            region=region, run=run_id, sample=sample_id
-        ),
-        "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt".format(
+        "analysis/{region}/nanopore/{run}/report/{sample}.report.html".format(
             region=region, run=run_id, sample=sample_id
         )])
 
