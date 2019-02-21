@@ -134,10 +134,15 @@ Processing Steps
 Mykrobe Analysis
 ===================================
 **Phylogenetic group:** {phylo_group}
+
 **Species:** {species}
+
 **Lineage:** {lineage}
+
 A summary of the susceptiblity information from `Mykrobe predict`_ is shown here. For the full report, see mykrobe_. If resistance is identified for a drug then the predicted responsible variant(s) is given, along with supporting information.
+
 {mykrobe_report}
+
 .. _Porechop: https://github.com/rrwick/Porechop
 .. _Minimap2: https://github.com/lh3/minimap2
 .. _NanoStat: https://github.com/wdecoster/nanostat
