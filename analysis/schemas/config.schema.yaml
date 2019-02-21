@@ -207,6 +207,20 @@ properties:
     required:
         - container
 
+  stats:
+    type:                       object
+    properties:
+        memory:
+            type:               number
+            default:            1000
+        threads:
+            type:               number
+            default:            1
+        container:
+            type:               string
+    required:
+        - container
+
 required:
   - samples
   - basecall
@@ -222,3 +236,4 @@ required:
   - generate_krona_input
   - plot_sample_composition
   - qc_plot
+  - stats

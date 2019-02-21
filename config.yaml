@@ -53,3 +53,8 @@ plot_sample_composition:
 qc_plot:
     memory:                   8000
     container:                "shub://mbhall88/Singularity_recipes:pistis@c0161afb485b937f58e38f7bf16c7966"
+
+stats:
+    threads:                  8
+    memory:                   8000
+    container:                "docker://quay.io/biocontainers/nanostat:1.1.2--py36_1"
