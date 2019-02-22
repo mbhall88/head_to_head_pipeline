@@ -21,7 +21,7 @@ def determine_config_model(wildcards, input, output, threads, resources):
 
 rule basecall:
     input:
-        "data/{region}/nanopore/{run}/f5s",
+        "data/{region}/nanopore/{run}/f5s/"
     output:
         directory("analysis/{region}/nanopore/{run}/basecalling")
     threads:
@@ -31,7 +31,7 @@ rule basecall:
     singularity:
         config["basecall"]["container"]
     params:
-        model_config = determine_config_model
+        model_config = determine_config_model,
     log:
         "analysis/logs/basecall_{region}_{run}.log"
     shell:
@@ -45,7 +45,7 @@ rule basecall:
 
 rule combine_fastq:
     input:
-        rules.basecall.output
+        "analysis/{region}/nanopore/{run}/basecalling"
     output:
         "analysis/{region}/nanopore/{run}/basecalled.fastq"
     threads: 1

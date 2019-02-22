@@ -105,7 +105,7 @@ mykrobe_report = mykrobe_rst_list(mykrobe_overview(snakemake.input.mykrobe))
 num_reads_pre_filter = get_num_reads(snakemake.input.stats_pre_filter)
 num_reads_post_filter = get_num_reads(snakemake.input.stats_post_filter)
 percent_reads_mapped = round(num_reads_post_filter / num_reads_pre_filter * 100, 2)
-sample=snakemake.params.sample
+sample=snakemake.wildcards.sample
 
 mykrobe_data = load_json(snakemake.input.mykrobe)
 key = list(mykrobe_data.keys())[0]

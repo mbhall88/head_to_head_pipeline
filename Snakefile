@@ -18,6 +18,7 @@ samples = pd.read_csv(config["samples"]).set_index(
     ["region", "nanopore_run_id", "sample_id"], drop=False
 )
 validate(samples, "analysis/schemas/samples.schema.yaml")
+
 # ======================================================
 # Functions and Classes
 # ======================================================
@@ -35,10 +36,15 @@ for index, row in samples.iterrows():
         continue
     region = row["region"]
     sample_id = row["sample_id"]
+
     files.extend([
+        "analysis/{region}/nanopore/{run}/plotting/krona/{sample}.krona.html".format(
+            region=region, run=run_id, sample=sample_id
+        ),
         "analysis/{region}/nanopore/{run}/report/{sample}.report.html".format(
             region=region, run=run_id, sample=sample_id
         )])
+
 
 
 # ======================================================

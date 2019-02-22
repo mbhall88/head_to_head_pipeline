@@ -63,8 +63,6 @@ rule report:
         mem_mb = (
             lambda wildcards, attempt: attempt * config["report"]["memory"]
             )
-    params:
-        sample="{sample}"
     log:
         "analysis/logs/report_{region}_{run}_{sample}.log"
     script:

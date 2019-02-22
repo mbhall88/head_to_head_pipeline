@@ -12,7 +12,7 @@ bsub -R "select[mem>1000] rusage[mem=1000]" \
     snakemake --use-singularity \
     --use-conda \
     --cluster-config cluster.yaml \
-    --jobs 500 \
+    --jobs 2000 \
     --restart-times 3 \
     --cluster "${CLUSTER_CMD[@]}"
 
