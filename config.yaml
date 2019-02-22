@@ -52,7 +52,7 @@ plot_sample_composition:
 
 qc_plot:
     memory:                   8000
-    container:                "shub://mbhall88/Singularity_recipes:pistis@c0161afb485b937f58e38f7bf16c7966"
+    container:                "shub://mbhall88/pistis:latest@e421f41eed3628bc1eeb4349c97b0769"
 
 stats:
     threads:                  2
