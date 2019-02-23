@@ -27,7 +27,7 @@ rule basecall:
     threads:
         config["basecall"]["threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: attempt * config["basecall"]["memory"]
+        mem_mb = lambda wildcards, attempt: attempt * (config["basecall"]["threads"] * 1000 + 4000)
     singularity:
         config["basecall"]["container"]
     params:

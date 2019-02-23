@@ -1,7 +1,6 @@
 samples    :                  "docs/samples.csv"
 basecall   :
     threads  :                32
-    memory   :                16000
     container:                "analysis/containers/guppycpu.simg"
 
 demultiplex:
