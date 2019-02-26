@@ -1,6 +1,4 @@
-import re
 from pathlib import Path
-from typing import List
 
 import pandas as pd
 from snakemake.utils import min_version, validate
