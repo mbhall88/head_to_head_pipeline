@@ -1,27 +1,28 @@
-$schema: "http://json-schema.org/draft-07/schema#"
+$schema:              "http://json-schema.org/draft-07/schema#"
 
-description: an entry in the sample sheet
+description:          an entry in the sample sheet
 properties:
     region:
-        type: string
-        description: The region where data was obtained from.
+        type:         string
+        description:  The region where data was obtained from.
     nanopore_run_id:
-        type: string
-        description: ID for the nanopore run. Can contain multiple sample IDs.
+        type:         string
+        description:  ID for the nanopore run. Can contain multiple sample IDs.
     sample_id:
-        type: string
-        description: Sample ID for individual sample.
+        type:         string
+        description:  Sample ID for individual sample.
     guuid:
-        type: string
-        description: GUUID identifier for the Illumina sequencing of this sample.
+        type:         string
+        description:  GUUID identifier for the Illumina sequencing of this sample.
     nanopore_barcode:
-        type: string
-        pattern: "barcode[0-1][0-9]"
-        description: Nanopore barcode number used if multiplexed.
+        type:         string
+        pattern:      "barcode[0-1][0-9]"
+        description:  Nanopore barcode number used if multiplexed.
     flowcell_version:
-        type: string
-        pattern: "^R[0-9]\\.[0-9]"
-        description: Nanopore flowcell chemistry version used.
+        type:         string
+        pattern:      "^R[0-9]\\.[0-9]"
+        description:  Nanopore flowcell chemistry version used.
+        default:      "R9.4.1"
 
 required:
     - region
