@@ -25,7 +25,7 @@ rule stats_pre_filter:
 
 rule stats_post_filter:
     input:
-        fastq = "analysis/{region}/nanopore/{run}/trimmed/{sample}.trimmed.fastq.gz",
+        fastq = "analysis/{region}/nanopore/{run}/filtered/{sample}.filtered.fastq.gz",
     output:
         "analysis/{region}/nanopore/{run}/stats/{sample}.post_filter.stats.txt"
     threads:
