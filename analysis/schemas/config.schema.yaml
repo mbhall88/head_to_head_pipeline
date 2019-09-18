@@ -156,7 +156,7 @@ properties:
             type:               string
         output_format:
             type:               string
-            patter:             "json|csv"
+            pattern:            "json|csv"
     required:
         - container
         - species
