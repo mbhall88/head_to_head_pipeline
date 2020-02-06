@@ -1,0 +1,52 @@
+from pathlib import Path
+
+from snakemake.utils import min_version
+
+min_version("5.10.0")
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+
+outdir = Path(config["outdir"])
+data_dir = Path(config["data_dir"])
+mada_dir = data_dir / "madagascar"
+illumina_dir = mada_dir / "illumina"
+ont_dir = mada_dir / "nanopore"
+pacbio_dir = mada_dir / "pacbio"
+# ======================================================
+# Setup
+# ======================================================
+
+output_files = []
+
+for sample in config["samples"]:
+    output_files.append(outdir / f"{sample}" / "spades" / "scaffolds.fasta")
+# ======================================================
+# Rules
+# ======================================================
+rule all:
+    input:
+         output_files
+
+
+"""
+Assembly combinations and options:
+- Spades with all three techs
+- PB only: Flye (PB) -> Arrow (PB)
+- PB+I: Flye (PB) -> Uincycler polish
+- ONT+I: Flye (ONT) -> Uincycler polish
+- PB+ONT: Canu -> Medaka -> Arrow
+
+Polishing options to consider:
+- Illumina -> Pilon
+- PB: Racon and Arrow
+- ONT: Racon and Medaka
+- HyPo: Takes all three techs and uses them to polish. https://github.com/kensung-lab/hypo
+
+Quast for assessing
+"""
+workflows_dir = Path("workflows")
+include: str(workflows_dir / "spades.smk")
+
