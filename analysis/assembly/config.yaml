@@ -1,0 +1,7 @@
+data_dir: "/hps/nobackup/research/zi/projects/tech_wars/data"
+outdir: "results"
+samples:
+  - "mada_101"
+#  - "mada_130"
+#  - "mada_132"
+#  - "mada_1-2"
