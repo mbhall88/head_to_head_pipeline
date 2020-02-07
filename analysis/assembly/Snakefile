@@ -35,6 +35,7 @@ rule trim_illumina:
     input:
         forward = illumina_dir / "{sample}" / "{sample}.R1.fastq.gz",
         reverse = illumina_dir / "{sample}" / "{sample}.R2.fastq.gz",
+        adapters = config["adapters"]
     output:
         forward_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         reverse_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
@@ -44,7 +45,7 @@ rule trim_illumina:
     resources:
         mem_mb = lambda wildcards, attempt: 2000 * attempt
     params:
-        illuminaclip = "TruSeq3-PE.fa:1:30:10:2:keepBothReads",
+        illuminaclip = "1:30:10:2:keepBothReads",
         leading = 3,
         trailing = 3,
         minlen = 30,
@@ -57,7 +58,7 @@ rule trim_illumina:
             {input.forward} {input.reverse} \
             {output.forward_paired} {output.forward_unpaired} \
             {output.reverse_paired} {output.reverse_unpaired} \
-            ILLUMINACLIP:{params.illuminaclip} \
+            ILLUMINACLIP:{input.adapters}:{params.illuminaclip} \
             LEADING:{params.leading} \
             TRAILING:{params.trailing} \
             MINLEN:{params.minlen} \
