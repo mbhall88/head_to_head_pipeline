@@ -2,28 +2,28 @@
 
 rule spades:
     input:
-         illumina1 = illumina_dir / "{sample}" / "{sample}.R1.fastq.gz",
-         illumina2 = illumina_dir / "{sample}" / "{sample}.R2.fastq.gz",
+         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
          pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq",
          nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz"
     output:
          assembly = outdir / "{sample}" / "spades" / "scaffolds.fasta"
-    threads: 16
+    threads: 32
     resources:
-             mem_mb=lambda wildcards, attempt: 32000 * attempt,
-             mem_gb=lambda wildcards, attempt: 32 * attempt
+             mem_mb=lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
+             mem_gb=lambda wildcards, attempt: 64 + (16 * (attempt - 1))
     singularity: "docker://quay.io/biocontainers/spades:3.14.0--h2d02072_0"
     shell:
          """
          outdir=$(dirname {output.assembly})
          spades.py \
             -o $outdir \
-            -1 {input.illumina1} \
-            -2 {input.illumina2} \
-            -s {input.pacbio} \
+            --pe1-1 {input.illumina1} \
+            --pe1-2 {input.illumina2} \
+            --s1 {input.pacbio} \
             --nanopore {input.nanopore} \
             --threads {threads} \
             --memory {resources.mem_gb} \
-            --careful
+            --isolate
          """
 
