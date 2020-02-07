@@ -31,6 +31,39 @@ rule all:
          output_files
 
 
+rule trim_illumina:
+    input:
+        forward = illumina_dir / "{sample}" / "{sample}.R1.fastq.gz",
+        reverse = illumina_dir / "{sample}" / "{sample}.R2.fastq.gz",
+    output:
+        forward_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+        reverse_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+        forward_unpaired = outdir / "{sample}" / "trimmed" / "{sample}.R1.unpaired.trimmed.fastq.gz",
+        reverse_unpaired = outdir / "{sample}" / "trimmed" / "{sample}.R2.unpaired.trimmed.fastq.gz",
+    threads: 4
+    resources:
+        mem_mb = lambda wildcards, attempt: 2000 * attempt
+    params:
+        illuminaclip = "TruSeq3-PE.fa:1:30:10:2:keepBothReads",
+        leading = 3,
+        trailing = 3,
+        minlen = 30,
+        in_phred = 33,
+        out_phred = 33,
+    shell:
+        """
+        trimmomatic PE -threads {threads} -phred{params.in_phred} \
+            {input.forward} {input.reverse} \
+            {output.forward_paired} {output.forward_unpaired} \
+            {output.reverse_paired} {output.reverse_unpaired} \
+            ILLUMINACLIP:{params.illuminaclip} \
+            LEADING:{params.leading} \
+            TRAILING:{params.trailing} \
+            MINLEN:{params.minlen} \
+            TOPHRED{params.out_phred}
+        """
+
+
 """
 Assembly combinations and options:
 - Spades with all three techs
