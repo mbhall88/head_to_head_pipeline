@@ -4,7 +4,7 @@ rule spades:
     input:
          illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
          illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
-         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq",
+         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
          nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz"
     output:
          assembly = outdir / "{sample}" / "spades" / "scaffolds.fasta"

@@ -1,5 +1,6 @@
 data_dir: "/hps/nobackup/research/zi/projects/tech_wars/data"
 outdir: "results"
+genome_size: 4411532
 adapters: "resources/TruSeq3-PE.fa"
 samples:
   - "mada_101"
