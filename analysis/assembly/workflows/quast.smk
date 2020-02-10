@@ -9,7 +9,7 @@ rule quast:
         nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
     output:
         report = outdir / "{sample}" / "quast" / "report.pdf"
-    threads = 8
+    threads: 8
     resources:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
     singularity: "docker://quay.io/biocontainers/quast:5.0.2--py35pl526ha92aebf_0"

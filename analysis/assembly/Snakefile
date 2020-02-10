@@ -91,4 +91,3 @@ workflows_dir = Path("workflows")
 include: str(workflows_dir / "spades.smk")
 include: str(workflows_dir / "flye.smk")
 include: str(workflows_dir / "quast.smk")
-
