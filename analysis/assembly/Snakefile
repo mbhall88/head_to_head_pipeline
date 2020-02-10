@@ -23,7 +23,7 @@ technologies = ["pacbio", "nanopore", "illumina"]
 output_files = set()
 
 for sample, technology in itertools.product(config["samples"], technologies):
-    output_files.add(outdir / f"{sample}" / "spades" / "scaffolds.fasta")
+    outdir / f"{sample}" / "quast" / "report.pdf"
     if technology != "illumina":
         flye_assembly = outdir / f"{sample}" / "flye" / f"{technology}" / "assembly.fasta"
         output_files.add(flye_assembly)
@@ -90,3 +90,5 @@ Quast for assessing
 workflows_dir = Path("workflows")
 include: str(workflows_dir / "spades.smk")
 include: str(workflows_dir / "flye.smk")
+include: str(workflows_dir / "quast.smk")
+
