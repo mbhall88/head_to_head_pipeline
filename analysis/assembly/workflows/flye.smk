@@ -11,7 +11,7 @@ def infer_flye_input_type(technology: str) -> str:
 
 rule flye:
     input:
-        reads = data_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
         assembly      = outdir / "{sample}" / "flye" / "{technology}" / "assembly.fasta",
         assembly_info = outdir / "{sample}" / "flye" / "{technology}" / "assembly_info.txt",
