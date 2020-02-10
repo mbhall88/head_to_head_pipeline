@@ -17,7 +17,7 @@ rule flye:
         assembly_info = outdir / "{sample}" / "flye" / "{technology}" / "assembly_info.txt",
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
+        mem_mb = lambda wildcards, attempt: 16000 * attempt,
     singularity: "docker://quay.io/biocontainers/flye:2.6--py37he513fc3_0"
     params:
         genome_size = config["genome_size"],
