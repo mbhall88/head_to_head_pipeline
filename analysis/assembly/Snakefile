@@ -1,4 +1,5 @@
 from pathlib import Path
+import itertools
 
 from snakemake.utils import min_version
 
@@ -18,17 +19,21 @@ pacbio_dir = mada_dir / "pacbio"
 # ======================================================
 # Setup
 # ======================================================
+technologies = ["pacbio", "nanopore", "illumina"]
+output_files = set()
 
-output_files = []
+for sample, technology in itertools.product(config["samples"], technologies):
+    output_files.add(outdir / f"{sample}" / "spades" / "scaffolds.fasta")
+    if technology != "illumina":
+        flye_assembly = outdir / f"{sample}" / "flye" / f"{technology}" / "assembly.fasta"
+        output_files.add(flye_assembly)
 
-for sample in config["samples"]:
-    output_files.append(outdir / f"{sample}" / "spades" / "scaffolds.fasta")
 # ======================================================
 # Rules
 # ======================================================
 rule all:
     input:
-         output_files
+         list(output_files)
 
 
 rule trim_illumina:
@@ -84,4 +89,4 @@ Quast for assessing
 """
 workflows_dir = Path("workflows")
 include: str(workflows_dir / "spades.smk")
-
+include: str(workflows_dir / "flye.smk")
