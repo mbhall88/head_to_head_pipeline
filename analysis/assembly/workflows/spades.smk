@@ -12,7 +12,7 @@ rule spades:
     resources:
              mem_mb=lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
              mem_gb=lambda wildcards, attempt: 64 + (16 * (attempt - 1))
-    singularity: config["containers"]["spades"]
+    singularity: containers["spades"]
     shell:
          """
          outdir=$(dirname {output.assembly})

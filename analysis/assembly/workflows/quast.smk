@@ -16,7 +16,7 @@ rule quast:
     threads: 8
     resources:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
-    singularity: config["containers"]["quast"]
+    singularity: containers["quast"]
     params:
         genome_size = config["genome_size"],
         labels = "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_ont,flye_ont_uc,flye_ont_1r",

@@ -1,5 +1,5 @@
-from pathlib import Path
 import itertools
+from pathlib import Path
 
 from snakemake.utils import min_version
 
@@ -9,6 +9,7 @@ min_version("5.10.0")
 # Config files
 # ======================================================
 configfile: "config.yaml"
+containers = config["containers"]
 
 outdir = Path(config["outdir"])
 data_dir = Path(config["data_dir"])
@@ -56,7 +57,7 @@ rule trim_illumina:
         minlen = 30,
         in_phred = 33,
         out_phred = 33,
-    singularity: config["containers"]["trimmomatic"]
+    singularity: containers["trimmomatic"]
     shell:
         """
         trimmomatic PE -threads {threads} -phred{params.in_phred} \

@@ -18,7 +18,7 @@ rule flye:
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt,
-    singularity: config["containers"]["flye"]
+    singularity: containers["flye"]
     params:
         genome_size = config["genome_size"],
         input_type = lambda wildcards: infer_flye_input_type(wildcards.technology),
@@ -49,7 +49,7 @@ rule unicycler_polish_flye:
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 32000 * attempt
-    singularity: config["containers"]["unicycler"]
+    singularity: containers["unicycler"]
     params:
         verbosity = 2,
     shell:
@@ -88,7 +88,7 @@ rule map_long_reads_to_flye_assembly:
     threads: 8
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt
-    singularity: config["container"]["minimap2"]
+    singularity: containers["minimap2"]
     params:
         preset = lambda wildcards: infer_minimap2_preset(wildcards.technology),
         extras = "--secondary=no"
@@ -111,7 +111,7 @@ rule racon_polish_flye:
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt
-    singularity: config["containers"]["racon"]
+    singularity: containers["racon"]
     params:
         extras = "--include-unpolished"
     shell:
