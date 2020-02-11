@@ -118,7 +118,7 @@ rule racon_polish_flye:
         """
         racon --threads {threads} \
             {params.extras} \
+            {input.reads} \
             {input.sam} \
-            {input.assembly} \
-            {input.reads} > {output.polished_assembly}
+            {input.assembly} > {output.polished_assembly}
         """
