@@ -63,3 +63,62 @@ rule unicycler_polish_flye:
             --threads {threads} \
             --existing_long_read_assembly {input.long_read_assembly}
         """
+
+"""
+Taken from https://www.biorxiv.org/content/biorxiv/early/2019/08/13/635037.full.pdf
+Polishing PacBio CCS with racon
+minimap2 -ax map-pb --eqx -m 5000 -t {threads} --secondary=no {ref} {fastq} | samtools view -F 1796-> {sam}
+racon {fastq} {sam} {ref} -u -t {threads} > {output.fasta}
+"""
+class MinimapPresets(Enum):
+    PACBIO = "asm20"
+    NANOPORE = "map-ont"
+
+
+def infer_minimap2_preset(technology: str) -> str:
+    return FlyeInputType[technology.upper()].value
+
+
+rule map_long_reads_to_flye_assembly:
+    input:
+        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        flye_assembly = rules.flye.output.assembly,
+    output:
+        sam = outdir / "{sample}" / "flye" / "{technology}" / "mapping" / "{sample}.{technology}.flye.sam"
+    threads: 8
+    resources:
+        mem_mb = lambda wildcards, attempt: 16000 * attempt
+    singularity: config["container"]["minimap2"]
+    params:
+        preset = lambda wildcards: infer_minimap2_preset(wildcards.technology),
+        extras = "--secondary=no"
+    shell:
+        """
+        minimap2 -ax {params.preset} \
+            {params.extras} \
+            -t {threads} \
+            {input.flye_assembly} \
+            {input.reads} > {output.sam}
+        """
+
+rule racon_polish_flye:
+    input:
+        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        sam = rules.map_long_reads_to_flye_assembly.output.sam,
+        assembly = rules.flye.output.assembly
+    output:
+        polished_assembly = outdir / "{sample}" / "flye" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
+    threads: 16
+    resources:
+        mem_mb = lambda wildcards, attempt: 16000 * attempt
+    singularity: config["containers"]["racon"]
+    params:
+        extras = "--include-unpolished"
+    shell:
+        """
+        racon --threads {threads} \
+            {params.extras} \
+            {input.sam} \
+            {input.assembly} \
+            {input.reads} > {output.polished_assembly}
+        """
