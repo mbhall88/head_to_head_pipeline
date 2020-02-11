@@ -76,7 +76,7 @@ class MinimapPresets(Enum):
 
 
 def infer_minimap2_preset(technology: str) -> str:
-    return FlyeInputType[technology.upper()].value
+    return MinimapPresets[technology.upper()].value
 
 
 rule map_long_reads_to_flye_assembly:
