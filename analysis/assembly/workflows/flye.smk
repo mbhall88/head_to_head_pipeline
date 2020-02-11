@@ -110,7 +110,7 @@ rule racon_polish_flye:
         polished_assembly = outdir / "{sample}" / "flye" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 16000 * attempt
+        mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["racon"]
     params:
         extras = "--include-unpolished"
