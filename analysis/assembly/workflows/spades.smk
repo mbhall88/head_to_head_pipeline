@@ -12,7 +12,7 @@ rule spades:
     resources:
              mem_mb=lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
              mem_gb=lambda wildcards, attempt: 64 + (16 * (attempt - 1))
-    singularity: "docker://quay.io/biocontainers/spades:3.14.0--h2d02072_0"
+    singularity: config["containers"]["spades"]
     shell:
          """
          outdir=$(dirname {output.assembly})

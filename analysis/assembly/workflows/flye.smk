@@ -18,7 +18,7 @@ rule flye:
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt,
-    singularity: "docker://quay.io/biocontainers/flye:2.6--py37he513fc3_0"
+    singularity: config["containers"]["flye"]
     params:
         genome_size = config["genome_size"],
         input_type = lambda wildcards: infer_flye_input_type(wildcards.technology),

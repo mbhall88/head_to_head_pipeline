@@ -12,9 +12,7 @@ rule quast:
     threads: 8
     resources:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
-    # biocontainers image is currently broken
-    # singularity: "docker://quay.io/biocontainers/quast:5.0.2--py35pl526ha92aebf_0"
-    singularity: "/hps/nobackup/research/zi/gblackwell/assemble_all_ena.2019.02.251b36c597d63d8dd5020b0f68ac9cce3765cff14f.img"
+    singularity: config["containers"]["quast"]
     params:
         genome_size = config["genome_size"]
     shell:
