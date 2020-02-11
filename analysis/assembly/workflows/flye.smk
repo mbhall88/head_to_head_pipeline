@@ -32,3 +32,34 @@ rule flye:
             --threads {threads} \
             --iterations {params.polishing_iterations} 
         """
+
+
+"""
+This rule is effectively using Unicycler to polish the Flye assembly.
+"""
+rule unicycler_polish_flye:
+    input:
+        illumina1          = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+        illumina2          = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+        long_reads         = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        long_read_assembly = rules.flye.output.assembly,
+    output:
+        assembly = outdir / "{sample}" / "flye" / "{technology}" / "unicycler" / "assembly.fasta",
+        assembly_graph = outdir / "{sample}" / "flye" / "{technology}" / "unicycler" / "assembly.gfa",
+    threads: 16
+    resources:
+        mem_mb = lambda wildcards, attempt: 32000 * attempt
+    singularity: config["containers"]["unicycler"]
+    params:
+        verbosity = 2,
+    shell:
+        """
+        outdir=$(dirname {output.assembly})
+        unicycler --short1 {input.illumina1} \
+            --short2 {input.illumina2} \
+            --long {input.long_reads} \
+            --out $outdir \
+            --verbosity {params.verbosity} \
+            --threads {threads} \
+            --existing_long_read_assembly {input.long_read_assembly}
+        """

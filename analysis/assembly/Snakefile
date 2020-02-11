@@ -25,8 +25,8 @@ output_files = set()
 for sample, technology in itertools.product(config["samples"], technologies):
     output_files.add(outdir / f"{sample}" / "quast" / "report.pdf")
     if technology != "illumina":
-        flye_assembly = outdir / f"{sample}" / "flye" / f"{technology}" / "assembly.fasta"
-        output_files.add(flye_assembly)
+        flye_unicycler = outdir / f"{sample}" / "flye" / f"{technology}" / "unicycler" / "assembly.fasta",
+        output_files.add(flye_unicycler)
 
 # ======================================================
 # Rules
