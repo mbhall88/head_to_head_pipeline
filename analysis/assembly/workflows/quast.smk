@@ -6,6 +6,8 @@ rule quast:
         flye_ont = outdir / "{sample}" / "flye" / "nanopore" / "assembly.fasta",
         flye_ont_uc = outdir / "{sample}" / "flye" / "nanopore" / "unicycler" / "assembly.fasta",
         flye_ont_1racon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
+        uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
+        uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
         spades = outdir / "{sample}" / "spades" / "scaffolds.fasta",
         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
@@ -20,7 +22,10 @@ rule quast:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
     singularity: containers["quast"]
     params:
-        labels = "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_ont,flye_ont_uc,flye_ont_1r",
+        labels = (
+            "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_ont,flye_ont_uc,flye_ont_1r,"
+            "uc_pb,uc_ont"
+        ),
         extras = ""
     shell:
          """
@@ -36,5 +41,6 @@ rule quast:
              --pacbio {input.pacbio} \
              --nanopore {input.nanopore} \
              {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
-             {input.flye_ont} {input.flye_ont_uc} {input.flye_ont_1racon}
+             {input.flye_ont} {input.flye_ont_uc} {input.flye_ont_1racon} {input.uc_pb} \
+             {input.uc_ont}
          """

@@ -49,7 +49,7 @@ rule unicycler_polish_flye:
         assembly_graph = outdir / "{sample}" / "flye" / "{technology}" / "unicycler" / "assembly.gfa",
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 32000 * attempt
+        mem_mb = lambda wildcards, attempt: 16000 * attempt
     singularity: containers["unicycler"]
     params:
         verbosity = 2,
