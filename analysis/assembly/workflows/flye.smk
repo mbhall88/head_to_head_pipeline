@@ -15,6 +15,7 @@ rule flye:
     output:
         assembly      = outdir / "{sample}" / "flye" / "{technology}" / "assembly.fasta",
         assembly_info = outdir / "{sample}" / "flye" / "{technology}" / "assembly_info.txt",
+        assembly_graph = outdir / "{sample}" / "flye" / "{technology}" / "assembly_graph.gfa",
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt,
@@ -42,7 +43,7 @@ rule unicycler_polish_flye:
         illumina1          = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         illumina2          = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
         long_reads         = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-        long_read_assembly = rules.flye.output.assembly,
+        long_read_assembly = rules.flye.output.assembly_graph,
     output:
         assembly = outdir / "{sample}" / "flye" / "{technology}" / "unicycler" / "assembly.fasta",
         assembly_graph = outdir / "{sample}" / "flye" / "{technology}" / "unicycler" / "assembly.gfa",
