@@ -10,6 +10,7 @@ min_version("5.10.0")
 # ======================================================
 configfile: "config.yaml"
 containers = config["containers"]
+H37RV = config["h37rv"]
 
 outdir = Path(config["outdir"])
 data_dir = Path(config["data_dir"])

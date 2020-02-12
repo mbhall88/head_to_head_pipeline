@@ -11,6 +11,8 @@ rule quast:
         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
+        reference_genome = H37RV["genome"],
+        reference_features = H37RV["features"],
     output:
         report = outdir / "{sample}" / "quast" / "report.pdf"
     threads: 8
@@ -18,21 +20,21 @@ rule quast:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
     singularity: containers["quast"]
     params:
-        genome_size = config["genome_size"],
         labels = "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_ont,flye_ont_uc,flye_ont_1r",
-        extras = "--gene-finding --conserved-genes-finding"
+        extras = ""
     shell:
-        """
-        outdir=$(dirname {output.report})
-        quast.py -o $outdir \
-            --threads {threads} \
-            --labels  {params.labels} \
-            {params.extras} \
-            --est-ref-size {params.genome_size} \
-            --pe1 {input.illumina1} \
-            --pe2 {input.illumina2} \
-            --pacbio {input.pacbio} \
-            --nanopore {input.nanopore} \
-            {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
-            {input.flye_ont} {input.flye_ont_uc} {input.flye_ont_1racon}
-        """
+         """
+         outdir=$(dirname {output.report})
+         quast.py -o $outdir \
+             --threads {threads} \
+             --labels  {params.labels} \
+             -r {input.reference_genome} \
+             --features {input.reference_features} \
+             {params.extras} \
+             --pe1 {input.illumina1} \
+             --pe2 {input.illumina2} \
+             --pacbio {input.pacbio} \
+             --nanopore {input.nanopore} \
+             {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
+             {input.flye_ont} {input.flye_ont_uc} {input.flye_ont_1racon}
+         """
