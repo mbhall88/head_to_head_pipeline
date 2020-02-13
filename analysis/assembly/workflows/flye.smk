@@ -161,9 +161,9 @@ rule pilon_polish_flye:
         final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
     shell:
          """
-         script=pilon.py
+         script=$(realpath pilon.py)
          wget -O $script {params.script_url}
-         pilon_jar=pilon.jar
+         pilon_jar=$(realpath pilon.jar)
          wget -O $pilon_jar {params.pilon_url}
          
          bwa index {input.assembly}
