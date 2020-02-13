@@ -155,7 +155,7 @@ rule pilon_polish_flye:
     params:
         pilon_url = f"https://github.com/broadinstitute/pilon/releases/download/v{config['pilon_version']}/pilon-{config['pilon_version']}.jar",
         script_url = "https://raw.githubusercontent.com/mbhall88/bioscripts/master/python/pilon_iterative.py",
-        mem_gb = lambda wildcards, resources: resources.mem_mb / 1000,
+        mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
         max_iterations = 10,
         outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
         final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
