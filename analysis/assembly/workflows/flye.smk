@@ -175,5 +175,5 @@ rule pilon_polish_flye:
              --reads2 {input.illumina2} \
              --outdir {params.outdir} \
              --final_fasta {params.final_fasta}
-         rm $pilon_jar
+         rm $pilon_jar $script
          """
