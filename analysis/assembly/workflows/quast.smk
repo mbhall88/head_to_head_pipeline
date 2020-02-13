@@ -3,9 +3,11 @@ rule quast:
         flye_pb = outdir / "{sample}" / "flye" / "pacbio" / "assembly.circularise.fasta",
         flye_pb_uc = outdir / "{sample}" / "flye" / "pacbio" / "unicycler" / "assembly.fasta",
         flye_pb_1racon = outdir / "{sample}" / "flye" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
+        flye_pb_1racon_pilon = outdir / "{sample}" / "flye" / "pacbio" / "racon" / "pilon" / "final.pilon.fasta",
         flye_ont = outdir / "{sample}" / "flye" / "nanopore" / "assembly.circularise.fasta",
         flye_ont_uc = outdir / "{sample}" / "flye" / "nanopore" / "unicycler" / "assembly.fasta",
         flye_ont_1racon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
+        flye_ont_1racon_pilon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "pilon" / "final.pilon.fasta",
         uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
         uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
         spades = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
@@ -23,8 +25,8 @@ rule quast:
     singularity: containers["quast"]
     params:
         labels = (
-            "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_ont,flye_ont_uc,flye_ont_1r,"
-            "uc_pb,uc_ont"
+            "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_pb_1r_p,flye_ont,flye_ont_uc,"
+            "flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont"
         ),
         extras = ""
     shell:
@@ -41,6 +43,7 @@ rule quast:
              --pacbio {input.pacbio} \
              --nanopore {input.nanopore} \
              {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
-             {input.flye_ont} {input.flye_ont_uc} {input.flye_ont_1racon} {input.uc_pb} \
+             {input.flye_pb_1racon_pilon} {input.flye_ont} {input.flye_ont_uc} \
+             {input.flye_ont_1racon} {input.flye_ont_1racon_pilon} {input.uc_pb} \
              {input.uc_ont}
          """

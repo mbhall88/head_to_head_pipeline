@@ -140,3 +140,40 @@ rule racon_polish_flye:
             {input.sam} \
             {input.assembly} > {output.polished_assembly}
         """
+
+"""This rule assumes bwa mem and java are available on PATH"""
+rule pilon_polish_flye:
+    input:
+        assembly = rules.racon_polish_flye.output.polished_assembly,
+        illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+        illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+    output:
+          polished_assembly = outdir / "{sample}" / "flye" / "{technology}" / "racon" / "pilon" / "final.pilon.fasta"
+    threads: 16
+    resources:
+        mem_mb = lambda wildcards, attempt: 8000 * attempt
+    params:
+        pilon_url = f"https://github.com/broadinstitute/pilon/releases/download/v{config['pilon_version']}/pilon-{config['pilon_version']}.jar",
+        script_url = "https://raw.githubusercontent.com/mbhall88/bioscripts/master/python/pilon_iterative.py",
+        mem_gb = lambda wildcards, resources: resources.mem_mb / 1000,
+        max_iterations = 10,
+        outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
+        final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
+    shell:
+         """
+         script=pilon.py
+         wget -O $script {params.script_url}
+         pilon_jar=pilon.jar
+         wget -O $pilon_jar {params.pilon_url}
+         python3 $script \
+             --pilon_java_xmx {params.mem_gb}G \
+             --threads {threads} \
+             --max_iterations {params.max_iterations} \
+             --pilon_jar $pilon_jar \
+             --assembly_fasta {input.assembly} \
+             --reads1 {input.illumina1} \
+             --reads2 {input.illumina2} \
+             --outdir {params.outdir} \
+             --final_fasta {params.final_fasta}
+         rm $pilon_jar
+         """
