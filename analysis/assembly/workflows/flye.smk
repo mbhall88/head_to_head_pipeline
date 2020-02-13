@@ -165,6 +165,8 @@ rule pilon_polish_flye:
          wget -O $script {params.script_url}
          pilon_jar=pilon.jar
          wget -O $pilon_jar {params.pilon_url}
+         
+         bwa index {input.assembly}
          python3 $script \
              --pilon_java_xmx {params.mem_gb}G \
              --threads {threads} \
