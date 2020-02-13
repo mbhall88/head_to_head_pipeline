@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 
 class FlyeInputType(Enum):
     PACBIO = "--pacbio-corr"
@@ -65,6 +66,22 @@ rule unicycler_polish_flye:
             --existing_long_read_assembly {input.long_read_assembly}
         """
 
+rule circularise_flye:
+    input:
+        assembly = rules.flye.output.assembly,
+    output:
+        assembly = outdir / "{sample}" / "flye" / "{technology}" / "assembly.circularise.fasta",
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: 4000 * attempt
+    params:
+        output_prefix = lambda wildcards, input: Path(input.assembly).with_suffix("")
+    singularity: containers["circlator"]
+    shell:
+        """
+        circlator minimus2 {input.assembly} {params.output_prefix}
+        """
+
 """
 Taken from https://www.biorxiv.org/content/biorxiv/early/2019/08/13/635037.full.pdf
 Polishing PacBio CCS with racon
@@ -83,7 +100,7 @@ def infer_minimap2_preset(technology: str) -> str:
 rule map_long_reads_to_flye_assembly:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-        flye_assembly = rules.flye.output.assembly,
+        flye_assembly = rules.circularise_flye.output.assembly,
     output:
         sam = outdir / "{sample}" / "flye" / "{technology}" / "mapping" / "{sample}.{technology}.flye.sam"
     threads: 8
@@ -106,7 +123,7 @@ rule racon_polish_flye:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
         sam = rules.map_long_reads_to_flye_assembly.output.sam,
-        assembly = rules.flye.output.assembly
+        assembly = rules.circularise_flye.output.assembly
     output:
         polished_assembly = outdir / "{sample}" / "flye" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
     threads: 16

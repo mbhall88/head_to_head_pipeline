@@ -1,14 +1,14 @@
 rule quast:
     input:
-        flye_pb = outdir / "{sample}" / "flye" / "pacbio" / "assembly.fasta",
+        flye_pb = outdir / "{sample}" / "flye" / "pacbio" / "assembly.circularise.fasta",
         flye_pb_uc = outdir / "{sample}" / "flye" / "pacbio" / "unicycler" / "assembly.fasta",
         flye_pb_1racon = outdir / "{sample}" / "flye" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
-        flye_ont = outdir / "{sample}" / "flye" / "nanopore" / "assembly.fasta",
+        flye_ont = outdir / "{sample}" / "flye" / "nanopore" / "assembly.circularise.fasta",
         flye_ont_uc = outdir / "{sample}" / "flye" / "nanopore" / "unicycler" / "assembly.fasta",
         flye_ont_1racon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
         uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
         uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
-        spades = outdir / "{sample}" / "spades" / "scaffolds.fasta",
+        spades = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",

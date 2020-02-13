@@ -1,4 +1,5 @@
 """Spades will be run on all three techs at the same time."""
+from pathlib import Path
 
 rule spades:
     input:
@@ -27,3 +28,19 @@ rule spades:
             --isolate
          """
 
+
+rule circularise_spades:
+    input:
+         assembly = rules.spades.output.assembly,
+    output:
+          assembly = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
+    threads: 1
+    resources:
+             mem_mb = lambda wildcards, attempt: 4000 * attempt
+    params:
+          output_prefix = lambda wildcards, input: Path(input.assembly).with_suffix("")
+    singularity: containers["circlator"]
+    shell:
+         """
+         circlator minimus2 {input.assembly} {params.output_prefix}
+         """
