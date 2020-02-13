@@ -19,7 +19,7 @@ rule quast:
         report = outdir / "{sample}" / "quast" / "report.pdf"
     threads: 8
     resources:
-        mem_mb = lambda wildcards, attempt: 8000 * attempt
+        mem_mb = lambda wildcards, attempt: 12000 * attempt
     singularity: containers["quast"]
     params:
         labels = (
