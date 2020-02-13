@@ -36,7 +36,7 @@ rule circularise_spades:
           assembly = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
     threads: 1
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+             mem_mb = lambda wildcards, attempt: 1000 * attempt
     params:
           output_prefix = lambda wildcards, input: Path(input.assembly).with_suffix("")
     singularity: containers["circlator"]

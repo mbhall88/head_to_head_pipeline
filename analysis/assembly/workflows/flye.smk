@@ -73,7 +73,7 @@ rule circularise_flye:
         assembly = outdir / "{sample}" / "flye" / "{technology}" / "assembly.circularise.fasta",
     threads: 1
     resources:
-        mem_mb = lambda wildcards, attempt: 4000 * attempt
+        mem_mb = lambda wildcards, attempt: 1000 * attempt
     params:
         output_prefix = lambda wildcards, input: Path(input.assembly).with_suffix("")
     singularity: containers["circlator"]
