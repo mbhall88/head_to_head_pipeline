@@ -119,6 +119,26 @@ rule map_long_reads_to_flye_assembly:
             {input.reads} > {output.sam}
         """
 
+rule map_illumina_reads_to_flye_assembly:
+    input:
+        assembly = rules.circularise_flye.output.assembly,
+        illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+        illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+    output:
+        bam = outdir / "{sample}" / "flye" / "{technology}" / "mapping" / "{sample}.illumina.flye.bam",
+        bam_index = outdir / "{sample}" / "flye" / "{technology}" / "mapping" / "{sample}.illumina.flye.bam.bai",
+    threads: 8
+    resources:
+        mem_mb = lambda wildcards, attempt: 8000 * attempt
+    shell:
+        """
+        bwa index {input.assembly}
+        bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
+            samtools sort -@ {threads} -o {output.bam} -
+        samtoools index {output.bam}
+        """
+
+
 rule racon_polish_flye:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
@@ -179,3 +199,5 @@ rule pilon_polish_flye:
              --final_fasta {params.final_fasta}
          rm $pilon_jar $script
          """
+
+
