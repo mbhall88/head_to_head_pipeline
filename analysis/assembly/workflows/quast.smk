@@ -11,9 +11,12 @@ rule quast:
         uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
         uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
         spades = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
-        canu = outdir / "{sample}" / "canu" / "{sample}.contigs.circularise.fasta",
-        canu_1racon = outdir / "{sample}" / "canu" / "racon" / "assembly.1x.racon.fasta",
-        canu_1racon_pilon = outdir / "{sample}" / "canu" / "racon" / "pilon" / "final.pilon.fasta",
+        canu_pb = outdir / "{sample}" / "canu" / "pacbio" / "{sample}.contigs.circularise.fasta",
+        canu_pb_1racon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
+        canu_pb_1racon_pilon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "pilon" / "final.pilon.fasta",
+        canu_ont = outdir / "{sample}" / "canu" / "nanopore" / "{sample}.contigs.circularise.fasta",
+        canu_ont_1racon = outdir / "{sample}" / "canu" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
+        canu_ont_1racon_pilon = outdir / "{sample}" / "canu" / "nanopore" / "racon" / "pilon" / "final.pilon.fasta",
         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
@@ -29,7 +32,8 @@ rule quast:
     params:
         labels = (
             "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_pb_1r_p,flye_ont,flye_ont_uc,"
-            "flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont,canu,canu_1r,canu_1r_p"
+            "flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont,canu_pb,canu_pb_1r,canu_pb_1r_p,"
+            "canu_ont,canu_ont_1r,canu_ont_1r_p"
         ),
         extras = ""
     shell:
@@ -48,5 +52,7 @@ rule quast:
              {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
              {input.flye_pb_1racon_pilon} {input.flye_ont} {input.flye_ont_uc} \
              {input.flye_ont_1racon} {input.flye_ont_1racon_pilon} {input.uc_pb} \
-             {input.uc_ont} {input.canu} {input.canu_1racon} {input.canu_1racon_pilon}
+             {input.uc_ont} {input.canu_pb} {input.canu_pb_1racon} \
+             {input.canu_pb_1racon_pilon} {input.canu_ont} {input.canu_ont_1racon} \
+             {input.canu_ont_1racon_pilon}
          """

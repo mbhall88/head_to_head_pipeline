@@ -1,20 +1,28 @@
 from pathlib import Path
+from enum import Enum
 
+class CanuInputType(Enum):
+    PACBIO = "-pacbio-hifi"
+    NANOPORE = "-nanopore-raw"
+
+
+def infer_canu_input_type(technology: str) -> str:
+    return CanuInputType[technology.upper()].value
 
 rule canu:
     input:
-         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
-         nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
+        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-        assembly = outdir / "{sample}" / "canu" / "{sample}.contigs.fasta",
-        assembly_graph = outdir / "{sample}" / "canu" / "{sample}.unitigs.gfa",
+        assembly = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.fasta",
+        assembly_graph = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.unitigs.gfa",
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 32000 * attempt
     params:
-        min_read_length = 700,
+        min_read_length = 800,
         min_overlap_length = 400,
         genome_size = config["genome_size"],
+        input_type = lambda wildcards: infer_canu_input_type(wildcards.technology),
         mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
         outprefix = lambda wildcards, output: Path(output.assembly).name.replace(".contigs.fasta", ""),
         outdir = lambda wildcards, output: Path(output.assembly).parent,
@@ -30,15 +38,15 @@ rule canu:
             genomeSize={params.genome_size} \
             minThreads={threads} maxThreads={threads} \
             maxMemory={params.mem_gb} \
-            -nanopore-raw {input.nanopore} \
-            -pacbio-hifi {input.pacbio} {params.extra}
+            {params.input_type} {input.reads} \
+            {params.extra}
         """
 
 rule circularise_canu:
     input:
          assembly = rules.canu.output.assembly,
     output:
-          assembly = outdir / "{sample}" / "canu" / "{sample}.contigs.circularise.fasta",
+          assembly = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.circularise.fasta",
     threads: 1
     resources:
              mem_mb = lambda wildcards, attempt: 1000 * attempt
@@ -56,18 +64,27 @@ Polishing PacBio CCS with racon
 minimap2 -ax map-pb --eqx -m 5000 -t {threads} --secondary=no {ref} {fastq} | samtools view -F 1796-> {sam}
 racon {fastq} {sam} {ref} -u -t {threads} > {output.fasta}
 """
+class MinimapPresets(Enum):
+    PACBIO = "asm20"
+    NANOPORE = "map-ont"
+
+
+def infer_minimap2_preset(technology: str) -> str:
+    return MinimapPresets[technology.upper()].value
+
+
 rule map_long_reads_to_canu_assembly:
     input:
-        reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
+        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
         canu_assembly = rules.circularise_canu.output.assembly,
     output:
-        sam = outdir / "{sample}" / "canu" / "mapping" / "{sample}.canu.sam"
+        sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam"
     threads: 8
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt
     singularity: containers["minimap2"]
     params:
-        preset = "asm20",
+        preset = lambda wildcards: infer_minimap2_preset(wildcards.technology),
         extras = "--secondary=no"
     shell:
         """
@@ -78,13 +95,14 @@ rule map_long_reads_to_canu_assembly:
             {input.reads} > {output.sam}
         """
 
+"""Only polish with pacbio reads"""
 rule racon_polish_canu:
     input:
         reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         sam = rules.map_long_reads_to_canu_assembly.output.sam,
         assembly = rules.circularise_canu.output.assembly
     output:
-        polished_assembly = outdir / "{sample}" / "canu" / "racon" / "assembly.1x.racon.fasta"
+        polished_assembly = outdir / "{sample}" / "canu" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 4000 * attempt
@@ -107,7 +125,7 @@ rule pilon_polish_canu:
         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
     output:
-        polished_assembly = outdir / "{sample}" / "canu" / "racon" / "pilon" / "final.pilon.fasta"
+        polished_assembly = outdir / "{sample}" / "canu" / "{technology}" / "racon" / "pilon" / "final.pilon.fasta"
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
