@@ -42,21 +42,6 @@ rule canu:
             {params.extra}
         """
 
-rule circularise_canu:
-    input:
-         assembly = rules.canu.output.assembly,
-    output:
-          assembly = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.circularise.fasta",
-    threads: 1
-    resources:
-             mem_mb = lambda wildcards, attempt: 1000 * attempt
-    params:
-          output_prefix = lambda wildcards, input: Path(input.assembly).with_suffix("")
-    singularity: containers["circlator"]
-    shell:
-         """
-         circlator minimus2 {input.assembly} {params.output_prefix}
-         """
 
 """
 Taken from https://www.biorxiv.org/content/biorxiv/early/2019/08/13/635037.full.pdf
@@ -76,7 +61,7 @@ def infer_minimap2_preset(technology: str) -> str:
 rule map_long_reads_to_canu_assembly:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-        canu_assembly = rules.circularise_canu.output.assembly,
+        canu_assembly = rules.canu.output.assembly,
     output:
         sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam"
     threads: 8
@@ -100,7 +85,7 @@ rule racon_polish_canu:
     input:
         reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         sam = rules.map_long_reads_to_canu_assembly.output.sam,
-        assembly = rules.circularise_canu.output.assembly
+        assembly = rules.canu.output.assembly
     output:
         polished_assembly = outdir / "{sample}" / "canu" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
     threads: 16
