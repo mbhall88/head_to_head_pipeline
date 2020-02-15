@@ -58,9 +58,9 @@ def infer_minimap2_preset(technology: str) -> str:
     return MinimapPresets[technology.upper()].value
 
 
-rule map_long_reads_to_canu_assembly:
+rule map_pacbio_reads_to_canu_assembly:
     input:
-        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         canu_assembly = rules.canu.output.assembly,
     output:
         sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam"
