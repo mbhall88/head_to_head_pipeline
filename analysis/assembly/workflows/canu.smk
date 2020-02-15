@@ -84,7 +84,7 @@ rule map_pacbio_reads_to_canu_assembly:
 rule racon_polish_canu:
     input:
         reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
-        sam = outdir / "{sample}" / "canu" / "pacbio" / "mapping" / "{sample}.canu.sam",
+        sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam",
         assembly = rules.canu.output.assembly
     output:
         polished_assembly = outdir / "{sample}" / "canu" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
