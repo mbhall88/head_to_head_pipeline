@@ -66,7 +66,7 @@ rule map_long_reads_to_canu_assembly:
         sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam"
     threads: 8
     resources:
-        mem_mb = lambda wildcards, attempt: 16000 * attempt
+        mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["minimap2"]
     params:
         preset = lambda wildcards: infer_minimap2_preset(wildcards.technology),
