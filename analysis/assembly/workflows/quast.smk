@@ -56,3 +56,6 @@ rule quast:
              {input.canu_pb_1racon_pilon} {input.canu_ont} {input.canu_ont_1racon} \
              {input.canu_ont_1racon_pilon}
          """
+
+
+# todo: remove some intermediate result assemblies

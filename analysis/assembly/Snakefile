@@ -25,6 +25,7 @@ technologies = ["pacbio", "nanopore", "illumina"]
 output_files = set()
 
 for sample, technology in itertools.product(config["samples"], technologies):
+    output_files.add(outdir / f"{sample}" / "spades" / "pilon" / "final.pilon.fasta")
     output_files.add(outdir / f"{sample}" / "quast" / "report.pdf")
 
 # ======================================================

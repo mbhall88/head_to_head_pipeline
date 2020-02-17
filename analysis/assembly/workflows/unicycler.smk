@@ -22,3 +22,7 @@ rule unicycler:
             --verbosity {params.verbosity} \
             --threads {threads} 
         """
+
+# todo: add rule to annotate
+# todo: add rules to polish
+# todo: add rule to analyse pileup

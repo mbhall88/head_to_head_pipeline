@@ -141,3 +141,6 @@ rule pilon_polish_canu:
             --final_fasta {params.final_fasta}
         rm $pilon_jar $script
          """
+
+# todo: add rule to annotate
+# todo: add rule to analyse pileup

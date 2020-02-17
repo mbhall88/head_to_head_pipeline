@@ -200,4 +200,7 @@ rule pilon_polish_flye:
          rm $pilon_jar $script
          """
 
+# todo: add rule to annotate
+# todo: add rule to polish with medaka
 #todo: add hypo rule - polish with CCS and ONT and then with Illumina or vice versa..
+# todo: add rule to analyse pileup
