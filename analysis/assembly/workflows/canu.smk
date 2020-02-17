@@ -26,7 +26,7 @@ rule canu:
         mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
         outprefix = lambda wildcards, output: Path(output.assembly).name.replace(".contigs.fasta", ""),
         outdir = lambda wildcards, output: Path(output.assembly).parent,
-        extra = "",
+        extra = "corMaxEvidenceErate=0.15",
         #can try corMaxEvidenceErate=0.15 for GC rich, repetitive genomes from docs https://canu.readthedocs.io/en/latest/faq.html#my-genome-is-at-or-gc-rich-do-i-need-to-adjust-parameters-what-about-highly-repetitive-genomes
     singularity: containers["canu"]
     shell:
