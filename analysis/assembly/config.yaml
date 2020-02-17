@@ -1,11 +1,11 @@
-data_dir:      "/hps/nobackup/research/zi/projects/tech_wars/data"
-outdir:        "results"
-genome_size:   4411532
+data_dir:                    "/hps/nobackup/research/zi/projects/tech_wars/data"
+outdir:                      "results"
+genome_size:                 4411532
 h37rv:
   genome:     "resources/h37rv.fa"
   annotation: "resources/h37rv.gbk"
   features:   "resources/h37rv.gff3"
-adapters:      "resources/TruSeq3-PE.fa"
+adapters:                    "resources/TruSeq3-PE.fa"
 containers:
   unicycler:   "docker://quay.io/biocontainers/unicycler:0.4.8--py37h8b12597_0"
   flye:        "docker://quay.io/biocontainers/flye:2.6--py37he513fc3_0"
@@ -16,8 +16,11 @@ containers:
   minimap2:    "docker://quay.io/biocontainers/minimap2:2.17--h8b12597_1"
   circlator:   "docker://sangerpathogens/circlator:release-v1.5.5-docker4"
   canu:        "library://mbhall88/default/canu:7ae7a09"
-  prokka:      "docker://quay.io/biocontainers/prokka:1.14.5--pl526_0
-pilon_version: 1.23
+  prokka:      "docker://quay.io/biocontainers/prokka:1.14.5--pl526_0"
+pilon_version:               1.23
+depth_cutoff_mask:           95
+assess_per_base_script:      "scripts/assess_per_base_accuracy.py"
+bam_to_low_qual_mask_script: "scripts/bam_to_low_qual_mask.pl"
 samples:
   - "mada_101"
 #  - "mada_130"

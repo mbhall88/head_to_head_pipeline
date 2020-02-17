@@ -109,7 +109,7 @@ rule pilon_polish_spades:
 
 rule annotate_spades:
     input:
-        assembly = outdir / "{sample}" / "spades" / "pilon" / "final.pilon.fasta",
+        assembly = rules.pilon_polish_spades.output.polished_assembly,
     output:
         annotation = outdir / "{sample}" / "spades" / "prokka" / "spades.pilon.gff",
     threads: 16
@@ -131,3 +131,41 @@ rule annotate_spades:
             {input.assembly}
         """
 # todo: add rule to analyse pileup
+rule map_illumina_reads_to_spades_polished_assembly:
+    input:
+         assembly = rules.pilon_polish_spades.output.polished_assembly,
+         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+    output:
+          bam = outdir / "{sample}" / "spades" / "mapping" / "{sample}.pilon.illumina.spades.bam",
+          bam_index = outdir / "{sample}" / "spades" / "mapping" / "{sample}.pilon.illumina.spades.bam.bai",
+    threads: 8
+    resources:
+             mem_mb = lambda wildcards, attempt: 8000 * attempt
+    shell:
+         """
+         bwa index {input.assembly}
+         bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
+             samtools sort -@ {threads} -o {output.bam} -
+         samtoools index {output.bam}
+         """
+
+rule assess_spades:
+    input:
+        assembly = rules.pilon_polish_spades.output.polished_assembly,
+        bam = rules.map_illumina_reads_to_spades_polished_assembly.output.bam,
+    output:
+        bed = outdir / "{sample}" / "spades" / "assessment" / "spades.pilon.bed",
+        positions_masked = outdir / "{sample}" / "spades" / "assessment" / "spades.pilon.txt",
+    params:
+        bam_to_low_qual_mask_script = config["bam_to_low_qual_mask_script"],
+        depth_cutoff = config["depth_cutoff_mask"],
+        assess_per_base_script = config["assess_per_base_script"],
+
+    shell:
+        """
+        perl {params.bam_to_low_qual_mask_script} {params.depth_cutoff} {input.bam} {output.bed}
+        python3 {params.assess_per_base_script} --bed {output.bed} --assembly {input.assembly} &> {output.positions_masked}
+        sum qualities ...
+        """
+# todo: sum quality scores
