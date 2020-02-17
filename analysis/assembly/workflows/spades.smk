@@ -105,5 +105,29 @@ rule pilon_polish_spades:
              --final_fasta {params.final_fasta}
          rm $pilon_jar $script
          """
-# todo: add rule to annotate
+
+
+rule annotate_spades:
+    input:
+        assembly = outdir / "{sample}" / "spades" / "pilon" / "final.pilon.fasta",
+    output:
+        annotation = outdir / "{sample}" / "spades" / "prokka" / "spades.pilon.gff",
+    threads: 16
+    resources:
+        mem_mb = lambda wildcards, attempt: 4000 * attempt
+    singularity: containers["prokka"]
+    params:
+        annotation = config["h37rv"]["annotation"],
+        outdir = lambda wildcards, output: Path(output.annotation).parent,
+        prefix = lambda wildcards, output: Path(output.annotation).with_suffix("").name,
+        extras = "--force"
+    shell:
+        """
+        prokka --proteins {params.annotation} \
+            --cpus {threads} \
+            --outdir {params.outdir} \
+            --prefix {params.prefix} \
+            {params.extras} \
+            {input.assembly}
+        """
 # todo: add rule to analyse pileup

@@ -16,6 +16,7 @@ containers:
   minimap2:    "docker://quay.io/biocontainers/minimap2:2.17--h8b12597_1"
   circlator:   "docker://sangerpathogens/circlator:release-v1.5.5-docker4"
   canu:        "library://mbhall88/default/canu:7ae7a09"
+  prokka:      "docker://quay.io/biocontainers/prokka:1.14.5--pl526_0
 pilon_version: 1.23
 samples:
   - "mada_101"
