@@ -133,7 +133,7 @@ rule map_illumina_reads_to_spades_polished_assembly:
 
 rule stats_spades:
     input:
-        bam = rules.map_illumina_reads_to_spades_polished_assembly,
+        bam = rules.map_illumina_reads_to_spades_polished_assembly.output.bam,
     output:
         stats = outdir / "{sample}" / "spades" / "qc" / "{sample}.pilon.illumina.stats"
     threads: 1
