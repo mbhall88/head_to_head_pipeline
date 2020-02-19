@@ -128,7 +128,7 @@ rule map_illumina_reads_to_spades_polished_assembly:
          bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
              samtools view {params.filter_flags} {params.view_extras} - | \
              samtools sort -@ {threads} -o {output.bam} -
-         samtoools index {output.bam}
+         samtools index {output.bam}
          """
 
 rule stats_spades:
