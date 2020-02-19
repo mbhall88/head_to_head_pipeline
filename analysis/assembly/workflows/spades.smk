@@ -57,8 +57,8 @@ rule pilon_polish_spades:
     resources:
              mem_mb = lambda wildcards, attempt: 8000 * attempt
     params:
-          pilon_url = f"https://github.com/broadinstitute/pilon/releases/download/v{config['pilon_version']}/pilon-{config['pilon_version']}.jar",
-          script_url = "https://raw.githubusercontent.com/mbhall88/bioscripts/master/python/pilon_iterative.py",
+          pilon_jar = scripts["pilon_jar"],
+          script = scripts["pilon"],
           mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
           max_iterations = 10,
           outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
@@ -67,13 +67,8 @@ rule pilon_polish_spades:
     conda: envs["pilon"]
     shell:
          """
-         script=$(realpath pilon.py)
-         wget -O $script {params.script_url}
-         pilon_jar=$(realpath pilon.jar)
-         wget -O $pilon_jar {params.pilon_url}
-         
          bwa index {input.assembly}
-         python3 $script \
+         python3 {params.script} \
              --pilon_java_xmx {params.mem_gb}G \
              --threads {threads} \
              --max_iterations {params.max_iterations} \
@@ -83,7 +78,6 @@ rule pilon_polish_spades:
              --reads2 {input.illumina2} \
              --outdir {params.outdir} \
              --final_fasta {params.final_fasta}
-         rm $pilon_jar $script
          """
 
 
