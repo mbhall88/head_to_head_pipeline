@@ -1,0 +1,9 @@
+name: assess_per_base
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::pysam=0.15.2
+  - pandas
+  - "click>=7.0"

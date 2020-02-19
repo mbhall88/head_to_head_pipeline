@@ -1,0 +1,10 @@
+name: pilon
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - "python>=3.6"
+  - wget
+  - bioconda::bwa=0.7.17
+  - bioconda::java-jdk=8.0.112

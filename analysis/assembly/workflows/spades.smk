@@ -46,28 +46,6 @@ rule circularise_spades:
          """
 
 
-rule map_illumina_reads_to_spades_assembly:
-    input:
-         assembly = rules.circularise_spades.output.assembly,
-         illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
-         illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
-    output:
-          bam = outdir / "{sample}" / "spades" / "mapping" / "{sample}.illumina.spades.bam",
-          bam_index = outdir / "{sample}" / "spades" / "mapping" / "{sample}.illumina.spades.bam.bai",
-    threads: 8
-    resources:
-             mem_mb = lambda wildcards, attempt: 8000 * attempt
-    shell:
-         """
-         bwa index {input.assembly}
-         bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
-             samtools sort -@ {threads} -o {output.bam} -
-         samtoools index {output.bam}
-         """
-
-
-
-"""This rule assumes bwa mem and java are available on PATH"""
 rule pilon_polish_spades:
     input:
          assembly = rules.circularise_spades.output.assembly,
@@ -85,6 +63,8 @@ rule pilon_polish_spades:
           max_iterations = 10,
           outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
           final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
+    singularity: containers["conda"]
+    conda: envs["pilon"]
     shell:
          """
          script=$(realpath pilon.py)
@@ -130,7 +110,8 @@ rule annotate_spades:
             {params.extras} \
             {input.assembly}
         """
-# todo: add rule to analyse pileup
+
+
 rule map_illumina_reads_to_spades_polished_assembly:
     input:
          assembly = rules.pilon_polish_spades.output.polished_assembly,
@@ -142,30 +123,71 @@ rule map_illumina_reads_to_spades_polished_assembly:
     threads: 8
     resources:
              mem_mb = lambda wildcards, attempt: 8000 * attempt
+    singularity: containers["conda"]
+    conda: envs["aln_tools"]
+    params:
+        view_extras = "-hu", # include header, uncompressed BAM
+        filter_flags = "-F {}".format(config["illumina_flag_filter"]),
     shell:
          """
          bwa index {input.assembly}
          bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
+             samtools view {params.filter_flags} {params.view_extras} - | \
              samtools sort -@ {threads} -o {output.bam} -
          samtoools index {output.bam}
          """
 
-rule assess_spades:
+rule stats_spades:
     input:
-        assembly = rules.pilon_polish_spades.output.polished_assembly,
-        bam = rules.map_illumina_reads_to_spades_polished_assembly.output.bam,
+        bam = rules.map_illumina_reads_to_spades_polished_assembly,
     output:
-        bed = outdir / "{sample}" / "spades" / "assessment" / "spades.pilon.bed",
-        positions_masked = outdir / "{sample}" / "spades" / "assessment" / "spades.pilon.txt",
-    params:
-        bam_to_low_qual_mask_script = config["bam_to_low_qual_mask_script"],
-        depth_cutoff = config["depth_cutoff_mask"],
-        assess_per_base_script = config["assess_per_base_script"],
-
+        stats = outdir / "{sample}" / "spades" / "qc" / "{sample}.pilon.illumina.stats"
+    threads: 1
+    resources:
+        mem_mb = 1000
+    singularity: containers["samtools"]
     shell:
         """
-        perl {params.bam_to_low_qual_mask_script} {params.depth_cutoff} {input.bam} {output.bed}
-        python3 {params.assess_per_base_script} --bed {output.bed} --assembly {input.assembly} &> {output.positions_masked}
-        sum qualities ...
+        samtools stats {input.bam} > {output.stats}
         """
-# todo: sum quality scores
+
+rule mpileup_spades:
+    input:
+        bam = rules.map_illumina_reads_to_spades_polished_assembly,
+        assembly = rules.pilon_polish_spades.output.polished_assembly
+    output:
+        pileup = outdir / "{sample}" / "spades" / "mapping" / "{sample}.pilon.illumina.spades.pileup",
+    singularity: containers["samtools"]
+    params:
+        extras = "-aa"
+    shell:
+        """
+        samtools mpileup {params.extras} \
+            -o {output.pileup} \
+            --fasta-ref {input.assembly} \
+            {input.bam}
+        """
+
+rule assess_per_base_accuracy_spades:
+    input:
+        bam = rules.map_illumina_reads_to_spades_polished_assembly.output.bam,
+        pileup = rules.mpileup_spades.output.pileup,
+    output:
+        json = outdir / "{sample}" / "spades" / "assessment" / "{sample}.spades.pilon.json",
+        bed = outdir / "{sample}" / "spades" / "assessment" / "{sample}.spades.pilon.bed"
+    params:
+        script = scripts["assess_per_base"],
+        min_depth = config["min_depth"],
+        quorum = config["quorum"],
+        prefix = lambda wildcards, output: Path(output.json).with_suffix(""),
+    singularity: containers["conda"]
+    conda: envs["assess_per_base"]
+    shell:
+        """
+        python3 {params.script} \
+            --bam {input.bam} \
+            --pileup {input.pileup} \
+            --min-depth {params.min_depth} \
+            --quorum {params.quorum} \
+            --prefix {params.prefix}
+        """
