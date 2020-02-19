@@ -5,6 +5,6 @@ channels:
   - defaults
 dependencies:
   - "python>=3.6"
-  - wget
   - bioconda::bwa=0.7.17
+  - bioconda::samtools=1.10
   - bioconda::java-jdk=8.0.112
