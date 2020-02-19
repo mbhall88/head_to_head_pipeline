@@ -29,7 +29,7 @@ scripts:
   pilon_jar:       "scripts/pilon-1.23.jar"
 quorum:                      95
 min_depth:                   10
-illumina_sam_filter:         3328 # not primary alignment (0x100), read is PCR or optical duplicate (0x400), supplementary alignment (0x800)
+illumina_flag_filter:         3328 # not primary alignment (0x100), read is PCR or optical duplicate (0x400), supplementary alignment (0x800)
 pilon_version:               1.23
 samples:
   - "mada_101"
