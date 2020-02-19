@@ -72,7 +72,7 @@ rule pilon_polish_spades:
              --pilon_java_xmx {params.mem_gb}G \
              --threads {threads} \
              --max_iterations {params.max_iterations} \
-             --pilon_jar $pilon_jar \
+             --pilon_jar {params.pilon_jar} \
              --assembly_fasta {input.assembly} \
              --reads1 {input.illumina1} \
              --reads2 {input.illumina2} \
