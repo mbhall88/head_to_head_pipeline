@@ -11,6 +11,7 @@ rule quast:
         uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
         uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
         spades = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
+        spades_pilon = outdir / "{sample}" / "spades" / "pilon" / "final.pilon.fasta",
         canu_pb = outdir / "{sample}" / "canu" / "pacbio" / "{sample}.contigs.fasta",
         canu_pb_1racon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
         canu_pb_1racon_pilon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "pilon" / "final.pilon.fasta",
@@ -31,9 +32,9 @@ rule quast:
     singularity: containers["quast"]
     params:
         labels = (
-            "spades,flye_pb,flye_pb_uc,flye_pb_1r,flye_pb_1r_p,flye_ont,flye_ont_uc,"
-            "flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont,canu_pb,canu_pb_1r,canu_pb_1r_p,"
-            "canu_ont,canu_ont_1r,canu_ont_1r_p"
+            "spades,spades_p,flye_pb,flye_pb_uc,flye_pb_1r,flye_pb_1r_p,flye_ont,"
+            "flye_ont_uc,flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont,canu_pb,canu_pb_1r,"
+            "canu_pb_1r_p,canu_ont,canu_ont_1r,canu_ont_1r_p"
         ),
         extras = ""
     shell:
@@ -49,10 +50,10 @@ rule quast:
              --pe2 {input.illumina2} \
              --pacbio {input.pacbio} \
              --nanopore {input.nanopore} \
-             {input.spades} {input.flye_pb} {input.flye_pb_uc} {input.flye_pb_1racon} \
-             {input.flye_pb_1racon_pilon} {input.flye_ont} {input.flye_ont_uc} \
-             {input.flye_ont_1racon} {input.flye_ont_1racon_pilon} {input.uc_pb} \
-             {input.uc_ont} {input.canu_pb} {input.canu_pb_1racon} \
+             {input.spades} {input.spades_pilon} {input.flye_pb} {input.flye_pb_uc} \
+             {input.flye_pb_1racon} {input.flye_pb_1racon_pilon} {input.flye_ont} \
+             {input.flye_ont_uc} {input.flye_ont_1racon} {input.flye_ont_1racon_pilon} \
+             {input.uc_pb} {input.uc_ont} {input.canu_pb} {input.canu_pb_1racon} \
              {input.canu_pb_1racon_pilon} {input.canu_ont} {input.canu_ont_1racon} \
              {input.canu_ont_1racon_pilon}
          """
