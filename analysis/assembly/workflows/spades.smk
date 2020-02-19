@@ -147,8 +147,8 @@ rule stats_spades:
 
 rule mpileup_spades:
     input:
-        bam = rules.map_illumina_reads_to_spades_polished_assembly,
-        assembly = rules.pilon_polish_spades.output.polished_assembly
+        bam = rules.map_illumina_reads_to_spades_polished_assembly.output.bam,
+        assembly = rules.pilon_polish_spades.output.polished_assembly,
     output:
         pileup = outdir / "{sample}" / "spades" / "mapping" / "{sample}.pilon.illumina.spades.pileup",
     singularity: containers["samtools"]
