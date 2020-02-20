@@ -19,8 +19,8 @@ rule canu:
     resources:
         mem_mb = lambda wildcards, attempt: 32000 * attempt
     params:
-        min_read_length = 800,
-        min_overlap_length = 400,
+        min_read_length = 1000,
+        min_overlap_length = 500,
         genome_size = config["genome_size"],
         input_type = lambda wildcards: infer_canu_input_type(wildcards.technology),
         mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
@@ -43,6 +43,25 @@ rule canu:
         """
 
 
+rule remove_bubbles_canu:
+    input:
+        assembly = rules.canu.output.assembly,
+    output:
+        assembly = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.nobubbles.fasta",
+        id_fofn = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.nobubbles.fofn",
+    threads: 1
+    resources:
+        mem_mb = 500
+    singularity: containers["fastaq"]
+    params:
+        pattern = "'s/^>\(\S*\)\s.*suggestBubble=no.*$/\1/p'", # thank you https://unix.stackexchange.com/a/278377/318480
+        extras = "-n",
+    shell:
+        """
+        sed {params.pattern} {input.assembly} > {output.id_fofn}
+        fastaq filter --ids_file {output.id_fofn} {input.assembly} {output.assembly}
+        """
+
 """
 Taken from https://www.biorxiv.org/content/biorxiv/early/2019/08/13/635037.full.pdf
 Polishing PacBio CCS with racon
@@ -61,7 +80,7 @@ def infer_minimap2_preset(technology: str) -> str:
 rule map_pacbio_reads_to_canu_assembly:
     input:
         reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
-        canu_assembly = rules.canu.output.assembly,
+        canu_assembly = rules.remove_bubbles_canu.output.assembly,
     output:
         sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam"
     threads: 8
@@ -85,7 +104,7 @@ rule racon_polish_canu:
     input:
         reads    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         sam = outdir / "{sample}" / "canu" / "{technology}" / "mapping" / "{sample}.canu.sam",
-        assembly = rules.canu.output.assembly
+        assembly = rules.remove_bubbles_canu.output.assembly
     output:
         polished_assembly = outdir / "{sample}" / "canu" / "{technology}" / "racon" / "assembly.1x.racon.fasta"
     threads: 16
