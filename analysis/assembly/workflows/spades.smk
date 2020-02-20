@@ -28,7 +28,7 @@ rule spades:
             --isolate
          """
 
-
+"""We remove '.circularised' from the output headers as they cause issues in prokka."""
 rule circularise_spades:
     input:
          assembly = rules.spades.output.assembly,
@@ -43,6 +43,7 @@ rule circularise_spades:
     shell:
          """
          circlator minimus2 {input.assembly} {params.output_prefix}
+         sed -ir 's/\.circularised//g' {output.assembly}
          """
 
 

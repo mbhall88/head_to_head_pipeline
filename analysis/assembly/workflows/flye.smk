@@ -66,6 +66,7 @@ rule unicycler_polish_flye:
             --existing_long_read_assembly {input.long_read_assembly}
         """
 
+"""We remove '.circularised' from the output headers as they cause issues in prokka."""
 rule circularise_flye:
     input:
         assembly = rules.flye.output.assembly,
@@ -80,6 +81,7 @@ rule circularise_flye:
     shell:
         """
         circlator minimus2 {input.assembly} {params.output_prefix}
+        sed -ir 's/\.circularised//g' {output.assembly}
         """
 
 """
