@@ -134,31 +134,27 @@ rule pilon_polish_canu:
     resources:
         mem_mb = lambda wildcards, attempt: 8000 * attempt
     params:
-        pilon_url = f"https://github.com/broadinstitute/pilon/releases/download/v{config['pilon_version']}/pilon-{config['pilon_version']}.jar",
-        script_url = "https://raw.githubusercontent.com/mbhall88/bioscripts/master/python/pilon_iterative.py",
-        mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
-        max_iterations = 10,
-        outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
-        final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
+          pilon_jar = scripts["pilon_jar"],
+          script = scripts["pilon"],
+          mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
+          max_iterations = 10,
+          outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
+          final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
+    singularity: containers["conda"]
+    conda: envs["pilon"]
     shell:
-        """
-        script=$(realpath pilon.py)
-        wget -O $script {params.script_url}
-        pilon_jar=$(realpath pilon.jar)
-        wget -O $pilon_jar {params.pilon_url}
-        
-        bwa index {input.assembly}
-        python3 $script \
-            --pilon_java_xmx {params.mem_gb}G \
-            --threads {threads} \
-            --max_iterations {params.max_iterations} \
-            --pilon_jar $pilon_jar \
-            --assembly_fasta {input.assembly} \
-            --reads1 {input.illumina1} \
-            --reads2 {input.illumina2} \
-            --outdir {params.outdir} \
-            --final_fasta {params.final_fasta}
-        rm $pilon_jar $script
+         """
+         bwa index {input.assembly}
+         python3 {params.script} \
+             --pilon_java_xmx {params.mem_gb}G \
+             --threads {threads} \
+             --max_iterations {params.max_iterations} \
+             --pilon_jar {params.pilon_jar} \
+             --assembly_fasta {input.assembly} \
+             --reads1 {input.illumina1} \
+             --reads2 {input.illumina2} \
+             --outdir {params.outdir} \
+             --final_fasta {params.final_fasta}
          """
 
 # todo: add rule to annotate

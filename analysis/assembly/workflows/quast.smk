@@ -59,4 +59,3 @@ rule quast:
          """
 
 
-# todo: remove some intermediate result assemblies
