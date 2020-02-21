@@ -15,10 +15,9 @@ rule canu:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-        assembly       = outdir / "{sample}" / "canu" / "assembly.canu.with_bubbles.{technology}.fasta",
-        report         = outdir / "{sample}" / "canu" / "assembly.canu.with_bubbles.{technology}.report",
-        assembly_graph = outdir / "{sample}" / "canu" / "assembly.canu.with_bubbles.{technology}.gfa",
-    shadow: "shallow"
+        assembly       = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.fasta",
+        report         = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.report",
+        assembly_graph = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.gfa",
     threads: 16
     resources:
         mem_mb = lambda wildcards, attempt: 32000 * attempt
@@ -53,8 +52,8 @@ rule remove_bubbles_canu:
     input:
         assembly = rules.canu.output.assembly,
     output:
-        assembly = outdir / "{sample}" / "canu" / "assembly.canu.{technology}.fasta",
-        id_fofn  = outdir / "{sample}" / "canu" / "{sample}.contigs.nobubbles.{technology}.fofn",
+        assembly = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.{technology}.fasta",
+        id_fofn  = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.nobubbles.{technology}.fofn",
     threads: 1
     resources:
         mem_mb = 500

@@ -7,9 +7,8 @@ rule unicycler:
          illumina2  = rules.trim_illumina.output.reverse_paired,
          long_reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-          assembly       = outdir / "{sample}" / "unicycler" / "assembly.unicycler.{technology}.fasta",
-          assembly_graph = outdir / "{sample}" / "unicycler" / "assembly.unicycler.{technology}.gfa",
-    shadow: "shallow"
+          assembly       = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.fasta",
+          assembly_graph = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.gfa",
     threads: 16
     resources:
              mem_mb = lambda wildcards, attempt: 16000 * attempt
@@ -26,7 +25,6 @@ rule unicycler:
             --out {params.outdir} \
             --verbosity {params.verbosity} \
             --threads {threads} 
-        cat {params.outdir}/unicycler.log
         mv {params.outdir}/assembly.fasta {output.assembly}
         mv {params.outdir}/assembly.gfa {output.assembly_graph}
         """

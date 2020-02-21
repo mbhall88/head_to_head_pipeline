@@ -37,12 +37,12 @@ for sample in config["samples"]:
 
     for assembler, technologies in assembler_tech_lookup.items():
         for technology in technologies:
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "prokka" / f"polished.{sample}.{assembler}.{technology}.gff")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "prokka" / f"{sample}.{assembler}.{technology}.gff")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "assessment" / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "assessment" / f"{sample}.{assembler}.illumina.{technology}.stats")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "assessment" / f"{sample}.{assembler}.accuracy.{technology}.json")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / "assessment" / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "prokka" / f"polished.{sample}.{assembler}.{technology}.gff")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "prokka" / f"{sample}.{assembler}.{technology}.gff")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.illumina.{technology}.stats")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.accuracy.{technology}.json")
+            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
 
 
 # ======================================================
@@ -110,9 +110,9 @@ def infer_minimap2_preset(technology: str) -> str:
 rule map_long_reads_to_assembly:
     input:
          reads    = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-         assembly = outdir / "{sample}" / "{assembler}" / "assembly.{assembler}.{technology}.fasta",
+         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-          sam = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.{technology}.sam"
+          sam = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.{technology}.sam"
     shadow: "shallow"
     threads: 8
     resources:
@@ -133,13 +133,13 @@ rule map_long_reads_to_assembly:
 
 rule map_illumina_reads_to_assembly:
     input:
-         assembly  = outdir / "{sample}" / "{assembler}" / "assembly.{assembler}.{technology}.fasta",
+         assembly  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
          illumina1 = rules.trim_illumina.output.forward_paired,
          illumina2 = rules.trim_illumina.output.reverse_paired,
     output:
-          bam       = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam",
-          bam_index = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam.bai",
-          pileup    = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.pileup",
+          bam       = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam",
+          bam_index = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam.bai",
+          pileup    = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.pileup",
     shadow: "shallow"
     threads: 8
     resources:
@@ -176,9 +176,9 @@ rule racon:
     input:
          reads    = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
          sam      = rules.map_long_reads_to_assembly.output.sam,
-         assembly = outdir / "{sample}" / "{assembler}" / "assembly.{assembler}.{technology}.fasta",
+         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-          polished_assembly = outdir / "{sample}" / "{assembler}" / "assembly.{assembler}.racon.{technology}.fasta"
+          polished_assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.racon.{technology}.fasta"
     shadow: "shallow"
     threads: 16
     resources:
@@ -202,7 +202,7 @@ rule pilon:
          illumina1 = rules.trim_illumina.output.forward_paired,
          illumina2 = rules.trim_illumina.output.reverse_paired,
     output:
-          polished_assembly = outdir / "{sample}" / "{assembler}" / "polished_assembly.{assembler}.{technology}.fasta"
+          polished_assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "polished_assembly.{assembler}.{technology}.fasta"
     shadow: "shallow"
     threads: 16
     resources:
@@ -240,9 +240,9 @@ rule map_illumina_reads_to_polished_assembly:
          illumina1 = rules.trim_illumina.output.forward_paired,
          illumina2 = rules.trim_illumina.output.reverse_paired,
     output:
-          bam       = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam",
-          bam_index = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam.bai",
-          pileup    = outdir / "{sample}" / "{assembler}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
+          bam       = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam",
+          bam_index = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam.bai",
+          pileup    = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
     shadow: "shallow"
     threads: 8
     resources:
@@ -275,8 +275,8 @@ rule samtools_stats:
          unpolished_bam = rules.map_illumina_reads_to_assembly.output.bam,
          polished_bam   = rules.map_illumina_reads_to_polished_assembly.output.bam,
     output:
-          unpolished_stats = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.illumina.{technology}.stats",
-          polished_stats   = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.polished.illumina.{technology}.stats",
+          unpolished_stats = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.illumina.{technology}.stats",
+          polished_stats   = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.illumina.{technology}.stats",
     threads: 1
     resources:
              mem_mb = 1000
@@ -293,8 +293,8 @@ rule assess_unpolished_per_base_accuracy:
          bam    = rules.map_illumina_reads_to_assembly.output.bam,
          pileup = rules.map_illumina_reads_to_assembly.output.pileup,
     output:
-          json = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.json",
-          bed  = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.bed",
+          json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.json",
+          bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.bed",
     params:
           script = scripts["assess_per_base"],
           min_depth = config["min_depth"],
@@ -318,8 +318,8 @@ rule assess_polished_per_base_accuracy:
          bam    = rules.map_illumina_reads_to_polished_assembly.output.bam,
          pileup = rules.map_illumina_reads_to_polished_assembly.output.pileup,
     output:
-          json = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.json",
-          bed  = outdir / "{sample}" / "{assembler}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.bed",
+          json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.json",
+          bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.bed",
     params:
           script = scripts["assess_per_base"],
           min_depth = config["min_depth"],
@@ -344,16 +344,16 @@ prokka_exts = [".gbk", ".gff", ".faa", ".ffn", ".err", ".txt", ".tsv"]
 
 rule annotate_unpolished:
     input:
-         assembly = outdir / "{sample}" / "{assembler}" / "assembly.{assembler}.{technology}.fasta",
+         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-        genbank                  = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.gbk",
-        annotation               = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.gff",
-        translated_cds           = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.faa",
-        prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.ffn",
-        unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.err",
-        stats                    = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.txt",
-        features                 = outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.tsv",
-    log: outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.{technology}.log"
+        genbank                  = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gbk",
+        annotation               = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gff",
+        translated_cds           = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.faa",
+        prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.ffn",
+        unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.err",
+        stats                    = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.txt",
+        features                 = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.tsv",
+    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.log"
     threads: 8
     shadow: "shallow"
     resources:
@@ -380,14 +380,14 @@ rule annotate_polished:
     input:
          assembly = rules.pilon.output.polished_assembly,
     output:
-          genbank                  = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gbk",
-          annotation               = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gff",
-          translated_cds           = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.faa",
-          prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.ffn",
-          unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.err",
-          stats                    = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.txt",
-          features                 = outdir / "{sample}" / "{assembler}" / "prokka" / "polished.{sample}.{assembler}.{technology}.tsv",
-    log: outdir / "{sample}" / "{assembler}" / "prokka" / "{sample}.{assembler}.polished.{technology}.log"
+          genbank                  = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gbk",
+          annotation               = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gff",
+          translated_cds           = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.faa",
+          prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.ffn",
+          unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.err",
+          stats                    = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.txt",
+          features                 = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.tsv",
+    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.polished.{technology}.log"
     threads: 8
     shadow: "shallow"
     resources:

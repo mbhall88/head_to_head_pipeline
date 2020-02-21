@@ -8,9 +8,8 @@ rule spades:
         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz"
     output:
-        assembly       = outdir / "{sample}" / "spades" / "assembly.spades.{technology}.fasta",
-        assembly_graph = outdir / "{sample}" / "spades" / "assembly_graph.spades.{technology}.gfa",
-    shadow: "shallow"
+        assembly       = outdir / "{sample}" / "spades" / "{technology}" / "assembly.spades.{technology}.fasta",
+        assembly_graph = outdir / "{sample}" / "spades" / "{technology}" / "assembly_graph.spades.{technology}.gfa",
     threads: 32
     resources:
         mem_mb = lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
@@ -29,7 +28,6 @@ rule spades:
            --threads {threads} \
            --memory {params.mem_gb} \
            --isolate
-        cat {params.outdir}/spades.log
         mv {params.outdir}/scaffolds.fasta {output.assembly}
         mv {params.outdir}/assembly_graph.gfa {output.assembly_graph}
         """

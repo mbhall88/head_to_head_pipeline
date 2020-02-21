@@ -15,11 +15,8 @@ rule flye:
     input:
         reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-        assembly       = outdir / "{sample}" / "flye" / "assembly.flye.{technology}.fasta",
-        assembly_info  = outdir / "{sample}" / "flye" / "assembly_info.flye.{technology}.txt",
-        assembly_graph = outdir / "{sample}" / "flye" / "assembly_graph.flye.{technology}.gfa",
-    threads: 16
-    shadow: "shallow"
+        assembly       = outdir / "{sample}" / "flye" / "{technology}" / "assembly.flye.{technology}.fasta",
+        assembly_info  = outdir / "{sample}" / "flye" / "{technology}" / "assembly_info.flye.{technology}.txt",
     resources:
         mem_mb = lambda wildcards, attempt: 16000 * attempt,
     singularity: containers["flye"]
@@ -35,8 +32,6 @@ rule flye:
             --out-dir {params.outdir} \
             --threads {threads} \
             --iterations {params.polishing_iterations} 
-        cat {params.outdir}/flye.log
         mv {params.outdir}/assembly.fasta {output.assembly}
         mv {params.outdir}/assembly_info.txt {output.assembly_info}
-        mv {params.outdir}/assembly_graph.gfa {output.assembly_graph}
         """
