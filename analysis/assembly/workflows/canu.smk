@@ -43,7 +43,6 @@ rule canu:
             {params.input_type} {input.reads} \
             {params.extra}
         mv {params.outdir}/{params.outprefix}.contigs.fasta {output.assembly}
-        mv {params.outdir}/{params.outprefix}.report {output.report}
         mv {params.outdir}/{params.outprefix}.unitigs.gfa {output.assembly_graph}
         """
 
