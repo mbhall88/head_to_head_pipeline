@@ -1,28 +1,32 @@
+from pathlib import Path
+
+
 rule unicycler:
     input:
-         illumina1          = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
-         illumina2          = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
-         long_reads         = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+         illumina1  = rules.trim_illumina.output.forward_paired,
+         illumina2  = rules.trim_illumina.output.reverse_paired,
+         long_reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-          assembly = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.fasta",
-          assembly_graph = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.gfa",
+          assembly       = outdir / "{sample}" / "unicycler" / "assembly.unicycler.{technology}.fasta",
+          assembly_graph = outdir / "{sample}" / "unicycler" / "assembly.unicycler.{technology}.gfa",
+    shadow: "shallow"
     threads: 16
     resources:
              mem_mb = lambda wildcards, attempt: 16000 * attempt
     singularity: containers["unicycler"]
     params:
-          verbosity = 2,
+        outdir = lambda wildcards, output: Path(output.assembly).parent,
+        verbosity = 2,
+        keep = 0,  # keep only assembly, graph, and log
     shell:
         """
-        outdir=$(dirname {output.assembly})
         unicycler --short1 {input.illumina1} \
             --short2 {input.illumina2} \
             --long {input.long_reads} \
-            --out $outdir \
+            --out {params.outdir} \
             --verbosity {params.verbosity} \
             --threads {threads} 
+        cat {params.outdir}/unicycler.log
+        mv {params.outdir}/assembly.fasta {output.assembly}
+        mv {params.outdir}/assembly.gfa {output.assembly_graph}
         """
-
-# todo: add rule to annotate
-# todo: add rules to polish
-# todo: add rule to analyse pileup

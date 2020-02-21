@@ -1,25 +1,24 @@
+from pathlib import Path
+
+
 rule quast:
     input:
-        flye_pb = outdir / "{sample}" / "flye" / "pacbio" / "assembly.circularise.fasta",
-        flye_pb_uc = outdir / "{sample}" / "flye" / "pacbio" / "unicycler" / "assembly.fasta",
-        flye_pb_1racon = outdir / "{sample}" / "flye" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
-        flye_pb_1racon_pilon = outdir / "{sample}" / "flye" / "pacbio" / "racon" / "pilon" / "final.pilon.fasta",
-        flye_ont = outdir / "{sample}" / "flye" / "nanopore" / "assembly.circularise.fasta",
-        flye_ont_uc = outdir / "{sample}" / "flye" / "nanopore" / "unicycler" / "assembly.fasta",
-        flye_ont_1racon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
-        flye_ont_1racon_pilon = outdir / "{sample}" / "flye" / "nanopore" / "racon" / "pilon" / "final.pilon.fasta",
-        uc_pb = outdir / "{sample}" / "unicycler" / "pacbio" / "assembly.fasta",
-        uc_ont = outdir / "{sample}" / "unicycler" / "nanopore" / "assembly.fasta",
-        spades = outdir / "{sample}" / "spades" / "scaffolds.circularise.fasta",
-        spades_pilon = outdir / "{sample}" / "spades" / "pilon" / "final.pilon.fasta",
-        canu_pb = outdir / "{sample}" / "canu" / "pacbio" / "{sample}.contigs.nobubbles.fasta",
-        canu_pb_1racon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "assembly.1x.racon.fasta",
-        canu_pb_1racon_pilon = outdir / "{sample}" / "canu" / "pacbio" / "racon" / "pilon" / "final.pilon.fasta",
-        canu_ont = outdir / "{sample}" / "canu" / "nanopore" / "{sample}.contigs.nobubbles.fasta",
-        canu_ont_1racon = outdir / "{sample}" / "canu" / "nanopore" / "racon" / "assembly.1x.racon.fasta",
-        canu_ont_1racon_pilon = outdir / "{sample}" / "canu" / "nanopore" / "racon" / "pilon" / "final.pilon.fasta",
-        illumina1 = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
-        illumina2 = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+        flye_pb = outdir / "{sample}" / "flye" / "assembly.flye.pacbio.fasta",
+        flye_pb_polish = outdir / "{sample}" / "flye" / "polished_assembly.flye.pacbio.fasta",
+        flye_ont = outdir / "{sample}" / "flye" / "assembly.flye.nanopore.fasta",
+        flye_ont_polish = outdir / "{sample}" / "flye" / "polished_assembly.flye.nanopore.fasta",
+        unicycler_pb = outdir / "{sample}" / "unicycler" / "assembly.unicycler.pacbio.fasta",
+        unicycler_pb_polish = outdir / "{sample}" / "unicycler" / "polished_assembly.unicycler.pacbio.fasta",
+        unicycler_ont = outdir / "{sample}" / "unicycler" / "assembly.unicycler.nanopore.fasta",
+        unicycler_ont_polish = outdir / "{sample}" / "unicycler" / "polished_assembly.unicycler.nanopore.fasta",
+        spades = outdir / "{sample}" / "spades" / "assembly.spades.pacbio.fasta",
+        spades_polish = outdir / "{sample}" / "spades" / "polished_assembly.spades.pacbio.fasta",
+        canu_pb = outdir / "{sample}" / "canu" / "assembly.canu.pacbio.fasta",
+        canu_pb_polish = outdir / "{sample}" / "canu" / "polished_assembly.canu.pacbio.fasta",
+        canu_ont = outdir / "{sample}" / "canu" / "assembly.canu.nanopore.fasta",
+        canu_ont_polish = outdir / "{sample}" / "canu" / "polished_assembly.canu.nanopore.fasta",
+        illumina1 = rules.trim_illumina.output.forward_paired,
+        illumina2 = rules.trim_illumina.output.reverse_paired,
         pacbio    = pacbio_dir / "{sample}" / "{sample}.pacbio.fastq.gz",
         nanopore  = ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
         reference_genome = H37RV["genome"],
@@ -32,15 +31,14 @@ rule quast:
     singularity: containers["quast"]
     params:
         labels = (
-            "spades,spades_p,flye_pb,flye_pb_uc,flye_pb_1r,flye_pb_1r_p,flye_ont,"
-            "flye_ont_uc,flye_ont_1r,flye_ont_1r_p,uc_pb,uc_ont,canu_pb,canu_pb_1r,"
-            "canu_pb_1r_p,canu_ont,canu_ont_1r,canu_ont_1r_p"
+            "flye_pb,flye_pb_pol,flye_ont,flye_ont_pol,uc_pb,uc_pb_pol,uc_ont,"
+            "uc_ont_pol,spades,spades_pol,canu_pb,canu_pb_pol,canu_ont,canu_ont_pol"
         ),
+        outdir = lambda wildcards, output: Path(output.report).parent,
         extras = ""
     shell:
          """
-         outdir=$(dirname {output.report})
-         quast.py -o $outdir \
+         quast.py -o {params.outdir} \
              --threads {threads} \
              --labels  {params.labels} \
              -r {input.reference_genome} \
@@ -50,12 +48,14 @@ rule quast:
              --pe2 {input.illumina2} \
              --pacbio {input.pacbio} \
              --nanopore {input.nanopore} \
-             {input.spades} {input.spades_pilon} {input.flye_pb} {input.flye_pb_uc} \
-             {input.flye_pb_1racon} {input.flye_pb_1racon_pilon} {input.flye_ont} \
-             {input.flye_ont_uc} {input.flye_ont_1racon} {input.flye_ont_1racon_pilon} \
-             {input.uc_pb} {input.uc_ont} {input.canu_pb} {input.canu_pb_1racon} \
-             {input.canu_pb_1racon_pilon} {input.canu_ont} {input.canu_ont_1racon} \
-             {input.canu_ont_1racon_pilon}
+             {input.flye_pb} {input.flye_pb_polish} \
+             {input.flye_ont} {input.flye_ont_polish} \
+             {input.unicycler_pb} {input.unicycler_pb_polish} \
+             {input.unicycler_ont} {input.unicycler_ont_polish} \
+             {input.spades} {input.spades_polish} \
+             {input.canu_pb} {input.canu_pb_polish} \
+             {input.canu_ont} {input.canu_ont_polish}
+             
          """
 
 
