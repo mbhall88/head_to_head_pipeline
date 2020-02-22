@@ -15,7 +15,9 @@ rule spades:
         mem_mb = lambda wildcards, attempt: 64000 + (16000 * (attempt - 1)),
     params:
         mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
-        outdir = lambda wildcards, output: Path(output.assembly).parent
+        outdir = lambda wildcards, output: Path(output.assembly).parent,
+        original_assembly_graph_name = "assembly_graph_with_scaffolds.gfa",
+        original_assembly_name ="scaffolds.fasta",
     singularity: containers["spades"]
     shell:
         """
@@ -28,7 +30,7 @@ rule spades:
            --threads {threads} \
            --memory {params.mem_gb} \
            --isolate
-        mv {params.outdir}/scaffolds.fasta {output.assembly}
-        mv {params.outdir}/assembly_graph.gfa {output.assembly_graph}
+        cp {params.outdir}/{params.original_assembly_name} {output.assembly}
+        cp {params.outdir}/{params.original_assembly_graph_name} {output.assembly_graph}
         """
 

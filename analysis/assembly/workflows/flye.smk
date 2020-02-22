@@ -25,6 +25,8 @@ rule flye:
         outdir = lambda wildcards, output: Path(output.assembly).parent,
         input_type = lambda wildcards: infer_flye_input_type(wildcards.technology),
         polishing_iterations = 1,
+        original_assembly_info_name = "assembly_info.txt",
+        original_assembly_name ="assembly.fasta",
     shell:
         """
         flye {params.input_type} {input.reads} \
@@ -32,6 +34,6 @@ rule flye:
             --out-dir {params.outdir} \
             --threads {threads} \
             --iterations {params.polishing_iterations} 
-        mv {params.outdir}/assembly.fasta {output.assembly}
-        mv {params.outdir}/assembly_info.txt {output.assembly_info}
+        cp {params.outdir}/{params.original_assembly_name} {output.assembly}
+        cp {params.outdir}/{params.original_assembly_info_name} {output.assembly_info}
         """

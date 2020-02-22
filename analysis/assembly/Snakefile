@@ -5,6 +5,7 @@ from snakemake.utils import min_version
 
 min_version("5.10.0")
 
+
 # ======================================================
 # Config files
 # ======================================================
@@ -14,12 +15,34 @@ envs = config["envs"]
 scripts = config["scripts"]
 H37RV = config["h37rv"]
 
+# ======================================================
+# Global functions and variables
+# ======================================================
 outdir = Path(config["outdir"])
 data_dir = Path(config["data_dir"])
 mada_dir = data_dir / "madagascar"
 illumina_dir = mada_dir / "illumina"
 ont_dir = mada_dir / "nanopore"
 pacbio_dir = mada_dir / "pacbio"
+
+def generate_run_directory(sample: str, assembler: str, technology: str) -> Path:
+    return outdir / f"{sample}" / f"{assembler}" / f"{technology}"
+
+def generate_assembly_filepath(sample: str, assembler: str, technology: str) -> Path:
+    run_dir = generate_run_directory(sample, assembler, technology)
+    filename = f"assembly.{assembler}.{technology}.fasta"
+    return run_dir / filename
+
+def generate_polished_assembly_filepath(sample: str, assembler: str, technology: str) -> Path:
+    run_dir = generate_run_directory(sample, assembler, technology)
+    filename = f"polished_assembly.{assembler}.{technology}.fasta"
+    return run_dir / filename
+
+def generate_assembly_graph_filepath(sample: str, assembler: str, technology: str) -> Path:
+    run_dir = generate_run_directory(sample, assembler, technology)
+    filename = f"assembly_graph.{assembler}.{technology}.gfa"
+    return run_dir / filename
+
 # ======================================================
 # Setup
 # ======================================================
@@ -37,12 +60,16 @@ for sample in config["samples"]:
 
     for assembler, technologies in assembler_tech_lookup.items():
         for technology in technologies:
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "prokka" / f"polished.{sample}.{assembler}.{technology}.gff")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "prokka" / f"{sample}.{assembler}.{technology}.gff")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.illumina.{technology}.stats")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.accuracy.{technology}.json")
-            output_files.add(outdir / f"{sample}" / f"{assembler}" / f"{technology}" / "assessment" / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
+            run_dir = generate_run_directory(sample, assembler, technology)
+            prokka_dir = run_dir / "prokka"
+            assessment_dir = run_dir / "assessment"
+
+            output_files.add(prokka_dir / f"polished.{sample}.{assembler}.{technology}.gff")
+            output_files.add(prokka_dir / f"{sample}.{assembler}.{technology}.gff")
+            output_files.add(assessment_dir / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
+            output_files.add(assessment_dir / f"{sample}.{assembler}.illumina.{technology}.stats")
+            output_files.add(assessment_dir / f"{sample}.{assembler}.accuracy.{technology}.json")
+            output_files.add(assessment_dir / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
 
 
 # ======================================================
@@ -360,7 +387,7 @@ rule annotate_unpolished:
              mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["prokka"]
     params:
-          annotation = config["h37rv"]["annotation"],
+          annotation = H37RV["annotation"],
           outdir = lambda wildcards, output: Path(output.annotation).parent,
           prefix = lambda wildcards, output: Path(output.annotation).with_suffix("").name,
           extras = "--force"
@@ -394,7 +421,7 @@ rule annotate_polished:
              mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["prokka"]
     params:
-          annotation = config["h37rv"]["annotation"],
+          annotation = H37RV["annotation"],
           outdir = lambda wildcards, output: Path(output.annotation).parent,
           prefix = lambda wildcards, output: Path(output.annotation).with_suffix("").name,
           extras = "--force"

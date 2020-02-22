@@ -17,6 +17,8 @@ rule unicycler:
         outdir = lambda wildcards, output: Path(output.assembly).parent,
         verbosity = 2,
         keep = 0,  # keep only assembly, graph, and log
+        original_assembly_graph_name = "assembly.gfa",
+        original_assembly_name ="assembly.fasta",
     shell:
         """
         unicycler --short1 {input.illumina1} \
@@ -25,6 +27,6 @@ rule unicycler:
             --out {params.outdir} \
             --verbosity {params.verbosity} \
             --threads {threads} 
-        mv {params.outdir}/assembly.fasta {output.assembly}
-        mv {params.outdir}/assembly.gfa {output.assembly_graph}
+        cp {params.outdir}/{params.original_assembly_name} {output.assembly}
+        cp {params.outdir}/{params.original_assembly_graph_name} {output.assembly_graph}
         """

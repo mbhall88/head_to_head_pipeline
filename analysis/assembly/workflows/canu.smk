@@ -42,8 +42,8 @@ rule canu:
             maxMemory={params.mem_gb} \
             {params.input_type} {input.reads} \
             {params.extra}
-        mv {params.outdir}/{params.outprefix}.contigs.fasta {output.assembly}
-        mv {params.outdir}/{params.outprefix}.unitigs.gfa {output.assembly_graph}
+        cp {params.outdir}/{params.outprefix}.contigs.fasta {output.assembly}
+        cp {params.outdir}/{params.outprefix}.unitigs.gfa {output.assembly_graph}
         """
 
 
