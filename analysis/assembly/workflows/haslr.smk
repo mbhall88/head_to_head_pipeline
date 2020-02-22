@@ -10,6 +10,7 @@ class HaslrInputType(Enum):
 def infer_haslr_input_type(technology: str) -> str:
     return HaslrInputType[technology.upper()].value
 
+
 rule haslr:
     input:
         illumina1  = rules.trim_illumina.output.forward_paired,

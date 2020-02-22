@@ -52,6 +52,7 @@ assembler_tech_lookup = {
     "flye": long_read_tech,
     "canu": long_read_tech,
     "unicycler": long_read_tech,
+    "haslr": long_read_tech
 }
 output_files = set()
 
@@ -121,6 +122,7 @@ include: str(workflows_dir / "flye.smk")
 include: str(workflows_dir / "quast.smk")
 include: str(workflows_dir / "unicycler.smk")
 include: str(workflows_dir / "canu.smk")
+include: str(workflows_dir / "haslr.smk")
 
 ###########################################################
 # MAPPING
