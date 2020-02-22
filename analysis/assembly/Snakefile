@@ -28,20 +28,20 @@ pacbio_dir = mada_dir / "pacbio"
 def generate_run_directory(sample: str, assembler: str, technology: str) -> Path:
     return outdir / f"{sample}" / f"{assembler}" / f"{technology}"
 
-def generate_assembly_filepath(sample: str, assembler: str, technology: str) -> Path:
+def generate_assembly_filepath(sample: str, assembler: str, technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"assembly.{assembler}.{technology}.fasta"
-    return run_dir / filename
+    return str(run_dir / filename)
 
-def generate_polished_assembly_filepath(sample: str, assembler: str, technology: str) -> Path:
+def generate_polished_assembly_filepath(sample: str, assembler: str, technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"polished_assembly.{assembler}.{technology}.fasta"
-    return run_dir / filename
+    return str(run_dir / filename)
 
-def generate_assembly_graph_filepath(sample: str, assembler: str, technology: str) -> Path:
+def generate_assembly_graph_filepath(sample: str, assembler: str, technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"assembly_graph.{assembler}.{technology}.gfa"
-    return run_dir / filename
+    return str(run_dir / filename)
 
 # ======================================================
 # Setup
