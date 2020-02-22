@@ -1,0 +1,8 @@
+name: remove_bubbles
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - ripgrep=11.0.2
+  - bioconda::pyfastaq=3.17.0

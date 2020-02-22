@@ -56,12 +56,17 @@ rule remove_bubbles_canu:
     threads: 1
     resources:
         mem_mb = 500
-    singularity: containers["fastaq"]
+    singularity: containers["conda"]
+    conda: envs["remove_bubbles"]
     params:
-        pattern = "'s/^>\(\S*\)\s.*suggestBubble=no.*$/\1/p'", # thank you https://unix.stackexchange.com/a/278377/318480
-        extras = "-n",
+        pattern = "'^>(?P<id>\w+)\s.*suggestBubble=no.*$'",
+        replace_with = "'$id",
+        extras = "-uuu --no-line-number",  # disable smart filtering with -uuu
     shell:
         """
-        sed {params.pattern} {input.assembly} > {output.id_fofn}
+        rg {params.extras} \
+            --only-matching {params.pattern} \
+            --replace {params.replace_with} \
+            {input.assembly} > {output.id_fofn}
         fastaq filter --ids_file {output.id_fofn} {input.assembly} {output.assembly}
         """
