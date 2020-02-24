@@ -35,9 +35,9 @@ def remove_pilon_from_fasta_headers(infile: Path, outfile: Path, number_of_pilon
             if line.startswith(">"):
                 line = line.rstrip()
                 assert line.endswith(expected_suffix)
-                line = line[0 : -len(expected_suffix)].rstrip()
+                line = line[0 : -len(expected_suffix)]
 
-            print(line, file=f_out)
+            print(line.rstrip(), file=f_out)
 
 
 def get_iteration_files(iteration_num: int, assembly_fasta: str) -> Dict[str, Path]:
