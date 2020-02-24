@@ -239,9 +239,9 @@ rule pilon:
     params:
           pilon_jar = scripts["pilon_jar"],
           script = scripts["pilon"],
-          mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
           max_iterations = 10,
           outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
+          pilon_memory = lambda wildcards, resources: f"{int(resources.mem_mb)}m",
           final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
     singularity: containers["conda"]
     conda: envs["pilon"]
@@ -249,15 +249,15 @@ rule pilon:
          """
          bwa index {input.assembly}
          python3 {params.script} \
-             --pilon_java_xmx {params.mem_gb}G \
+             --pilon-memory {params.pilon_memory} \
              --threads {threads} \
-             --max_iterations {params.max_iterations} \
-             --pilon_jar {params.pilon_jar} \
-             --assembly_fasta {input.assembly} \
+             --max-iterations {params.max_iterations} \
+             --pilon-jar {params.pilon_jar} \
+             --assembly {input.assembly} \
              --reads1 {input.illumina1} \
              --reads2 {input.illumina2} \
              --outdir {params.outdir} \
-             --final_fasta {params.final_fasta}
+             --final-fasta {params.final_fasta}
          """
 
 ###########################################################

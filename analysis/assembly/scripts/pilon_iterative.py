@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 
-import argparse
+import click
 import errno
 import logging
 import os
 from pathlib import Path
 import subprocess
-from typing import Dict
+import re
+from typing import Dict, Union
 
+PathLike = Union[Path, str, os.PathLike]
 DEFAULT_MAX_ITERATIONS = 10
+XMX_REGEX = re.compile(r"^[0-9]+[gkm]$", re.IGNORECASE)
+XMX_URL = "https://bit.ly/3c3KEot"
+
+
+def validate_xmx(ctx: click.Context, param, value: str) -> str:
+    if not XMX_REGEX.match(value):
+        raise click.BadParameter(
+            f"The format of {value} is incorrect. "
+            "Accepted format is <int>[g|G|m|M|k|K]. e.g. 8g, 1000K, or 980m"
+        )
+    return value
 
 
 def remove_pilon_from_fasta_headers(infile: Path, outfile: Path, number_of_pilons: int):
@@ -27,9 +40,7 @@ def remove_pilon_from_fasta_headers(infile: Path, outfile: Path, number_of_pilon
             print(line, file=f_out)
 
 
-def get_iteration_files(
-    iteration_num: int, options: argparse.Namespace
-) -> Dict[str, Path]:
+def get_iteration_files(iteration_num: int, assembly_fasta: str) -> Dict[str, Path]:
     files = {
         "done_file": Path(f"iteration.{iteration_num}.done"),
         "pilon_dir": Path(f"iteration.{iteration_num}.pilon"),
@@ -37,7 +48,7 @@ def get_iteration_files(
     }
 
     if iteration_num == 1:
-        files["ref_fasta"] = options.assembly_fasta
+        files["ref_fasta"] = Path(assembly_fasta)
     else:
         files["ref_fasta"] = (
             Path(f"iteration.{iteration_num - 1}.pilon") / "pilon.fasta"
@@ -68,7 +79,11 @@ def log_and_run_command(command):
 
 
 def make_pilon_bam(
-    reads1: Path, reads2: Path, ref_fasta: Path, outprefix: Path, threads=1
+    reads1: PathLike,
+    reads2: PathLike,
+    ref_fasta: PathLike,
+    outprefix: PathLike,
+    threads=1,
 ) -> Path:
     sam_file = Path(f"{outprefix}.sam")
     sorted_bam = Path(f"{outprefix}.sorted.bam")
@@ -82,7 +97,8 @@ def make_pilon_bam(
         f"bwa mem -t {threads} -x intractg {ref_fasta} {reads1} {reads2} > {sam_file}"
     )
     log_and_run_command(
-        f"samtools sort --threads {threads} --reference {ref_fasta} -o {sorted_bam} {sam_file}"
+        f"samtools sort --threads {threads} --reference {ref_fasta} "
+        f"-o {sorted_bam} {sam_file}"
     )
     sam_file.unlink()
     log_and_run_command(f"samtools index {sorted_bam}")
@@ -91,12 +107,12 @@ def make_pilon_bam(
 
 
 def run_pilon(
-    bam: Path,
-    ref_fasta: Path,
+    bam: PathLike,
+    ref_fasta: PathLike,
     outdir: Path,
-    java_jar: Path,
+    pilon_jar: PathLike,
     java_xmx_opt: str,
-    threads=1,
+    threads: int = 1,
 ):
     fasta = outdir / "pilon.fasta"
     done_file = outdir / ".done"
@@ -104,9 +120,10 @@ def run_pilon(
         logging.info(f"Found done file {done_file}")
         assert os.path.exists(f"{fasta}.fai")
 
-    assert java_jar.exists()
     log_and_run_command(
-        f"java -Xmx{java_xmx_opt} -jar {java_jar} --outdir {outdir} --genome {ref_fasta} --frags {bam} --changes --threads {threads} --minmq 10 --minqual 10"
+        f"java -Xmx{java_xmx_opt} -jar {pilon_jar} --outdir {outdir} "
+        f"--genome {ref_fasta} --frags {bam} --changes --threads {threads} "
+        f"--minmq 10 --minqual 10"
     )
     log_and_run_command(f"bwa index {fasta}")
     log_and_run_command(f"samtools faidx {fasta}")
@@ -126,80 +143,107 @@ def check_file_exists(path: Path, filename_for_log: str):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
 
 
-def cli() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Iteratively run pilon to correct assembly. Stops after "
-            f"{DEFAULT_MAX_ITERATIONS} (default) iterations, or if no changes made."
-        )
-    )
+@click.command()
+@click.help_option("--help", "-h")
+@click.option(
+    "-1",
+    "--reads1",
+    help="Name of input reads file 1.",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+)
+@click.option(
+    "-2",
+    "--reads2",
+    help="Name of input reads file 2.",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+)
+@click.option(
+    "-o",
+    "--outdir",
+    help="Name of output/working.",
+    required=True,
+    type=click.Path(exists=False, file_okay=False, resolve_path=True),
+)
+@click.option(
+    "-f",
+    "--final-fasta",
+    help="Name of the final, polished fasta file.",
+    default="final.fasta",
+    show_default=True,
+)
+@click.option(
+    "-a",
+    "--assembly",
+    help="Name of input assembly fasta file.",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    required=True,
+)
+@click.option(
+    "-j",
+    "--pilon-jar",
+    help="Name of pilon JAR file",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    required=True,
+)
+@click.option(
+    "-i",
+    "--max-iterations",
+    type=click.IntRange(min=1),
+    default=DEFAULT_MAX_ITERATIONS,
+    help="Max number of iterations.",
+    show_default=True,
+)
+@click.option(
+    "-t",
+    "--threads",
+    type=click.IntRange(min=1),
+    default=1,
+    help="Number of threads to use with BWA mem and pilon.",
+    show_default=True,
+)
+@click.option(
+    "-m",
+    "--pilon-memory",
+    default="8G",
+    help=(
+        "Maximum memory allocation pool for running Pilon. It is passed as `java "
+        f"-Xmx<value>`. Format: <int>[g|G|m|M|k|K]. See {XMX_URL} for more information."
+    ),
+    show_default=True,
+    callback=validate_xmx,
+)
+@click.option(
+    "-l",
+    "--log-file",
+    help="Name of the log file.",
+    default="log.txt",
+    show_default=True,
+)
+def main(
+    reads1: str,
+    reads2: str,
+    outdir: str,
+    final_fasta: str,
+    assembly: str,
+    pilon_jar: str,
+    max_iterations: int,
+    threads: int,
+    pilon_memory: str,
+    log_file: str,
+):
+    """Iteratively run pilon to correct an assembly with Illumina reads. Stops after a
+    specified number of iterations, or if no changes were made on the last iteration.
+    """
+    outdir = Path(outdir)
+    outdir.mkdir(exist_ok=True)
 
-    parser.add_argument(
-        "--pilon_java_xmx",
-        default="8G",
-        help="Option used with -Xmx when running javar pilon.jar [%(default)s]",
-        metavar="STRING",
-    )
-    parser.add_argument(
-        "--threads",
-        type=int,
-        default=1,
-        help="Number of threads to use with BWA mem and pilon [%(default)s]",
-        metavar="INT",
-    )
-    parser.add_argument(
-        "--max_iterations",
-        type=int,
-        default=DEFAULT_MAX_ITERATIONS,
-        help="Max number of iterations. [%(default)s]",
-        metavar="INT",
-    )
-    parser.add_argument(
-        "--pilon_jar", help="Name of pilon JAR file", type=Path, required=True
-    )
-    parser.add_argument(
-        "--assembly_fasta",
-        help="Name of input assembly fasta file",
-        type=Path,
-        required=True,
-    )
-    parser.add_argument(
-        "--reads1", help="Name of input reads file 1", type=Path, required=True
-    )
-    parser.add_argument(
-        "--reads2", help="Name of input reads file 2", type=Path, required=True
-    )
-    parser.add_argument(
-        "--outdir",
-        help=f"Name of output/working directory. Default [%(default)s]",
-        type=Path,
-        default=Path(),
-    )
-    parser.add_argument(
-        "--final_fasta",
-        help="Name of the final, polished fasta file. [%(default)s]",
-        default="final.fasta",
-    )
-    options = parser.parse_args()
-
-    options.assembly_fasta = options.assembly_fasta.resolve()
-    options.reads1 = options.reads1.resolve()
-    options.reads2 = options.reads2.resolve()
-    options.outdir = options.outdir.resolve()
-    options.pilon_jar = options.pilon_jar.resolve()
-
-    options.outdir.mkdir(exist_ok=True)
-
-    return options
-
-
-def main():
-    options = cli()
-    os.chdir(options.outdir)
+    os.chdir(outdir)
 
     log = logging.getLogger()
     log.setLevel(logging.INFO)
-    logfile_handle = logging.FileHandler("log.txt", mode="w")
+    logfile_handle = logging.FileHandler(log_file, mode="w")
     log = logging.getLogger()
     formatter = logging.Formatter(
         "[pilon_iterative %(asctime)s %(levelname)s] %(message)s",
@@ -208,31 +252,23 @@ def main():
     logfile_handle.setFormatter(formatter)
     log.addHandler(logfile_handle)
 
-    check_file_exists(options.assembly_fasta, "assembly_fasta")
-    check_file_exists(options.reads1, "reads1")
-    check_file_exists(options.reads2, "reads2")
-
-    for iteration_num in range(1, options.max_iterations + 1, 1):
+    for iteration_num in range(1, max_iterations + 1, 1):
         logging.info(f"Start iteration {iteration_num}")
-        files = get_iteration_files(iteration_num, options)
+        files = get_iteration_files(iteration_num, assembly)
 
         if files["done_file"].exists():
             logging.info(f'Found iteration done file {files["done_file"]}')
         else:
             bam = make_pilon_bam(
-                options.reads1,
-                options.reads2,
-                files["ref_fasta"],
-                files["mapping_prefix"],
-                threads=options.threads,
+                reads1, reads2, files["ref_fasta"], files["mapping_prefix"], threads
             )
             run_pilon(
                 bam,
                 files["ref_fasta"],
                 files["pilon_dir"],
-                options.pilon_jar,
-                options.pilon_java_xmx,
-                threads=options.threads,
+                pilon_jar,
+                pilon_memory,
+                threads,
             )
             bam.unlink()
             Path(f"{bam}.bai").unlink()
@@ -242,15 +278,20 @@ def main():
             f"Number of changes at iteration {iteration_num}: {number_of_changes}"
         )
         files["done_file"].touch()
-        logging.info(f"End iteration {iteration_num}")
 
         if number_of_changes == 0:
             logging.info(f"No changes made in iteration {iteration_num}. Stopping")
-            logging.info("Making final corrected file final.fasta with renamed contigs")
-            remove_pilon_from_fasta_headers(
-                files["corrected_fasta"], Path(options.final_fasta), iteration_num
-            )
             break
+        elif iteration_num >= max_iterations:
+            logging.info(f"Reached max. iteration number of {max_iterations}. Stopping")
+            break
+        else:
+            logging.info(f"End of iteration {iteration_num}. Continuing")
+
+    logging.info("Making final corrected file final.fasta with renamed contigs")
+    remove_pilon_from_fasta_headers(
+        files["corrected_fasta"], Path(final_fasta), iteration_num
+    )
 
     logging.info("Finished")
 
