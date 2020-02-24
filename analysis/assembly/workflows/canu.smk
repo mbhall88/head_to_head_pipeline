@@ -60,7 +60,7 @@ rule remove_bubbles_canu:
     conda: envs["remove_bubbles"]
     params:
         pattern = "'^>(?P<id>\w+)\s.*suggestBubble=no.*$'",
-        replace_with = "'$id",
+        replace_with = "'$id'",
         extras = "-uuu --no-line-number",  # disable smart filtering with -uuu
     shell:
         """
