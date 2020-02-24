@@ -401,7 +401,6 @@ rule annotate_unpolished:
              --prefix {params.prefix} \
              {params.extras} \
              {input.assembly}
-         cat {log}
          """
 
 
@@ -416,7 +415,7 @@ rule annotate_polished:
           unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.err",
           stats                    = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.txt",
           features                 = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.tsv",
-    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.polished.{technology}.log"
+    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.log"
     threads: 8
     shadow: "shallow"
     resources:
@@ -435,5 +434,4 @@ rule annotate_polished:
              --prefix {params.prefix} \
              {params.extras} \
              {input.assembly}
-         cat {log}
          """
