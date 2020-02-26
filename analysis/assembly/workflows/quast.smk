@@ -36,7 +36,7 @@ rule quast:
     params:
         labels = (
             "flye_pb,flye_pb_pol,flye_ont,flye_ont_pol,uc_pb,uc_pb_pol,uc_ont,"
-            "uc_ont_pol,spades,spades_pol,canu_pb,canu_pb_pol,canu_ont,canu_ont_pol"
+            "uc_ont_pol,spades,spades_pol,canu_pb,canu_pb_pol,canu_ont,canu_ont_pol,"
             "haslr_pb,haslr_pb_pol,haslr_ont,haslr_ont_pol"
         ),
         outdir = lambda wildcards, output: Path(output.report).parent,
