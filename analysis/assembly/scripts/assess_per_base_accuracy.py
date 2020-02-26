@@ -111,7 +111,7 @@ def collapse_positions_into_intervals(
     help=(
         "Bam file to assess. It is up to the user whether to include "
         "secondary/supplementary alignments. These can be removed with "
-        "`samtools view -bh -f 0 -F 256`"
+        "`samtools view -bh -F 3328`"
     ),
     type=Path,
     required=True,
@@ -165,7 +165,9 @@ def main(
     2. Mapping quality summary statistics. i.e. mean, median, quantiles etc.
     """
     log_level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=log_level)
+    logging.basicConfig(
+        format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
+    )
 
     pileup_stats = dict()
 
