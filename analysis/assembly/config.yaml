@@ -35,6 +35,11 @@ illumina_flag_filter:         3328 # not primary alignment (0x100), read is PCR 
 pilon_version:                1.23
 samples:
   - "mada_101"
-#  - "mada_130"
-#  - "mada_132"
-#  - "mada_1-2"
+  - "mada_102"
+  - "mada_104"
+  - "mada_116"
+  - "mada_125"
+  - "mada_130"
+  - "mada_132"
+  - "mada_1-2"
+  - "mada_1-44"

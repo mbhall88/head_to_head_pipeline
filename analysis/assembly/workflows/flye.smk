@@ -17,8 +17,9 @@ rule flye:
     output:
         assembly       = outdir / "{sample}" / "flye" / "{technology}" / "assembly.flye.{technology}.fasta",
         assembly_info  = outdir / "{sample}" / "flye" / "{technology}" / "assembly_info.flye.{technology}.txt",
+    threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 16000 * attempt,
+        mem_mb = lambda wildcards, attempt: 8000 * attempt,
     singularity: containers["flye"]
     params:
         genome_size = config["genome_size"],

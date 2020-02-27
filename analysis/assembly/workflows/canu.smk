@@ -20,7 +20,7 @@ rule canu:
         assembly_graph = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.gfa",
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 32000 * attempt
+        mem_mb = lambda wildcards, attempt: 8000 * attempt
     params:
         min_read_length = 1000,
         min_overlap_length = 500,

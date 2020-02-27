@@ -172,7 +172,7 @@ rule map_illumina_reads_to_assembly:
     shadow: "shallow"
     threads: 8
     resources:
-             mem_mb = lambda wildcards, attempt: 8000 * attempt
+             mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["conda"]
     conda: envs["aln_tools"]
     params:
@@ -275,7 +275,7 @@ rule map_illumina_reads_to_polished_assembly:
     shadow: "shallow"
     threads: 8
     resources:
-             mem_mb = lambda wildcards, attempt: 8000 * attempt
+             mem_mb = lambda wildcards, attempt: 4000 * attempt
     singularity: containers["conda"]
     conda: envs["aln_tools"]
     params:
@@ -308,7 +308,7 @@ rule samtools_stats:
           polished_stats   = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.illumina.{technology}.stats",
     threads: 1
     resources:
-             mem_mb = 1000
+             mem_mb = 100
     singularity: containers["samtools"]
     shell:
          """
@@ -324,6 +324,9 @@ rule assess_unpolished_per_base_accuracy:
     output:
           json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.json",
           bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.bed",
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: 500 * attempt
     params:
           script = scripts["assess_per_base"],
           min_depth = config["min_depth"],
@@ -349,6 +352,9 @@ rule assess_polished_per_base_accuracy:
     output:
           json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.json",
           bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.bed",
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: 500 * attempt
     params:
           script = scripts["assess_per_base"],
           min_depth = config["min_depth"],
@@ -386,7 +392,7 @@ rule annotate_unpolished:
     threads: 8
     shadow: "shallow"
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+             mem_mb = lambda wildcards, attempt: 1000 * attempt
     singularity: containers["prokka"]
     params:
           annotation = H37RV["annotation"],
@@ -419,7 +425,7 @@ rule annotate_polished:
     threads: 8
     shadow: "shallow"
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+             mem_mb = lambda wildcards, attempt: 1000 * attempt
     singularity: containers["prokka"]
     params:
           annotation = H37RV["annotation"],
