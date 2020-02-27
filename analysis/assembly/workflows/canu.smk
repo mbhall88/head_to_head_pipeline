@@ -13,23 +13,24 @@ def infer_canu_input_type(technology: str) -> str:
 
 rule canu:
     input:
-        reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-        assembly       = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.fasta",
-        report         = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.report",
-        assembly_graph = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.gfa",
+        assembly=outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.fasta",
+        report=outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.report",
+        assembly_graph=outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.with_bubbles.{technology}.gfa",
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 8000 * attempt
+        mem_mb=lambda wildcards, attempt: 8000 * attempt
     params:
-        min_read_length = 1000,
-        min_overlap_length = 500,
-        genome_size = config["genome_size"],
-        input_type = lambda wildcards: infer_canu_input_type(wildcards.technology),
-        mem_gb = lambda wildcards, resources: int(resources.mem_mb / 1000),
-        outprefix = lambda wildcards, output: Path(output.assembly).with_suffix("").name,
-        outdir = lambda wildcards, output: Path(output.assembly).parent,
-        extra = "corMaxEvidenceErate=0.15",  # for GC rich, repetitive genomes from docs https://canu.readthedocs.io/en/latest/faq.html#my-genome-is-at-or-gc-rich-do-i-need-to-adjust-parameters-what-about-highly-repetitive-genomes
+        min_read_length=1000,
+        min_overlap_length=500,
+        genome_size=config["genome_size"],
+        input_type=lambda wildcards: infer_canu_input_type(wildcards.technology),
+        mem_gb=lambda wildcards, resources: int(resources.mem_mb / 1000),
+        outprefix=lambda wildcards, output: Path(output.assembly).with_suffix("").name,
+        outdir=lambda wildcards, output: Path(output.assembly).parent,
+        extra="corMaxEvidenceErate=0.15",
+        # for GC rich, repetitive genomes from docs https://canu.readthedocs.io/en/latest/faq.html#my-genome-is-at-or-gc-rich-do-i-need-to-adjust-parameters-what-about-highly-repetitive-genomes
     singularity: containers["canu"]
     shell:
         """
@@ -46,22 +47,21 @@ rule canu:
         cp {params.outdir}/{params.outprefix}.unitigs.gfa {output.assembly_graph}
         """
 
-
 rule remove_bubbles_canu:
     input:
-        assembly = rules.canu.output.assembly,
+        assembly=rules.canu.output.assembly,
     output:
-        assembly = outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.{technology}.fasta",
-        id_fofn  = outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.nobubbles.{technology}.fofn",
+        assembly=outdir / "{sample}" / "canu" / "{technology}" / "assembly.canu.{technology}.fasta",
+        id_fofn=outdir / "{sample}" / "canu" / "{technology}" / "{sample}.contigs.nobubbles.{technology}.fofn",
     threads: 1
     resources:
-        mem_mb = 500
+        mem_mb=500
     singularity: containers["conda"]
     conda: envs["remove_bubbles"]
     params:
-        pattern = "'^>(?P<id>\w+)\s.*suggestBubble=no.*$'",
-        replace_with = "'$id'",
-        extras = "-uuu --no-line-number",  # disable smart filtering with -uuu
+        pattern="'^>(?P<id>\w+)\s.*suggestBubble=no.*$'",
+        replace_with="'$id'",
+        extras="-uuu --no-line-number",  # disable smart filtering with -uuu
     shell:
         """
         rg {params.extras} \

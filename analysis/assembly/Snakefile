@@ -5,7 +5,6 @@ from snakemake.utils import min_version
 
 min_version("5.10.0")
 
-
 # ======================================================
 # Config files
 # ======================================================
@@ -25,30 +24,38 @@ illumina_dir = mada_dir / "illumina"
 ont_dir = mada_dir / "nanopore"
 pacbio_dir = mada_dir / "pacbio"
 
+
 def generate_run_directory(sample: str, assembler: str, technology: str) -> Path:
     return outdir / f"{sample}" / f"{assembler}" / f"{technology}"
+
 
 def generate_assembly_filepath(sample: str, assembler: str, technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"assembly.{assembler}.{technology}.fasta"
     return str(run_dir / filename)
 
-def generate_polished_assembly_filepath(sample: str, assembler: str, technology: str) -> str:
+
+def generate_polished_assembly_filepath(sample: str, assembler: str,
+                                        technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"polished_assembly.{assembler}.{technology}.fasta"
     return str(run_dir / filename)
 
-def generate_assembly_graph_filepath(sample: str, assembler: str, technology: str) -> str:
+
+def generate_assembly_graph_filepath(sample: str, assembler: str,
+                                     technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
     filename = f"assembly_graph.{assembler}.{technology}.gfa"
     return str(run_dir / filename)
+
 
 # ======================================================
 # Setup
 # ======================================================
 long_read_tech = ["nanopore", "pacbio"]
 assembler_tech_lookup = {
-    "spades": ["pacbio"],  # it really uses all techs but we only want to polish with pacbio
+    "spades": ["pacbio"],
+    # it really uses all techs but we only want to polish with pacbio
     "flye": long_read_tech,
     "canu": long_read_tech,
     "unicycler": long_read_tech,
@@ -65,42 +72,45 @@ for sample in config["samples"]:
             prokka_dir = run_dir / "prokka"
             assessment_dir = run_dir / "assessment"
 
-            output_files.add(prokka_dir / f"polished.{sample}.{assembler}.{technology}.gff")
+            output_files.add(
+                prokka_dir / f"polished.{sample}.{assembler}.{technology}.gff")
             output_files.add(prokka_dir / f"{sample}.{assembler}.{technology}.gff")
-            output_files.add(assessment_dir / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
-            output_files.add(assessment_dir / f"{sample}.{assembler}.illumina.{technology}.stats")
-            output_files.add(assessment_dir / f"{sample}.{assembler}.accuracy.{technology}.json")
-            output_files.add(assessment_dir / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
-
+            output_files.add(
+                assessment_dir / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
+            output_files.add(
+                assessment_dir / f"{sample}.{assembler}.illumina.{technology}.stats")
+            output_files.add(
+                assessment_dir / f"{sample}.{assembler}.accuracy.{technology}.json")
+            output_files.add(
+                assessment_dir / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
 
 # ======================================================
 # Rules
 # ======================================================
 rule all:
     input:
-         list(output_files)
-
+        list(output_files)
 
 rule trim_illumina:
     input:
-        forward = illumina_dir / "{sample}" / "{sample}.R1.fastq.gz",
-        reverse = illumina_dir / "{sample}" / "{sample}.R2.fastq.gz",
-        adapters = config["adapters"]
+        forward=illumina_dir / "{sample}" / "{sample}.R1.fastq.gz",
+        reverse=illumina_dir / "{sample}" / "{sample}.R2.fastq.gz",
+        adapters=config["adapters"]
     output:
-        forward_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
-        reverse_paired   = outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
-        forward_unpaired = outdir / "{sample}" / "trimmed" / "{sample}.R1.unpaired.trimmed.fastq.gz",
-        reverse_unpaired = outdir / "{sample}" / "trimmed" / "{sample}.R2.unpaired.trimmed.fastq.gz",
+        forward_paired=outdir / "{sample}" / "trimmed" / "{sample}.R1.trimmed.fastq.gz",
+        reverse_paired=outdir / "{sample}" / "trimmed" / "{sample}.R2.trimmed.fastq.gz",
+        forward_unpaired=outdir / "{sample}" / "trimmed" / "{sample}.R1.unpaired.trimmed.fastq.gz",
+        reverse_unpaired=outdir / "{sample}" / "trimmed" / "{sample}.R2.unpaired.trimmed.fastq.gz",
     threads: 4
     resources:
-        mem_mb = lambda wildcards, attempt: 2000 * attempt
+        mem_mb=lambda wildcards, attempt: 2000 * attempt
     params:
-        illuminaclip = "1:30:10:2:keepBothReads",
-        leading = 3,
-        trailing = 3,
-        minlen = 30,
-        in_phred = 33,
-        out_phred = 33,
+        illuminaclip="1:30:10:2:keepBothReads",
+        leading=3,
+        trailing=3,
+        minlen=30,
+        in_phred=33,
+        out_phred=33,
     singularity: containers["trimmomatic"]
     shell:
         """
@@ -115,7 +125,6 @@ rule trim_illumina:
             TOPHRED{params.out_phred}
         """
 
-
 workflows_dir = Path("workflows")
 include: str(workflows_dir / "spades.smk")
 include: str(workflows_dir / "flye.smk")
@@ -123,6 +132,7 @@ include: str(workflows_dir / "quast.smk")
 include: str(workflows_dir / "unicycler.smk")
 include: str(workflows_dir / "canu.smk")
 include: str(workflows_dir / "haslr.smk")
+
 
 ###########################################################
 # MAPPING
@@ -138,63 +148,61 @@ def infer_minimap2_preset(technology: str) -> str:
 
 rule map_long_reads_to_assembly:
     input:
-         reads    = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-          sam = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.{technology}.sam"
+        sam=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.{technology}.sam"
     shadow: "shallow"
     threads: 8
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+        mem_mb=lambda wildcards, attempt: 4000 * attempt
     singularity: containers["minimap2"]
     params:
-          preset = lambda wildcards: infer_minimap2_preset(wildcards.technology),
-          extras = "--secondary=no"
+        preset=lambda wildcards: infer_minimap2_preset(wildcards.technology),
+        extras="--secondary=no"
     shell:
-         """
-         minimap2 -ax {params.preset} \
-             {params.extras} \
-             -t {threads} \
-             {input.assembly} \
-             {input.reads} > {output.sam}
-         """
-
+        """
+        minimap2 -ax {params.preset} \
+            {params.extras} \
+            -t {threads} \
+            {input.assembly} \
+            {input.reads} > {output.sam}
+        """
 
 rule map_illumina_reads_to_assembly:
     input:
-         assembly  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
-         illumina1 = rules.trim_illumina.output.forward_paired,
-         illumina2 = rules.trim_illumina.output.reverse_paired,
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        illumina1=rules.trim_illumina.output.forward_paired,
+        illumina2=rules.trim_illumina.output.reverse_paired,
     output:
-          bam       = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam",
-          bam_index = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam.bai",
-          pileup    = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.pileup",
+        bam=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam",
+        bam_index=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.bam.bai",
+        pileup=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.illumina.{technology}.pileup",
     shadow: "shallow"
     threads: 8
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+        mem_mb=lambda wildcards, attempt: 4000 * attempt
     singularity: containers["conda"]
     conda: envs["aln_tools"]
     params:
-          view_extras = "-hu", # include header, uncompressed BAM
-          filter_flags = "-F {}".format(config["illumina_flag_filter"]),
-          extras = "-aa"
+        view_extras="-hu",  # include header, uncompressed BAM
+        filter_flags="-F {}".format(config["illumina_flag_filter"]),
+        extras="-aa"
     shell:
-         """
-         bwa index {input.assembly}
-         
-         bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
-             samtools view {params.filter_flags} {params.view_extras} - | \
-             samtools sort -@ {threads} -o {output.bam} -
-             
-         samtools index {output.bam}
-         
-         samtools mpileup {params.extras} \
-             -o {output.pileup} \
-             --fasta-ref {input.assembly} \
-             {output.bam}
-         """
-
+        """
+        bwa index {input.assembly}
+        
+        bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
+            samtools view {params.filter_flags} {params.view_extras} - | \
+            samtools sort -@ {threads} -o {output.bam} -
+            
+        samtools index {output.bam}
+        
+        samtools mpileup {params.extras} \
+            -o {output.pileup} \
+            --fasta-ref {input.assembly} \
+            {output.bam}
+        """
 
 ###########################################################
 # POLISHING
@@ -203,174 +211,170 @@ rule map_illumina_reads_to_assembly:
 # todo: add hypo rule - polish with CCS and ONT and then with Illumina or vice versa..
 rule racon:
     input:
-         reads    = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-         sam      = rules.map_long_reads_to_assembly.output.sam,
-         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        sam=rules.map_long_reads_to_assembly.output.sam,
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-          polished_assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.racon.{technology}.fasta"
+        polished_assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.racon.{technology}.fasta"
     shadow: "shallow"
     threads: 16
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+        mem_mb=lambda wildcards, attempt: 4000 * attempt
     singularity: containers["racon"]
     params:
-          extras = "--include-unpolished"
+        extras="--include-unpolished"
     shell:
-         """
-         racon --threads {threads} \
-             {params.extras} \
-             {input.reads} \
-             {input.sam} \
-             {input.assembly} > {output.polished_assembly}
-         """
-
+        """
+        racon --threads {threads} \
+            {params.extras} \
+            {input.reads} \
+            {input.sam} \
+            {input.assembly} > {output.polished_assembly}
+        """
 
 rule pilon:
     input:
-         assembly  = rules.racon.output.polished_assembly,
-         illumina1 = rules.trim_illumina.output.forward_paired,
-         illumina2 = rules.trim_illumina.output.reverse_paired,
+        assembly=rules.racon.output.polished_assembly,
+        illumina1=rules.trim_illumina.output.forward_paired,
+        illumina2=rules.trim_illumina.output.reverse_paired,
     output:
-          polished_assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "polished_assembly.{assembler}.{technology}.fasta"
+        polished_assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "polished_assembly.{assembler}.{technology}.fasta"
     shadow: "shallow"
     threads: 16
     resources:
-             mem_mb = lambda wildcards, attempt: 8000 * attempt
+        mem_mb=lambda wildcards, attempt: 8000 * attempt
     params:
-          pilon_jar = scripts["pilon_jar"],
-          script = scripts["pilon"],
-          max_iterations = 10,
-          outdir = lambda wildcards, output: Path(output.polished_assembly).parent,
-          pilon_memory = lambda wildcards, resources: f"{int(resources.mem_mb)}m",
-          final_fasta = lambda wildcards, output: Path(output.polished_assembly).name,
+        pilon_jar=scripts["pilon_jar"],
+        script=scripts["pilon"],
+        max_iterations=10,
+        outdir=lambda wildcards, output: Path(output.polished_assembly).parent,
+        pilon_memory=lambda wildcards, resources: f"{int(resources.mem_mb)}m",
+        final_fasta=lambda wildcards, output: Path(output.polished_assembly).name,
     singularity: containers["conda"]
     conda: envs["pilon"]
     shell:
-         """
-         bwa index {input.assembly}
-         python3 {params.script} \
-             --pilon-memory {params.pilon_memory} \
-             --threads {threads} \
-             --max-iterations {params.max_iterations} \
-             --pilon-jar {params.pilon_jar} \
-             --assembly {input.assembly} \
-             --reads1 {input.illumina1} \
-             --reads2 {input.illumina2} \
-             --outdir {params.outdir} \
-             --final-fasta {params.final_fasta}
-         """
+        """
+        bwa index {input.assembly}
+        python3 {params.script} \
+            --pilon-memory {params.pilon_memory} \
+            --threads {threads} \
+            --max-iterations {params.max_iterations} \
+            --pilon-jar {params.pilon_jar} \
+            --assembly {input.assembly} \
+            --reads1 {input.illumina1} \
+            --reads2 {input.illumina2} \
+            --outdir {params.outdir} \
+            --final-fasta {params.final_fasta}
+        """
 
 ###########################################################
 # ASSESSMENT
 ###########################################################
 rule map_illumina_reads_to_polished_assembly:
     input:
-         assembly  = rules.pilon.output.polished_assembly,
-         illumina1 = rules.trim_illumina.output.forward_paired,
-         illumina2 = rules.trim_illumina.output.reverse_paired,
+        assembly=rules.pilon.output.polished_assembly,
+        illumina1=rules.trim_illumina.output.forward_paired,
+        illumina2=rules.trim_illumina.output.reverse_paired,
     output:
-          bam       = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam",
-          bam_index = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam.bai",
-          pileup    = outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
+        bam=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam",
+        bam_index=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.bam.bai",
+        pileup=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
     shadow: "shallow"
     threads: 8
     resources:
-             mem_mb = lambda wildcards, attempt: 4000 * attempt
+        mem_mb=lambda wildcards, attempt: 4000 * attempt
     singularity: containers["conda"]
     conda: envs["aln_tools"]
     params:
-          view_extras = "-hu", # include header, uncompressed BAM
-          filter_flags = "-F {}".format(config["illumina_flag_filter"]),
-          extras = "-aa"
+        view_extras="-hu",  # include header, uncompressed BAM
+        filter_flags="-F {}".format(config["illumina_flag_filter"]),
+        extras="-aa"
     shell:
-         """
-         bwa index {input.assembly}
-         
-         bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
-             samtools view {params.filter_flags} {params.view_extras} - | \
-             samtools sort -@ {threads} -o {output.bam} -
-             
-         samtools index {output.bam}
-         
-         samtools mpileup {params.extras} \
-             -o {output.pileup} \
-             --fasta-ref {input.assembly} \
-             {output.bam}
-         """
-
+        """
+        bwa index {input.assembly}
+        
+        bwa mem -t {threads} {input.assembly} {input.illumina1} {input.illumina2} | \
+            samtools view {params.filter_flags} {params.view_extras} - | \
+            samtools sort -@ {threads} -o {output.bam} -
+            
+        samtools index {output.bam}
+        
+        samtools mpileup {params.extras} \
+            -o {output.pileup} \
+            --fasta-ref {input.assembly} \
+            {output.bam}
+        """
 
 rule samtools_stats:
     input:
-         unpolished_bam = rules.map_illumina_reads_to_assembly.output.bam,
-         polished_bam   = rules.map_illumina_reads_to_polished_assembly.output.bam,
+        unpolished_bam=rules.map_illumina_reads_to_assembly.output.bam,
+        polished_bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
     output:
-          unpolished_stats = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.illumina.{technology}.stats",
-          polished_stats   = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.illumina.{technology}.stats",
+        unpolished_stats=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.illumina.{technology}.stats",
+        polished_stats=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.illumina.{technology}.stats",
     threads: 1
     resources:
-             mem_mb = 100
+        mem_mb=100
     singularity: containers["samtools"]
     shell:
-         """
-         samtools stats {input.unpolished_bam} > {output.unpolished_stats}
-         samtools stats {input.polished_bam} > {output.polished_stats}
-         """
-
+        """
+        samtools stats {input.unpolished_bam} > {output.unpolished_stats}
+        samtools stats {input.polished_bam} > {output.polished_stats}
+        """
 
 rule assess_unpolished_per_base_accuracy:
     input:
-         bam    = rules.map_illumina_reads_to_assembly.output.bam,
-         pileup = rules.map_illumina_reads_to_assembly.output.pileup,
+        bam=rules.map_illumina_reads_to_assembly.output.bam,
+        pileup=rules.map_illumina_reads_to_assembly.output.pileup,
     output:
-          json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.json",
-          bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.bed",
+        json=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.json",
+        bed=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.accuracy.{technology}.bed",
     threads: 1
     resources:
-        mem_mb = lambda wildcards, attempt: 500 * attempt
+        mem_mb=lambda wildcards, attempt: 500 * attempt
     params:
-          script = scripts["assess_per_base"],
-          min_depth = config["min_depth"],
-          quorum = config["quorum"],
-          prefix = lambda wildcards, output: Path(output.json).with_suffix(""),
+        script=scripts["assess_per_base"],
+        min_depth=config["min_depth"],
+        quorum=config["quorum"],
+        prefix=lambda wildcards, output: Path(output.json).with_suffix(""),
     singularity: containers["conda"]
     conda: envs["assess_per_base"]
     shell:
-         """
-         python3 {params.script} \
-             --bam {input.bam} \
-             --pileup {input.pileup} \
-             --min-depth {params.min_depth} \
-             --quorum {params.quorum} \
-             --prefix {params.prefix}
-         """
-
+        """
+        python3 {params.script} \
+            --bam {input.bam} \
+            --pileup {input.pileup} \
+            --min-depth {params.min_depth} \
+            --quorum {params.quorum} \
+            --prefix {params.prefix}
+        """
 
 rule assess_polished_per_base_accuracy:
     input:
-         bam    = rules.map_illumina_reads_to_polished_assembly.output.bam,
-         pileup = rules.map_illumina_reads_to_polished_assembly.output.pileup,
+        bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
+        pileup=rules.map_illumina_reads_to_polished_assembly.output.pileup,
     output:
-          json = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.json",
-          bed  = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.bed",
+        json=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.json",
+        bed=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.accuracy.{technology}.bed",
     threads: 1
     resources:
-        mem_mb = lambda wildcards, attempt: 500 * attempt
+        mem_mb=lambda wildcards, attempt: 500 * attempt
     params:
-          script = scripts["assess_per_base"],
-          min_depth = config["min_depth"],
-          quorum = config["quorum"],
-          prefix = lambda wildcards, output: Path(output.json).with_suffix(""),
+        script=scripts["assess_per_base"],
+        min_depth=config["min_depth"],
+        quorum=config["quorum"],
+        prefix=lambda wildcards, output: Path(output.json).with_suffix(""),
     singularity: containers["conda"]
     conda: envs["assess_per_base"]
     shell:
-         """
-         python3 {params.script} \
-             --bam {input.bam} \
-             --pileup {input.pileup} \
-             --min-depth {params.min_depth} \
-             --quorum {params.quorum} \
-             --prefix {params.prefix}
-         """
+        """
+        python3 {params.script} \
+            --bam {input.bam} \
+            --pileup {input.pileup} \
+            --min-depth {params.min_depth} \
+            --quorum {params.quorum} \
+            --prefix {params.prefix}
+        """
 
 ###########################################################
 # ANNOTATE
@@ -379,65 +383,66 @@ prokka_exts = [".gbk", ".gff", ".faa", ".ffn", ".err", ".txt", ".tsv"]
 
 rule annotate_unpolished:
     input:
-         assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
     output:
-        genbank                  = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gbk",
-        annotation               = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gff",
-        translated_cds           = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.faa",
-        prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.ffn",
-        unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.err",
-        stats                    = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.txt",
-        features                 = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.tsv",
-    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.log"
+        genbank=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gbk",
+        annotation=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gff",
+        translated_cds=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.faa",
+        prediction_transcripts=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.ffn",
+        unacceptable_annotations=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.err",
+        stats=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.txt",
+        features=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.tsv",
+    log:
+        outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.log"
     threads: 8
     shadow: "shallow"
     resources:
-             mem_mb = lambda wildcards, attempt: 1000 * attempt
+        mem_mb=lambda wildcards, attempt: 1000 * attempt
     singularity: containers["prokka"]
     params:
-          annotation = H37RV["annotation"],
-          outdir = lambda wildcards, output: Path(output.annotation).parent,
-          prefix = lambda wildcards, output: Path(output.annotation).with_suffix("").name,
-          extras = "--force"
+        annotation=H37RV["annotation"],
+        outdir=lambda wildcards, output: Path(output.annotation).parent,
+        prefix=lambda wildcards, output: Path(output.annotation).with_suffix("").name,
+        extras="--force"
     shell:
-         """
-         prokka --proteins {params.annotation} \
-             --cpus {threads} \
-             --outdir {params.outdir} \
-             --prefix {params.prefix} \
-             {params.extras} \
-             {input.assembly}
-         """
-
+        """
+        prokka --proteins {params.annotation} \
+            --cpus {threads} \
+            --outdir {params.outdir} \
+            --prefix {params.prefix} \
+            {params.extras} \
+            {input.assembly}
+        """
 
 rule annotate_polished:
     input:
-         assembly = rules.pilon.output.polished_assembly,
+        assembly=rules.pilon.output.polished_assembly,
     output:
-          genbank                  = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gbk",
-          annotation               = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gff",
-          translated_cds           = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.faa",
-          prediction_transcripts   = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.ffn",
-          unacceptable_annotations = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.err",
-          stats                    = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.txt",
-          features                 = outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.tsv",
-    log: outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.log"
+        genbank=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gbk",
+        annotation=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.gff",
+        translated_cds=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.faa",
+        prediction_transcripts=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.ffn",
+        unacceptable_annotations=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.err",
+        stats=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.txt",
+        features=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.tsv",
+    log:
+        outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "polished.{sample}.{assembler}.{technology}.log"
     threads: 8
     shadow: "shallow"
     resources:
-             mem_mb = lambda wildcards, attempt: 1000 * attempt
+        mem_mb=lambda wildcards, attempt: 1000 * attempt
     singularity: containers["prokka"]
     params:
-          annotation = H37RV["annotation"],
-          outdir = lambda wildcards, output: Path(output.annotation).parent,
-          prefix = lambda wildcards, output: Path(output.annotation).with_suffix("").name,
-          extras = "--force"
+        annotation=H37RV["annotation"],
+        outdir=lambda wildcards, output: Path(output.annotation).parent,
+        prefix=lambda wildcards, output: Path(output.annotation).with_suffix("").name,
+        extras="--force"
     shell:
-         """
-         prokka --proteins {params.annotation} \
-             --cpus {threads} \
-             --outdir {params.outdir} \
-             --prefix {params.prefix} \
-             {params.extras} \
-             {input.assembly}
-         """
+        """
+        prokka --proteins {params.annotation} \
+            --cpus {threads} \
+            --outdir {params.outdir} \
+            --prefix {params.prefix} \
+            {params.extras} \
+            {input.assembly}
+        """

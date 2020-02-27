@@ -1,24 +1,23 @@
 from pathlib import Path
 
-
 rule unicycler:
     input:
-         illumina1  = rules.trim_illumina.output.forward_paired,
-         illumina2  = rules.trim_illumina.output.reverse_paired,
-         long_reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        illumina1=rules.trim_illumina.output.forward_paired,
+        illumina2=rules.trim_illumina.output.reverse_paired,
+        long_reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-          assembly       = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.fasta",
-          assembly_graph = outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.gfa",
+        assembly=outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.fasta",
+        assembly_graph=outdir / "{sample}" / "unicycler" / "{technology}" / "assembly.unicycler.{technology}.gfa",
     threads: 16
     resources:
-             mem_mb = lambda wildcards, attempt: 16000 * attempt
+        mem_mb=lambda wildcards, attempt: 16000 * attempt
     singularity: containers["unicycler"]
     params:
-        outdir = lambda wildcards, output: Path(output.assembly).parent,
-        verbosity = 2,
-        keep = 0,  # keep only assembly, graph, and log
-        original_assembly_graph_name = "assembly.gfa",
-        original_assembly_name ="assembly.fasta",
+        outdir=lambda wildcards, output: Path(output.assembly).parent,
+        verbosity=2,
+        keep=0,  # keep only assembly, graph, and log
+        original_assembly_graph_name="assembly.gfa",
+        original_assembly_name="assembly.fasta",
     shell:
         """
         unicycler --short1 {input.illumina1} \

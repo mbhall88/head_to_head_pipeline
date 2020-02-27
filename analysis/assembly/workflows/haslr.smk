@@ -13,20 +13,20 @@ def infer_haslr_input_type(technology: str) -> str:
 
 rule haslr:
     input:
-        illumina1  = rules.trim_illumina.output.forward_paired,
-        illumina2  = rules.trim_illumina.output.reverse_paired,
-        long_reads = mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
+        illumina1=rules.trim_illumina.output.forward_paired,
+        illumina2=rules.trim_illumina.output.reverse_paired,
+        long_reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
     output:
-        assembly       = outdir / "{sample}" / "haslr" / "{technology}" / "assembly.haslr.{technology}.fasta",
-        assembly_graph = outdir / "{sample}" / "haslr" / "{technology}" / "assembly.haslr.{technology}.gfa",
+        assembly=outdir / "{sample}" / "haslr" / "{technology}" / "assembly.haslr.{technology}.fasta",
+        assembly_graph=outdir / "{sample}" / "haslr" / "{technology}" / "assembly.haslr.{technology}.gfa",
     threads: 16
     resources:
-        mem_mb = lambda wildcards, attempt: 8000 * attempt,
+        mem_mb=lambda wildcards, attempt: 8000 * attempt,
     params:
-        long_read_covg = 0,  # use all reads
-        long_read_type = lambda wildcards: infer_haslr_input_type(wildcards.technology),
-        genome_size = config["genome_size"],
-        outdir = lambda wildcards, output: Path(output.assembly).parent,
+        long_read_covg=0,  # use all reads
+        long_read_type=lambda wildcards: infer_haslr_input_type(wildcards.technology),
+        genome_size=config["genome_size"],
+        outdir=lambda wildcards, output: Path(output.assembly).parent,
     singularity: containers["haslr"]
     shell:
         """
