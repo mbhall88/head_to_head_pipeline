@@ -37,6 +37,7 @@ rule haslr:
             --short {input.illumina1} {input.illumina2} \
             --threads {threads} \
             --cov-lr {params.long_read_covg} 
+        sleep 5
         cp {params.outdir}/asm_contigs*/asm.final.fa {output.assembly}
         cp {params.outdir}/asm_contigs*/backbone.06.smallbubble.gfa {output.assembly_graph}
         """

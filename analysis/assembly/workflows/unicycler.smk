@@ -26,6 +26,7 @@ rule unicycler:
             --out {params.outdir} \
             --verbosity {params.verbosity} \
             --threads {threads} 
+        sleep 5
         cp {params.outdir}/{params.original_assembly_name} {output.assembly}
         cp {params.outdir}/{params.original_assembly_graph_name} {output.assembly_graph}
         """

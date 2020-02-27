@@ -29,6 +29,7 @@ rule spades:
            --threads {threads} \
            --memory {params.mem_gb} \
            --isolate
+        sleep 5
         cp {params.outdir}/{params.original_assembly_name} {output.assembly}
         cp {params.outdir}/{params.original_assembly_graph_name} {output.assembly_graph}
         """

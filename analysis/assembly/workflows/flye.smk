@@ -35,6 +35,7 @@ rule flye:
             --out-dir {params.outdir} \
             --threads {threads} \
             --iterations {params.polishing_iterations} 
+        sleep 5
         cp {params.outdir}/{params.original_assembly_name} {output.assembly}
         cp {params.outdir}/{params.original_assembly_info_name} {output.assembly_info}
         """
