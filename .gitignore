@@ -149,6 +149,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.conda
+.snakemake
 
 # Spyder project settings
 .spyderproject
@@ -295,3 +297,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+.quast
+logs/
+tmp/
