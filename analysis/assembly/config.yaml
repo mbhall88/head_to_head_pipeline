@@ -12,7 +12,7 @@ containers:
   spades:      "docker://quay.io/biocontainers/spades:3.14.0--h2d02072_0"
   quast:       "/hps/nobackup/research/zi/gblackwell/assemble_all_ena.2019.02.251b36c597d63d8dd5020b0f68ac9cce3765cff14f.img"
   trimmomatic: "docker://quay.io/biocontainers/trimmomatic:0.39--1"
-  racon:       "docker://quay.io/biocontainers/racon:1.4.10--he513fc3_0"
+  racon:       "library://mbhall88/default/racon:bfe29e5"  # issues with biocontainers version - https://github.com/lbcb-sci/racon/issues/3
   minimap2:    "docker://quay.io/biocontainers/minimap2:2.17--h8b12597_1"
   circlator:   "docker://sangerpathogens/circlator:release-v1.5.5-docker4"
   canu:        "library://mbhall88/default/canu:7ae7a09"
