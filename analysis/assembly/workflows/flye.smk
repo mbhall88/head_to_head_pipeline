@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class FlyeInputType(Enum):
-    PACBIO = "--pacbio-corr"
+    PACBIO = "--pacbio-hifi"
     NANOPORE = "--nano-raw"
 
 
