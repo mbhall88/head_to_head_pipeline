@@ -1,17 +1,8 @@
-## Prerequisites
--   [Singularity (v3)][singularity]
--   [Conda][conda]
--   [Snakemake][snakemake]
--   [ripgrep][ripgrep]
+This repository holds the pipelines/scripts used for our project analysing Illumina 
+and Nanopore for Mtb drug resistance calling and epidemiological clustering.
 
-## Setup
+It is currently in progress.
 
-### Data
+See subdirectories for more specific information about different pipelines.
 
-## Run
-
-
-[singularity]: https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
-[conda]: https://docs.conda.io/projects/conda/en/latest/user-guide/install/
-[snakemake]: https://snakemake.readthedocs.io/en/stable/
-[ripgrep]: https://github.com/BurntSushi/ripgrep
+-   [Assembly](analysis/assembly)
