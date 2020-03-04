@@ -65,6 +65,7 @@ output_files = set()
 
 for sample in config["samples"]:
     output_files.add(outdir / f"{sample}" / "quast" / "report.pdf")
+    output_files.add(outdir / f"{sample}" / f"{sample}.aggregated.ale")
 
     for assembler, technologies in assembler_tech_lookup.items():
         for technology in technologies:
@@ -374,6 +375,58 @@ rule assess_polished_per_base_accuracy:
             --min-depth {params.min_depth} \
             --quorum {params.quorum} \
             --prefix {params.prefix}
+        """
+
+rule ale_unpolished:
+    input:
+        bam = rules.map_illumina_reads_to_assembly.output.bam,
+        assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+    output:
+        report = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.{technology}.ale",
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: 2000 * attempt
+    singularity: containers["ale"]
+    shell:
+        """
+        ALE {input.bam} {input.assembly} {output.report}
+        """
+
+rule ale_polished:
+    input:
+        bam = rules.map_illumina_reads_to_polished_assembly.output.bam,
+        assembly = rules.pilon.output.polished_assembly,
+    output:
+        report = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.{technology}.ale",
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: 2000 * attempt
+    singularity: containers["ale"]
+    shell:
+        """
+        ALE {input.bam} {input.assembly} {output.report}
+        """
+
+rule aggregate_ale_scores:
+    input:
+        polished_reports = rules.ale_polished.output.report,
+        unpolished_reports = rules.ale_unpolished.output.report,
+    output:
+        summary = outdir / "{sample}" / "{sample}.aggregated.ale"
+    threads: 1
+    resources:
+        mem_mb = 500,
+    params:
+        pattern="'^#.*ALE_score.*\s(?P<score>[-+]?\d+\.\d+).*$'",
+        replace_with="'$score'",
+        extras="-uuu --no-line-number",  # disable smart filtering with -uuu
+    singularity: containers["ripgrep"]
+    shell:
+        """
+        rg --only-matching {params.pattern} \
+            --replace {params.replace_with}  
+            {params.extras} \
+            {input} > {output.summary}
         """
 
 ###########################################################

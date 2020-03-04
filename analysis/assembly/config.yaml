@@ -20,6 +20,7 @@ containers:
   samtools:    "docker://quay.io/biocontainers/samtools:1.10--h9402c20_2"
   conda:       "docker://continuumio/miniconda3:4.7.12"
   haslr:       "library://mbhall88/default/haslr:e67b1eb"
+  ale:         "docker://quay.io/biocontainers/ale:20180904--py27ha92aebf_0"
 envs:
   pilon:           "envs/pilon.yaml"
   aln_tools:       "envs/aln_tools.yaml"
