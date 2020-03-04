@@ -302,3 +302,4 @@ Temporary Items
 logs/
 tmp/
 .gm_key
+analysis/assembly/assessment/*/
