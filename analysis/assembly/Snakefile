@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+from typing import List, Dict
 
 from snakemake.utils import min_version
 
@@ -65,25 +66,32 @@ output_files = set()
 
 for sample in config["samples"]:
     output_files.add(outdir / f"{sample}" / "quast" / "report.pdf")
-    output_files.add(outdir / f"{sample}" / f"{sample}.aggregated.ale")
 
     for assembler, technologies in assembler_tech_lookup.items():
         for technology in technologies:
+            output_files.add(
+                outdir / f"{sample}" / f"{sample}.{technology}.aggregated.ale"
+            )
             run_dir = generate_run_directory(sample, assembler, technology)
             prokka_dir = run_dir / "prokka"
             assessment_dir = run_dir / "assessment"
 
             output_files.add(
-                prokka_dir / f"polished.{sample}.{assembler}.{technology}.gff")
+                prokka_dir / f"polished.{sample}.{assembler}.{technology}.gff"
+            )
             output_files.add(prokka_dir / f"{sample}.{assembler}.{technology}.gff")
             output_files.add(
-                assessment_dir / f"{sample}.{assembler}.polished.illumina.{technology}.stats")
+                assessment_dir / f"{sample}.{assembler}.polished.illumina.{technology}.stats"
+            )
             output_files.add(
-                assessment_dir / f"{sample}.{assembler}.illumina.{technology}.stats")
+                assessment_dir / f"{sample}.{assembler}.illumina.{technology}.stats"
+            )
             output_files.add(
-                assessment_dir / f"{sample}.{assembler}.accuracy.{technology}.json")
+                assessment_dir / f"{sample}.{assembler}.accuracy.{technology}.json"
+            )
             output_files.add(
-                assessment_dir / f"{sample}.{assembler}.polished.accuracy.{technology}.json")
+                assessment_dir / f"{sample}.{assembler}.polished.accuracy.{technology}.json"
+            )
 
 # ======================================================
 # Rules
@@ -407,12 +415,24 @@ rule ale_polished:
         ALE {input.bam} {input.assembly} {output.report}
         """
 
+def infer_ale_aggregation_input(wildcards) -> List[Path]:
+    assemblers = [
+        asm
+        for asm, techs in assembler_tech_lookup.items()
+        if wildcards.technology in techs
+    ]
+    paths = [
+        outdir / wildcards.sample / f"{assembler}" / wildcards.technology / "assessment" / f"{wildcards.sample}.{assembler}.polished.{wildcards.technology}.ale"
+        for assembler in assemblers
+    ]
+    paths.extend([Path(str(p).replace("polished.", "")) for p in paths])
+    return paths
+
 rule aggregate_ale_scores:
     input:
-        polished_reports = rules.ale_polished.output.report,
-        unpolished_reports = rules.ale_unpolished.output.report,
+        reports = infer_ale_aggregation_input,
     output:
-        summary = outdir / "{sample}" / "{sample}.aggregated.ale"
+        summary = outdir / "{sample}" / "{sample}.{technology}.aggregated.ale"
     threads: 1
     resources:
         mem_mb = 500,
@@ -425,7 +445,7 @@ rule aggregate_ale_scores:
         rg --only-matching {params.pattern} \
             --replace {params.replace_with}  
             {params.extras} \
-            {input} > {output.summary}
+            {input.reports} > {output.summary}
         """
 
 ###########################################################
