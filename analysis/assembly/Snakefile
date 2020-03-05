@@ -415,17 +415,17 @@ rule ale_polished:
         ALE {input.bam} {input.assembly} {output.report}
         """
 
-def infer_ale_aggregation_input(wildcards) -> List[Path]:
+def infer_ale_aggregation_input(wildcards) -> List[str]:
     assemblers = [
         asm
         for asm, techs in assembler_tech_lookup.items()
         if wildcards.technology in techs
     ]
     paths = [
-        outdir / wildcards.sample / f"{assembler}" / wildcards.technology / "assessment" / f"{wildcards.sample}.{assembler}.polished.{wildcards.technology}.ale"
+        f"{outdir}/{wildcards.sample}/{assembler}/{wildcards.technology}/assessment/{wildcards.sample}.{assembler}.polished.{wildcards.technology}.ale"
         for assembler in assemblers
     ]
-    paths.extend([Path(str(p).replace("polished.", "")) for p in paths])
+    paths.extend([p.replace("polished.", "") for p in paths])
     return paths
 
 rule aggregate_ale_scores:
