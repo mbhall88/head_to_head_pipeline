@@ -420,7 +420,6 @@ rule aggregate_ale_scores:
         pattern="'^#.*ALE_score.*\s(?P<score>[-+]?\d+\.\d+).*$'",
         replace_with="'$score'",
         extras="-uuu --no-line-number",  # disable smart filtering with -uuu
-    singularity: containers["ripgrep"]
     shell:
         """
         rg --only-matching {params.pattern} \
