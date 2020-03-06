@@ -1,3 +1,4 @@
+# todo: document each field
 data_dir:                     "/hps/nobackup/research/zi/projects/tech_wars/data"
 outdir:                       "results"
 genome_size:                  4411532
