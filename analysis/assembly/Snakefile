@@ -496,7 +496,7 @@ rule aggregate_ale_scores:
     shell:
         """
         rg --only-matching {params.pattern} \
-            --replace {params.replace_with}  
+            --replace {params.replace_with} \ 
             {params.extras} \
             {input.reports} > {output.summary}
         """
