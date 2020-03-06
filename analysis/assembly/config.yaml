@@ -21,19 +21,24 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   haslr:       "library://mbhall88/default/haslr:e67b1eb"
   ale:         "docker://quay.io/biocontainers/ale:20180904--py27ha92aebf_0"
+  centrifuge:  "docker://quay.io/biocontainers/centrifuge:1.0.4_beta--he513fc3_5"
 envs:
-  pilon:           "envs/pilon.yaml"
-  aln_tools:       "envs/aln_tools.yaml"
-  assess_per_base: "envs/assess_per_base.yaml"
-  remove_bubbles:  "../envs/remove_bubbles.yaml"
+  pilon:                "envs/pilon.yaml"
+  aln_tools:            "envs/aln_tools.yaml"
+  assess_per_base:      "envs/assess_per_base.yaml"
+  remove_bubbles:       "../envs/remove_bubbles.yaml"
+  remove_contamination: "envs/remove_contamination.yaml"
 scripts:
-  assess_per_base: "scripts/assess_per_base_accuracy.py"
-  pilon:           "scripts/pilon_iterative.py"
-  pilon_jar:       "scripts/pilon-1.23.jar"
+  assess_per_base:      "scripts/assess_per_base_accuracy.py"
+  pilon:                "scripts/pilon_iterative.py"
+  pilon_jar:            "scripts/pilon-1.23.jar"
+  remove_contamination: "scripts/remove_contamination.py"
 quorum:                       90
 min_depth:                    10
 illumina_flag_filter:         3328 # not primary alignment (0x100), read is PCR or optical duplicate (0x400), supplementary alignment (0x800)
 pilon_version:                1.23
+centrifuge_db:                "resources/centrifuge_db/archaea_bacteria"
+taxtree:                      "resources/taxonomy/mtbc.taxonlist"
 samples:
   - "mada_101"
   - "mada_102"

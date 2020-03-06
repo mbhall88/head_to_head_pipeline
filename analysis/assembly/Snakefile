@@ -32,7 +32,7 @@ def generate_run_directory(sample: str, assembler: str, technology: str) -> Path
 
 def generate_assembly_filepath(sample: str, assembler: str, technology: str) -> str:
     run_dir = generate_run_directory(sample, assembler, technology)
-    filename = f"assembly.{assembler}.{technology}.fasta"
+    filename = f"decontam.assembly.{assembler}.{technology}.fasta"
     return str(run_dir / filename)
 
 
@@ -137,10 +137,61 @@ rule trim_illumina:
 workflows_dir = Path("workflows")
 include: str(workflows_dir / "spades.smk")
 include: str(workflows_dir / "flye.smk")
-include: str(workflows_dir / "quast.smk")
 include: str(workflows_dir / "unicycler.smk")
 include: str(workflows_dir / "canu.smk")
 include: str(workflows_dir / "haslr.smk")
+
+###########################################################
+# REMOVE CONTAMINATION
+###########################################################
+rule centrifuge:
+    input:
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+    output:
+        report=outdir / "{sample}" / "{assembler}" / "{technology}" / "centrifuge.{sample}.{assembler}.{technology}.report",
+        classification=outdir / "{sample}" / "{assembler}" / "{technology}" / "centrifuge.{sample}.{assembler}.{technology}.classification"
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * 32000
+    params:
+        index_prefix=config["centrifuge_db"],
+        extras=" ".join([
+            "-f",  # specified reads are fasta files
+            "--met-stderr"  # Write centrifuge metrics to stderr
+        ])
+    singularity: containers["centrifuge"]
+    shell:
+        """
+        centrifuge {params.extras} \
+            -x {params.index_prefix} \
+            -U {input.assembly} \
+            --threads {threads} \
+            --report-file {output.report} \
+            -S {output.classification}
+        """
+
+rule remove_contamination:
+    input:
+        centrifuge_classification=rules.centrifuge.output.classification,
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+    output:
+        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "decontam.assembly.{assembler}.{technology}.fasta",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * 500
+    params:
+        script=scripts["remove_contamination"],
+        taxtree=config["taxtree"],
+    singularity: containers["conda"]
+    conda: envs["remove_contamination"]
+    shell:
+        """
+        python3 {params.script} \
+            --taxtree {params.taxtree} \
+            --classification {input.centrifuge_classification} \
+            --input {input.assembly} \
+            --output {output.assembly}
+        """
 
 
 ###########################################################
@@ -158,7 +209,7 @@ def infer_minimap2_preset(technology: str) -> str:
 rule map_long_reads_to_assembly:
     input:
         reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
-        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        assembly=rules.remove_contamination.output.assembly,
     output:
         sam=outdir / "{sample}" / "{assembler}" / "{technology}" / "mapping" / "{sample}.{assembler}.{technology}.sam"
     shadow: "shallow"
@@ -180,7 +231,7 @@ rule map_long_reads_to_assembly:
 
 rule map_illumina_reads_to_assembly:
     input:
-        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        assembly=rules.remove_contamination.output.assembly,
         illumina1=rules.trim_illumina.output.forward_paired,
         illumina2=rules.trim_illumina.output.reverse_paired,
     output:
@@ -222,7 +273,7 @@ rule racon:
     input:
         reads=mada_dir / "{technology}" / "{sample}" / "{sample}.{technology}.fastq.gz",
         sam=rules.map_long_reads_to_assembly.output.sam,
-        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        assembly=rules.remove_contamination.output.assembly,
     output:
         polished_assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.racon.{technology}.fasta"
     shadow: "shallow"
@@ -387,13 +438,13 @@ rule assess_polished_per_base_accuracy:
 
 rule ale_unpolished:
     input:
-        bam = rules.map_illumina_reads_to_assembly.output.bam,
-        assembly = outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        bam=rules.map_illumina_reads_to_assembly.output.bam,
+        assembly=rules.remove_contamination.output.assembly,
     output:
-        report = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.{technology}.ale",
+        report=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.{technology}.ale",
     threads: 1
     resources:
-        mem_mb = lambda wildcards, attempt: 2000 * attempt
+        mem_mb=lambda wildcards, attempt: 2000 * attempt
     singularity: containers["ale"]
     shell:
         """
@@ -402,18 +453,19 @@ rule ale_unpolished:
 
 rule ale_polished:
     input:
-        bam = rules.map_illumina_reads_to_polished_assembly.output.bam,
-        assembly = rules.pilon.output.polished_assembly,
+        bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
+        assembly=rules.pilon.output.polished_assembly,
     output:
-        report = outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.{technology}.ale",
+        report=outdir / "{sample}" / "{assembler}" / "{technology}" / "assessment" / "{sample}.{assembler}.polished.{technology}.ale",
     threads: 1
     resources:
-        mem_mb = lambda wildcards, attempt: 2000 * attempt
+        mem_mb=lambda wildcards, attempt: 2000 * attempt
     singularity: containers["ale"]
     shell:
         """
         ALE {input.bam} {input.assembly} {output.report}
         """
+
 
 def infer_ale_aggregation_input(wildcards) -> List[str]:
     assemblers = [
@@ -428,14 +480,15 @@ def infer_ale_aggregation_input(wildcards) -> List[str]:
     paths.extend([p.replace("polished.", "") for p in paths])
     return paths
 
+
 rule aggregate_ale_scores:
     input:
-        reports = infer_ale_aggregation_input,
+        reports=infer_ale_aggregation_input,
     output:
-        summary = outdir / "{sample}" / "{sample}.{technology}.aggregated.ale"
+        summary=outdir / "{sample}" / "{sample}.{technology}.aggregated.ale"
     threads: 1
     resources:
-        mem_mb = 500,
+        mem_mb=500,
     params:
         pattern="'^#.*ALE_score.*\s(?P<score>[-+]?\d+\.\d+).*$'",
         replace_with="'$score'",
@@ -448,6 +501,7 @@ rule aggregate_ale_scores:
             {input.reports} > {output.summary}
         """
 
+include: str(workflows_dir / "quast.smk")
 ###########################################################
 # ANNOTATE
 ###########################################################
@@ -455,7 +509,7 @@ prokka_exts = [".gbk", ".gff", ".faa", ".ffn", ".err", ".txt", ".tsv"]
 
 rule annotate_unpolished:
     input:
-        assembly=outdir / "{sample}" / "{assembler}" / "{technology}" / "assembly.{assembler}.{technology}.fasta",
+        assembly=rules.remove_contamination.output.assembly,
     output:
         genbank=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gbk",
         annotation=outdir / "{sample}" / "{assembler}" / "{technology}" / "prokka" / "{sample}.{assembler}.{technology}.gff",

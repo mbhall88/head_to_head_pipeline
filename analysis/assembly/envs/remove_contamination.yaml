@@ -1,0 +1,8 @@
+name: remove_contamination
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::pysam=0.15.2
+  - "click>=7.0"
