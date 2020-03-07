@@ -303,3 +303,4 @@ logs/
 tmp/
 .gm_key
 analysis/assembly/assessment/*/
+analysis/assembly/results/*/
