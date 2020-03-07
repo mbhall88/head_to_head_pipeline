@@ -495,10 +495,7 @@ rule aggregate_ale_scores:
         extras="-uuu --no-line-number",  # disable smart filtering with -uuu
     shell:
         """
-        rg --only-matching {params.pattern} \
-            --replace {params.replace_with} \ 
-            {params.extras} \
-            {input.reports} > {output.summary}
+        rg --only-matching {params.pattern} --replace {params.replace_with} {params.extras} {input.reports} > {output.summary}
         """
 
 include: str(workflows_dir / "quast.smk")
