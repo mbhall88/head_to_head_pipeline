@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, Union
@@ -136,7 +137,7 @@ class Pilon:
             if checkpoint_regex.match(path.name):
                 logging.debug(f"Found checkpoint file {path}. Removing file...")
                 if path.is_dir():
-                    path.rmdir()
+                    shutil.rmtree(path)
                 else:
                     path.unlink()
 
