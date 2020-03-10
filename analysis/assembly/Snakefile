@@ -292,6 +292,11 @@ rule racon:
             {input.assembly} > {output.polished_assembly}
         """
 
+def pilon_fixes(technology: str) -> str:
+    if technology == "nanopore":
+        return "all"
+    return "indels,gaps,local"
+
 rule pilon:
     input:
         assembly=rules.racon.output.polished_assembly,
@@ -310,6 +315,8 @@ rule pilon:
         outdir=lambda wildcards, output: Path(output.polished_assembly).parent,
         pilon_memory=lambda wildcards, resources: f"{int(resources.mem_mb)}m",
         final_fasta=lambda wildcards, output: Path(output.polished_assembly).name,
+        fixes = lambda wildcards: pilon_fixes(wildcards.technology),
+        extras="--force"
     singularity: containers["conda"]
     conda: envs["pilon"]
     shell:
@@ -324,7 +331,8 @@ rule pilon:
             --reads1 {input.illumina1} \
             --reads2 {input.illumina2} \
             --outdir {params.outdir} \
-            --final-fasta {params.final_fasta}
+            --final-fasta {params.final_fasta} \
+            --fix {params.fixes} {params.extras}
         """
 
 ###########################################################

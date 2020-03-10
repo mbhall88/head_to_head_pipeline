@@ -1,16 +1,22 @@
-#!/usr/bin/env python3
-
-import click
-import errno
 import logging
 import os
-from pathlib import Path
-import subprocess
 import re
+import subprocess
+from pathlib import Path
 from typing import Dict, Union
 
+import click
+
 PathLike = Union[Path, str, os.PathLike]
-DEFAULT_MAX_ITERATIONS = 10
+DEFAULTS = {
+    "max-iterations": 10,
+    "min-mapq": 10,
+    "min-qual": 10,
+    "fix": "all",
+    "pilon-memory": "8G",
+    "final-fasta": "final.fasta",
+    "threads": 1,
+}
 XMX_REGEX = re.compile(r"^[0-9]+[gkm]$", re.IGNORECASE)
 XMX_URL = "https://bit.ly/3c3KEot"
 
@@ -106,41 +112,67 @@ def make_pilon_bam(
     return sorted_bam
 
 
-def run_pilon(
-    bam: PathLike,
-    ref_fasta: PathLike,
-    outdir: Path,
-    pilon_jar: PathLike,
-    java_xmx_opt: str,
-    threads: int = 1,
-):
-    fasta = outdir / "pilon.fasta"
-    done_file = outdir / ".done"
-    if done_file.exists():
-        logging.info(f"Found done file {done_file}")
-        assert os.path.exists(f"{fasta}.fai")
+class Pilon:
+    def __init__(
+        self,
+        jarfile: PathLike,
+        memory: str,
+        threads: int,
+        min_mapq: int,
+        min_qual: int,
+        fixes: str,
+    ):
+        self.jarfile = jarfile
+        self.memory = memory
+        self.threads = threads
+        self.min_mapq = min_mapq
+        self.min_qual = min_qual
+        self.fixes = fixes
 
-    log_and_run_command(
-        f"java -Xmx{java_xmx_opt} -jar {pilon_jar} --outdir {outdir} "
-        f"--genome {ref_fasta} --frags {bam} --changes --threads {threads} "
-        f"--minmq 10 --minqual 10"
-    )
-    log_and_run_command(f"bwa index {fasta}")
-    log_and_run_command(f"samtools faidx {fasta}")
-    done_file.touch()
+    @staticmethod
+    def cleanup_checkpoints(directory: Path):
+        checkpoint_regex = re.compile(r"iteration\.[0-9]+\.(done|map|pilon)(\.done)?")
+        for path in directory.iterdir():
+            if checkpoint_regex.match(path.name):
+                logging.debug(f"Found checkpoint file {path}. Removing file...")
+                if path.is_dir():
+                    path.rmdir()
+                else:
+                    path.unlink()
 
+    def generate_params(self) -> str:
+        params = [
+            f"-Xmx{self.memory}",
+            f"-jar {self.jarfile}",
+            f"--threads {self.threads}",
+            f"--minmq {self.min_mapq}",
+            f"--minmq {self.min_mapq}",
+            f"--minqual {self.min_qual}",
+            "--changes",
+        ]
+        return " ".join(params)
 
-def number_of_pilon_changes(changes_file: Path) -> int:
-    with changes_file.open() as f:
-        return sum(1 for _ in f)
+    def run(
+        self, bam: PathLike, assembly: PathLike, outdir: Path,
+    ):
+        fasta = outdir / "pilon.fasta"
+        done_file = outdir / ".done"
+        if done_file.exists():
+            logging.info(f"Found done file {done_file}")
+            assert os.path.exists(f"{fasta}.fai")
 
+        params = self.generate_params()
+        log_and_run_command(
+            f"java {params} --outdir {outdir} --genome {assembly} --frags {bam}"
+        )
+        log_and_run_command(f"bwa index {fasta}")
+        log_and_run_command(f"samtools faidx {fasta}")
+        done_file.touch()
 
-def check_file_exists(path: Path, filename_for_log: str):
-    if path.exists():
-        logging.info(f"Found {filename_for_log}: {path}")
-    else:
-        logging.info(f"Not found: {filename_for_log}: {path}")
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
+    @staticmethod
+    def number_of_changes(changes_file: Path) -> int:
+        with changes_file.open() as f:
+            return sum(1 for _ in f)
 
 
 @click.command()
@@ -162,7 +194,7 @@ def check_file_exists(path: Path, filename_for_log: str):
 @click.option(
     "-o",
     "--outdir",
-    help="Name of output/working.",
+    help="Name of output/working directory.",
     required=True,
     type=click.Path(exists=False, file_okay=False, resolve_path=True),
 )
@@ -170,7 +202,7 @@ def check_file_exists(path: Path, filename_for_log: str):
     "-f",
     "--final-fasta",
     help="Name of the final, polished fasta file.",
-    default="final.fasta",
+    default=DEFAULTS["final-fasta"],
     show_default=True,
 )
 @click.option(
@@ -191,7 +223,7 @@ def check_file_exists(path: Path, filename_for_log: str):
     "-i",
     "--max-iterations",
     type=click.IntRange(min=1),
-    default=DEFAULT_MAX_ITERATIONS,
+    default=DEFAULTS["max-iterations"],
     help="Max number of iterations.",
     show_default=True,
 )
@@ -199,20 +231,46 @@ def check_file_exists(path: Path, filename_for_log: str):
     "-t",
     "--threads",
     type=click.IntRange(min=1),
-    default=1,
+    default=DEFAULTS["threads"],
     help="Number of threads to use with BWA mem and pilon.",
     show_default=True,
 )
 @click.option(
     "-m",
     "--pilon-memory",
-    default="8G",
+    default=DEFAULTS["pilon-memory"],
     help=(
         "Maximum memory allocation pool for running Pilon. It is passed as `java "
         f"-Xmx<value>`. Format: <int>[g|G|m|M|k|K]. See {XMX_URL} for more information."
     ),
     show_default=True,
     callback=validate_xmx,
+)
+@click.option(
+    "--fix",
+    help=(
+        "A comma-separated list of categories of issues to try to fix. Refer to the "
+        "pilon documentation for valid values."
+    ),
+    default=DEFAULTS["fix"],
+    show_default=True,
+)
+@click.option(
+    "--min-mapq",
+    help="Minimum alignment mapping quality for a read to count in pileups",
+    default=DEFAULTS["min-mapq"],
+    show_default=True,
+)
+@click.option(
+    "--min-qual",
+    help="Minimum base quality to consider for pileups",
+    default=DEFAULTS["min-qual"],
+    show_default=True,
+)
+@click.option(
+    "--force",
+    help="Ignore any previous checkpoints and polish from iteration 1.",
+    is_flag=True,
 )
 @click.option(
     "-l",
@@ -232,6 +290,10 @@ def main(
     threads: int,
     pilon_memory: str,
     log_file: str,
+    fix: str,
+    min_qual: int,
+    min_mapq: int,
+    force: bool,
 ):
     """Iteratively run pilon to correct an assembly with Illumina reads. Stops after a
     specified number of iterations, or if no changes were made on the last iteration.
@@ -252,28 +314,25 @@ def main(
     logfile_handle.setFormatter(formatter)
     log.addHandler(logfile_handle)
 
+    pilon = Pilon(pilon_jar, pilon_memory, threads, min_mapq, min_qual, fix)
+    if force:
+        pilon.cleanup_checkpoints(outdir)
+
     for iteration_num in range(1, max_iterations + 1, 1):
         logging.info(f"Start iteration {iteration_num}")
         files = get_iteration_files(iteration_num, assembly)
 
-        if files["done_file"].exists():
+        if files["done_file"].exists() and not force:
             logging.info(f'Found iteration done file {files["done_file"]}')
         else:
             bam = make_pilon_bam(
                 reads1, reads2, files["ref_fasta"], files["mapping_prefix"], threads
             )
-            run_pilon(
-                bam,
-                files["ref_fasta"],
-                files["pilon_dir"],
-                pilon_jar,
-                pilon_memory,
-                threads,
-            )
+            pilon.run(bam, files["ref_fasta"], files["pilon_dir"])
             bam.unlink()
             Path(f"{bam}.bai").unlink()
 
-        number_of_changes = number_of_pilon_changes(files["changes_file"])
+        number_of_changes = pilon.number_of_changes(files["changes_file"])
         logging.info(
             f"Number of changes at iteration {iteration_num}: {number_of_changes}"
         )
