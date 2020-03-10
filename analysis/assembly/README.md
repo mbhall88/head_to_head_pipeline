@@ -1,3 +1,7 @@
+## Pipeline overview
+
+![rulegraph](resources/rulegraph.png)
+
 ## Prerequisites
 To run the whole pipeline you will need the following programs installed:
 -   [Singularity (v3)][singularity]
