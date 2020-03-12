@@ -41,6 +41,7 @@ for sample in samples:
 rule all:
     input: output_files
 
+# https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#bam-of-mapped-basecalls
 rule map_basecalls:
     input:
         reads=ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
@@ -71,5 +72,5 @@ rule map_basecalls:
             -t {threads} \
             {input.assembly} \
             {input.reads} | \
-        samtools {params.samtools_extras} -T {input.assembly} -o {output.bam}
+        samtools view {params.samtools_extras} -T {input.assembly} -o {output.bam}
         """
