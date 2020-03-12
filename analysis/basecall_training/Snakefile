@@ -1,0 +1,75 @@
+from pathlib import Path
+import os
+from typing import Dict, Set, Union
+
+from snakemake.utils import min_version
+
+min_version("5.10.0")
+
+PathLike = Union[str, Path, os.PathLike]
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+# scripts = config["scripts"]
+assemblies: Dict[str, PathLike] = config["assemblies"]
+samples: Set[str] = {*assemblies.keys()}
+# H37RV = config["h37rv"]
+
+# ======================================================
+# Global functions and variables
+# ======================================================
+outdir = Path(config["outdir"])
+data_dir = Path(config["data_dir"])
+mada_dir = data_dir / "madagascar"
+# illumina_dir = mada_dir / "illumina"
+ont_dir = mada_dir / "nanopore"
+# pacbio_dir = mada_dir / "pacbio"
+
+output_files = set()
+
+for sample in samples:
+    output_files.add(
+        outdir / f"{sample}" / "mapping" / f"{sample}.basecalls_mapped_to_asm.bam")
+
+# ======================================================
+# Rules
+# ======================================================
+rule all:
+    input: output_files
+
+rule map_basecalls:
+    input:
+        reads=ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
+        assembly=lambda wildcards: assemblies[wildcards.sample],
+    output:
+        bam=outdir / "{sample}" / "mapping" / "{sample}.basecalls_mapped_to_asm.bam"
+    shadow: "shallow"
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * attempt
+    singularity: containers["conda"]
+    conda: envs["aln_tools"]
+    params:
+        preset="map-ont",
+        minimap_extras=" ".join([
+            "--secondary=no",  # don't output secondary alignments
+            "-a",  # output SAM
+            "-L",  # Write CIGAR with >65535 operators at the CG tag
+            "--sam-hit-only",  # don't output unmapped reads
+        ]),
+        samtools_extras=" ".join([
+            "-b",  # output BAM
+        ]),
+    shell:
+        """
+        minimap2 -x {params.preset} \
+            {params.minimap_extras} \
+            -t {threads} \
+            {input.assembly} \
+            {input.reads} | \
+        samtools {params.samtools_extras} -T {input.assembly} -o {output.bam}
+        """
