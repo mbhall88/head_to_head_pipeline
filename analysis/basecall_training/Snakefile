@@ -29,6 +29,7 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
+    output_files.add(outdir / "read_ids.txt")
 
 # ======================================================
 # Rules
@@ -88,4 +89,37 @@ rule extract_per_read_references:
         get_refs_from_sam.py --min_coverage {params.min_covg} \
             {input.assembly} \
             {input.bam} > {output.read_references}
+        """
+
+rule aggregate_read_references:
+    input:
+        read_references=[
+            outdir / f"{sample}" / f"{sample}.read_references.fasta"
+            for sample in samples
+        ],
+    output:
+        read_references=outdir / "read_references.fasta",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 500 * attempt
+    shell:
+        """
+        awk 1 {input.read_references} > {output.read_references}
+        """
+
+rule extract_read_ids:
+    input:
+        read_references=rules.aggregate_read_references.output.read_references,
+    output:
+        read_ids=outdir / "read_ids.txt",
+    threads: 1
+    resources:
+        mem_mb=300
+    params:
+        pattern="'^>(?P<id>[\w-]+)\s*$'",
+        replace_with="'$id'",
+        extras="-uuu --no-line-number",  # disable smart filtering with -uuu
+    shell:
+        """
+        rg --only-matching {params.pattern} --replace {params.replace_with} {params.extras} {input.read_references} > {output.read_ids}
         """
