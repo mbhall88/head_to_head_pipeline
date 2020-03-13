@@ -14,10 +14,8 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
-# scripts = config["scripts"]
 assemblies: Dict[str, PathLike] = config["assemblies"]
 samples: Set[str] = {*assemblies.keys()}
-# H37RV = config["h37rv"]
 
 # ======================================================
 # Global functions and variables
@@ -25,15 +23,12 @@ samples: Set[str] = {*assemblies.keys()}
 outdir = Path(config["outdir"])
 data_dir = Path(config["data_dir"])
 mada_dir = data_dir / "madagascar"
-# illumina_dir = mada_dir / "illumina"
 ont_dir = mada_dir / "nanopore"
-# pacbio_dir = mada_dir / "pacbio"
 
 output_files = set()
 
 for sample in samples:
-    output_files.add(
-        outdir / f"{sample}" / "mapping" / f"{sample}.basecalls_mapped_to_asm.bam")
+    output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
 
 # ======================================================
 # Rules
@@ -73,4 +68,24 @@ rule map_basecalls:
             {input.assembly} \
             {input.reads} | \
         samtools view {params.samtools_extras} -T {input.assembly} -o {output.bam}
+        """
+
+# https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#extract-per-read-references
+rule extract_per_read_references:
+    input:
+        assembly=lambda wildcards: assemblies[wildcards.sample],
+        bam=rules.map_basecalls.output.bam
+    output:
+        read_references=outdir / "{sample}" / "{sample}.read_references.fasta"
+    params:
+        min_covg=config["min_covg"],
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 500 * attempt
+    singularity: containers["taiyaki"]
+    shell:
+        """
+        get_refs_from_sam.py --min_coverage {params.min_covg} \
+            {input.assembly} \
+            {input.bam} > {output.read_references}
         """
