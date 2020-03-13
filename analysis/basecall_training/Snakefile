@@ -32,7 +32,7 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(fast5["outdir"] / ".extract_fast5s.done")
+    output_files.add(fast5["outdir"] / "filename_mapping.txt")
 
 # ======================================================
 # Rules
@@ -131,7 +131,7 @@ rule extract_fast5s_for_training:
     input:
         read_ids=rules.extract_read_ids.output.read_ids,
     output:
-        success=fast5["outdir"] / ".extract_fast5s.done",
+        success=fast5["outdir"] / "filename_mapping.txt",
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: attempt * 1_000
