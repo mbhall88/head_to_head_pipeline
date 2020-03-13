@@ -147,6 +147,7 @@ rule extract_fast5s_for_training:
             --save_path {params.save_path} \
             --read_id_list {input.read_ids} \
             --batch_size {params.batch_size} \
+            --threads {threads} \
             {params.extras}
         touch {output.success}
         """
