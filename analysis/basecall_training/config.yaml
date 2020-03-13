@@ -2,9 +2,15 @@ data_dir: "/hps/nobackup/research/zi/projects/tech_wars/data"
 outdir:   "results"
 min_covg: 0.8  # Ignore reads with alignments shorter than min_covg * read length
 
+fast5:
+  indir:      "/hps/nobackup/research/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files
+  outdir:     "data/fast5s/"  # directory where fast5 reads used for training will be placed
+  batch_size: 4000  # number of fast5 per multi-fast5
+
 containers:
   conda:   "docker://continuumio/miniconda3:4.7.12"
   taiyaki: "library://mbhall88/default/taiyaki:ce0cfbf"
+  fast5:   "docker://quay.io/biocontainers/ont-fast5-api:3.0.1--py_0"
 
 envs:
   aln_tools: "envs/aln_tools.yaml"
