@@ -132,9 +132,9 @@ rule extract_fast5s_for_training:
         read_ids=rules.extract_read_ids.output.read_ids,
     output:
         success=fast5["outdir"] / "filename_mapping.txt",
-    threads: 1
+    threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * 1_000
+        mem_mb=lambda wildcards, attempt: attempt * 8_000
     singularity: containers["fast5"]
     params:
         indir=fast5["indir"],
