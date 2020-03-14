@@ -33,7 +33,7 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(fast5["outdir"] / "filename_mapping.txt")
+    output_files.add(fast5["outdir"] / "read_params.tsv")
 
 # ======================================================
 # Rules
@@ -132,7 +132,7 @@ rule extract_fast5s_for_training:
     input:
         read_ids=rules.extract_read_ids.output.read_ids,
     output:
-        success=fast5["outdir"] / "filename_mapping.txt",
+        filename_mapping=fast5["outdir"] / "filename_mapping.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
@@ -150,5 +150,32 @@ rule extract_fast5s_for_training:
             --batch_size {params.batch_size} \
             --threads {threads} \
             {params.extras}
-        touch {output.success}
+        # add header row
+        echo -e 'read_id\tfilename' | \
+        awk 1 - {output.filename_mapping} > tmp.out && mv tmp.out {output.filename_mapping}
+        """
+
+# https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#create-per-read-scaling-parameters
+rule create_per_read_scaling_params:
+    input:
+        file_summary=rules.extract_fast5s_for_training.output.filename_mapping,
+    output:
+        read_params=outdir / "read_params.tsv",
+    threads: 32
+    resources:
+        mem_mb=lambda wildcards, attempt: (8 * GB) * attempt
+    singularity: containers["taiyaki"]
+    params:
+        reads_dir=fast5["outdir"],
+        trim_start=fast5["trim"]["start"],
+        trim_end=fast5["trim"]["end"],
+        extras="--recursive",
+    shell:
+        """
+        generate_per_read_params.py --jobs {threads} \
+            --output {output.read_params} \
+            --trim {params.trim_start} {params.trim_end} \
+            --input_strand_list {input.file_summary} \
+            {params.extras} \
+            {params.reads_dir}
         """

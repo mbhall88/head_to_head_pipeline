@@ -6,6 +6,9 @@ fast5:
   indir:      "/hps/nobackup/research/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files
   outdir:     "data/fast5s/"  # directory where fast5 reads used for training will be placed
   batch_size: 4000  # number of fast5 per multi-fast5
+  trim:  # Number of samples to trim off start and end of fast5 training files
+    start: 200
+    end:   100
 
 containers:
   conda:   "docker://continuumio/miniconda3:4.7.12"
