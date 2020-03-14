@@ -1,6 +1,7 @@
 data_dir: "/hps/nobackup/research/zi/projects/tech_wars/data"
 outdir:   "results"
 min_covg: 0.8  # Ignore reads with alignments shorter than min_covg * read length
+model: "resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.jsn"  # model used to basecall original data
 
 fast5:
   indir:      "/hps/nobackup/research/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files
