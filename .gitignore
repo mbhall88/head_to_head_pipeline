@@ -304,3 +304,4 @@ tmp/
 .gm_key
 analysis/assembly/assessment/*/
 analysis/assembly/results/*/
+analysis/assembly/results_before_no_snp_polish/*/
