@@ -205,7 +205,7 @@ rule create_mapped_read_file:
         hdf5=outdir / "mapped_reads.hdf5",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: (16 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: (64 * GB) * attempt,
     params:
         extras="--recursive",
         reads_dir=fast5["outdir"],
