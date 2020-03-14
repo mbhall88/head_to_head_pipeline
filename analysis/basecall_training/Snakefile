@@ -6,6 +6,7 @@ from snakemake.utils import min_version
 
 min_version("5.10.0")
 
+GB = 1_024
 PathLike = Union[str, Path, os.PathLike]
 
 # ======================================================
@@ -50,7 +51,7 @@ rule map_basecalls:
     shadow: "shallow"
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: 4_000 * attempt
+        mem_mb=lambda wildcards, attempt: (4 * GB) * attempt
     singularity: containers["conda"]
     conda: envs["aln_tools"]
     params:
@@ -85,7 +86,7 @@ rule extract_per_read_references:
         min_covg=config["min_covg"],
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 500 * attempt
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt
     singularity: containers["taiyaki"]
     shell:
         """
@@ -104,7 +105,7 @@ rule aggregate_read_references:
         read_references=outdir / "read_references.fasta",
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 500 * attempt
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt
     shell:
         """
         awk 1 {input.read_references} > {output.read_references}
@@ -117,7 +118,7 @@ rule extract_read_ids:
         read_ids=outdir / "read_ids.txt",
     threads: 1
     resources:
-        mem_mb=300
+        mem_mb=int(0.3 * GB)
     params:
         pattern="'^>(?P<id>[\w-]+)\s*$'",
         replace_with="'$id'",
@@ -134,7 +135,7 @@ rule extract_fast5s_for_training:
         success=fast5["outdir"] / "filename_mapping.txt",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * 8_000
+        mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
     singularity: containers["fast5"]
     params:
         indir=fast5["indir"],
