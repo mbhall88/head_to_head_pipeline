@@ -1,0 +1,11 @@
+outdir:                       "."  # directory under which all output will be written
+genome_size:                  4411532
+h37rv:
+  genome:     "resources/h37rv.fa"
+  annotation: "resources/h37rv.gbk"
+  features:   "resources/h37rv.gff3"
+#containers:
+#  samtools:    "docker://quay.io/biocontainers/samtools:1.10--h9402c20_2"
+#  conda:       "docker://continuumio/miniconda3:4.7.12"
+#envs:
+#scripts:
