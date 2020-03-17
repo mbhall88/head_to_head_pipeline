@@ -1,0 +1,32 @@
+from pathlib import Path
+import os
+from typing import Dict, Set, Union
+
+from snakemake.utils import min_version
+
+min_version("5.10.0")
+
+GB = 1_024
+PathLike = Union[str, Path, os.PathLike]
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+H37RV = config["h37rv"]
+
+# ======================================================
+# Global functions and variables
+# ======================================================
+outdir = Path(config["outdir"])
+
+output_files = set()
+
+# ======================================================
+# Rules
+# ======================================================
+rule all:
+    input: output_files
+
