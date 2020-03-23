@@ -203,9 +203,9 @@ rule create_mapped_read_file:
         checkpoint=rules.convert_model_json_to_checkpoint.output.checkpoint,
     output:
         hdf5=outdir / "mapped_reads.hdf5",
-    threads: 32
+    threads: 64
     resources:
-        mem_mb=lambda wildcards, attempt: (128 * GB) * attempt,
+        mem_mb=300 * GB,
     params:
         extras="--recursive",
         reads_dir=fast5["outdir"],
