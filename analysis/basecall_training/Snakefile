@@ -38,7 +38,7 @@ for sample in samples:
 # ======================================================
 # Rules
 # ======================================================
-localrules: all, extract_read_ids, subset_read_ids
+localrules: all, extract_read_ids, subset_read_ids, convert_model_json_to_checkpoint
 
 rule all:
     input: output_files
@@ -234,13 +234,13 @@ rule create_per_read_scaling_params:
     input:
         file_summary=rules.extract_fast5s_for_training.output.filename_mapping,
     output:
-        read_params=outdir / "read_params.tsv",
+        read_params=outdir / "training" / "read_params.tsv",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: (8 * GB) * attempt
+        mem_mb=lambda wildcards, attempt: (6 * GB) * attempt
     singularity: containers["taiyaki"]
     params:
-        reads_dir=fast5["outdir"],
+        reads_dir=lambda wildcards, input: Path(input.file_summary).parent,
         trim_start=fast5["trim"]["start"],
         trim_end=fast5["trim"]["end"],
         extras="--recursive",
@@ -254,6 +254,7 @@ rule create_per_read_scaling_params:
             {params.reads_dir}
         """
 
+
 rule convert_model_json_to_checkpoint:
     input:
         json=config["model"],
@@ -261,12 +262,13 @@ rule convert_model_json_to_checkpoint:
         checkpoint=Path(config["model"]).with_suffix(".checkpoint"),
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: (8 * GB) * attempt
+        mem_mb=int(0.2 * GB)
     singularity: containers["taiyaki"]
     shell:
         """
         json_to_checkpoint.py --output {output.checkpoint} {input.json}
         """
+
 
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#create-mapped-read-file
 rule create_mapped_read_file:
@@ -276,13 +278,13 @@ rule create_mapped_read_file:
         references=rules.aggregate_read_references.output.read_references,
         checkpoint=rules.convert_model_json_to_checkpoint.output.checkpoint,
     output:
-        hdf5=outdir / "mapped_reads.hdf5",
-    threads: 64
+        hdf5=outdir / "training" / "mapped_reads.hdf5",
+    threads: 32
     resources:
-        mem_mb=300 * GB,
+        mem_mb=lambda wildcards, attempt: attempt * int(64 * GB),
     params:
         extras="--recursive",
-        reads_dir=fast5["outdir"],
+        reads_dir=lambda wildcards, input: Path(input.file_summary).parent,
     singularity: containers["taiyaki"]
     shell:
         """
