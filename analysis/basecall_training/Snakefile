@@ -38,7 +38,7 @@ for sample in samples:
 # ======================================================
 # Rules
 # ======================================================
-localrules: all, extract_read_ids, subset_reads_ids
+localrules: all, extract_read_ids, subset_read_ids
 
 rule all:
     input: output_files
@@ -132,7 +132,7 @@ rule extract_read_ids:
         """
 
 
-rule subset_reads_ids:
+rule subset_read_ids:
     input:
         reads_ids=rules.extract_read_ids.output.read_ids
     output:
