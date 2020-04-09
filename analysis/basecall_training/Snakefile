@@ -167,17 +167,18 @@ rule subset_read_ids:
 
 rule extract_fast5s_for_training:
     input:
-        read_ids=rules.extract_read_ids.output.read_ids,
+        read_ids=rules.subset_read_ids.output.training_read_ids,
     output:
-        filename_mapping=fast5["outdir"] / "filename_mapping.txt",
+        filename_mapping=fast5["outdir"] / "training" / "filename_mapping.training.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
     singularity: containers["fast5"]
     params:
         indir=fast5["indir"],
-        save_path=fast5["outdir"],
+        save_path=lambda wildcards, output: Path(output.filename_mapping).parent,
         batch_size=fast5["batch_size"],
+        prefix="training",
         extras="--recursive"
     shell:
         """
@@ -185,12 +186,48 @@ rule extract_fast5s_for_training:
             --save_path {params.save_path} \
             --read_id_list {input.read_ids} \
             --batch_size {params.batch_size} \
+            --filename_base {params.prefix} \
             --threads {threads} \
             {params.extras}
+
+        tmpfile=$(mktemp)
         # add header row
         echo -e 'read_id\tfilename' | \
-        awk 1 - {output.filename_mapping} > tmp.out && mv tmp.out {output.filename_mapping}
+        awk 1 - {output.filename_mapping} > ${tmpfile} && mv ${tmpfile} {output.filename_mapping}
         """
+
+
+rule extract_fast5s_for_evaluation:
+    input:
+        read_ids=rules.subset_read_ids.output.evaluation_read_ids,
+    output:
+        filename_mapping=fast5["outdir"] / "evaluation" / "filename_mapping.evaluation.txt",
+    threads: 32
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
+    singularity: containers["fast5"]
+    params:
+        indir=fast5["indir"],
+        save_path=lambda wildcards, output: Path(output.filename_mapping).parent,
+        batch_size=fast5["batch_size"],
+        prefix="evaluation",
+        extras="--recursive"
+    shell:
+        """
+        fast5_subset --input {params.indir} \
+            --save_path {params.save_path} \
+            --read_id_list {input.read_ids} \
+            --batch_size {params.batch_size} \
+            --filename_base {params.prefix} \
+            --threads {threads} \
+            {params.extras}
+
+        tmpfile=$(mktemp)
+        # add header row
+        echo -e 'read_id\tfilename' | \
+        awk 1 - {output.filename_mapping} > ${tmpfile} && mv ${tmpfile} {output.filename_mapping}
+        """
+
 
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#create-per-read-scaling-parameters
 rule create_per_read_scaling_params:
