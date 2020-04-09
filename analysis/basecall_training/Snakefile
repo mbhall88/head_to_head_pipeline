@@ -38,7 +38,7 @@ for sample in samples:
 # ======================================================
 # Rules
 # ======================================================
-localrules: all, extract_read_ids
+localrules: all, extract_read_ids, subset_reads_ids
 
 rule all:
     input: output_files
@@ -113,6 +113,7 @@ rule aggregate_read_references:
         awk 1 {input.read_references} > {output.read_references}
         """
 
+
 rule extract_read_ids:
     input:
         read_references=rules.aggregate_read_references.output.read_references,
@@ -129,6 +130,40 @@ rule extract_read_ids:
         """
         rg --only-matching {params.pattern} --replace {params.replace_with} {params.extras} {input.read_references} > {output.read_ids}
         """
+
+
+rule subset_reads_ids:
+    input:
+        reads_ids=rules.extract_read_ids.output.read_ids
+    output:
+        training_read_ids=outdir / "read_ids.training.txt",
+        evaluation_read_ids=outdir / "read_ids.evaluation.txt"
+    threads: 1
+    resources:
+        mem_mb=int(0.3 * GB)
+    params:
+        seed = config["seed"],
+        training_size = config["training_size"]
+    run:
+        import random
+        from pathlib import Path
+
+        read_ids = []
+        with open(input.read_ids) as fh:
+            read_ids = [read_id for read_id in map(str.rstrip, fh) if read_id]
+
+        random.seed(params.seed)
+        k = int(len(reads_ids) * params.training_size)
+        print("Using {} reads for training, leaving {} for evaluation.".format(k, len(reads_ids) - k))
+        training_ids = set(random.sample(read_ids, k=k))
+        # write training ids to file
+        Path(output.training_read_ids).write_text("\n".join(training_ids))
+        # write all other ids (evaluation) to file
+        Path(output.evaluation_read_ids).write_text(
+            "\n".join(i for i in read_ids if i not in training_ids)
+        )
+
+
 
 rule extract_fast5s_for_training:
     input:
