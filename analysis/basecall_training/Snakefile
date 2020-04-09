@@ -139,7 +139,7 @@ rule extract_read_ids:
 
 rule subset_read_ids:
     input:
-        reads_ids=rules.extract_read_ids.output.read_ids
+        read_ids=rules.extract_read_ids.output.read_ids
     output:
         training_read_ids=outdir / "read_ids.training.txt",
         evaluation_read_ids=outdir / "read_ids.evaluation.txt"
