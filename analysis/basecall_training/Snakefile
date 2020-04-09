@@ -198,7 +198,7 @@ rule extract_fast5s_for_training:
         tmpfile=$(mktemp)
         # add header row
         echo -e 'read_id\tfilename' | \
-        awk 1 - {output.filename_mapping} > ${tmpfile} && mv ${tmpfile} {output.filename_mapping}
+        awk 1 - {output.filename_mapping} > ${{tmpfile}} && mv ${{tmpfile}} {output.filename_mapping}
         """
 
 
@@ -230,7 +230,7 @@ rule extract_fast5s_for_evaluation:
         tmpfile=$(mktemp)
         # add header row
         echo -e 'read_id\tfilename' | \
-        awk 1 - {output.filename_mapping} > ${tmpfile} && mv ${tmpfile} {output.filename_mapping}
+        awk 1 - {output.filename_mapping} > ${{tmpfile}} && mv ${{tmpfile}} {output.filename_mapping}
         """
 
 
