@@ -9,15 +9,17 @@ then
 fi
 
 MEMORY=4000
+THREADS=4
 PROFILE="lsf"
 
 module load singularity/3.5.0
 
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -M "$MEMORY" \
+    -n "$THREADS" \
     -o "$LOG_DIR"/"$JOB_NAME".o \
     -e "$LOG_DIR"/"$JOB_NAME".e \
     -J "$JOB_NAME" \
-        snakemake --profile "$PROFILE" "$@"
+        snakemake --profile "$PROFILE" --local-cores "$THREADS" "$@"
 
 exit 0

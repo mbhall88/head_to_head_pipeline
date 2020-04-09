@@ -38,6 +38,8 @@ for sample in samples:
 # ======================================================
 # Rules
 # ======================================================
+localrules: all, extract_read_ids
+
 rule all:
     input: output_files
 
