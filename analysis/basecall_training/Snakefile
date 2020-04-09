@@ -158,8 +158,8 @@ rule subset_read_ids:
             read_ids = [read_id for read_id in map(str.rstrip, fh) if read_id]
 
         random.seed(params.seed)
-        k = int(len(reads_ids) * params.training_size)
-        print("Using {} reads for training, leaving {} for evaluation.".format(k, len(reads_ids) - k))
+        k = int(len(read_ids) * params.training_size)
+        print("Using {} reads for training, leaving {} for evaluation.".format(k, len(read_ids) - k))
         training_ids = set(random.sample(read_ids, k=k))
         # write training ids to file
         Path(output.training_read_ids).write_text("\n".join(training_ids))
