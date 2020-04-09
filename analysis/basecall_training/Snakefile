@@ -25,15 +25,20 @@ samples: Set[str] = {*assemblies.keys()}
 # Global functions and variables
 # ======================================================
 outdir = Path(config["outdir"])
+training_dir = outdir / "training"
+evaluation_dir = outdir / "evaluation"
 data_dir = Path(config["data_dir"])
 mada_dir = data_dir / "madagascar"
 ont_dir = mada_dir / "nanopore"
+training_fast5_dir = fast5["outdir"] / "training"
+evaluation_fast5_dir = fast5["outdir"] / "evaluation"
 
 output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(outdir / "mapped_reads.hdf5")
+    output_files.add(evaluation_fast5_dir / "filename_mapping.evaluation.txt")
+    output_files.add(training_dir / "mapped_reads.hdf5")
 
 # ======================================================
 # Rules
@@ -169,7 +174,7 @@ rule extract_fast5s_for_training:
     input:
         read_ids=rules.subset_read_ids.output.training_read_ids,
     output:
-        filename_mapping=fast5["outdir"] / "training" / "filename_mapping.training.txt",
+        filename_mapping=training_fast5_dir / "filename_mapping.training.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
@@ -201,7 +206,7 @@ rule extract_fast5s_for_evaluation:
     input:
         read_ids=rules.subset_read_ids.output.evaluation_read_ids,
     output:
-        filename_mapping=fast5["outdir"] / "evaluation" / "filename_mapping.evaluation.txt",
+        filename_mapping=evaluation_fast5_dir / "filename_mapping.evaluation.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
@@ -234,7 +239,7 @@ rule create_per_read_scaling_params:
     input:
         file_summary=rules.extract_fast5s_for_training.output.filename_mapping,
     output:
-        read_params=outdir / "training" / "read_params.tsv",
+        read_params=training_dir / "read_params.tsv",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: (6 * GB) * attempt
@@ -278,7 +283,7 @@ rule create_mapped_read_file:
         references=rules.aggregate_read_references.output.read_references,
         checkpoint=rules.convert_model_json_to_checkpoint.output.checkpoint,
     output:
-        hdf5=outdir / "training" / "mapped_reads.hdf5",
+        hdf5=training_dir / "mapped_reads.hdf5",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * int(64 * GB),
