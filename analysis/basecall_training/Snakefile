@@ -37,7 +37,7 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(evaluation_fast5_dir / "filename_mapping.evaluation.txt")
+    output_files.add(evaluation_fast5_dir / "filename_mapping.txt")
     output_files.add(training_dir / "mapped_reads.hdf5")
 
 # ======================================================
@@ -174,7 +174,7 @@ rule extract_fast5s_for_training:
     input:
         read_ids=rules.subset_read_ids.output.training_read_ids,
     output:
-        filename_mapping=training_fast5_dir / "filename_mapping.training.txt",
+        filename_mapping=training_fast5_dir / "filename_mapping.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
@@ -206,7 +206,7 @@ rule extract_fast5s_for_evaluation:
     input:
         read_ids=rules.subset_read_ids.output.evaluation_read_ids,
     output:
-        filename_mapping=evaluation_fast5_dir / "filename_mapping.evaluation.txt",
+        filename_mapping=evaluation_fast5_dir / "filename_mapping.txt",
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
