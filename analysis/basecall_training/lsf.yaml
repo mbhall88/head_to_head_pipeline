@@ -1,0 +1,4 @@
+train_model:
+  - "-P gpu"
+  - "-gpu 'num=8:j_exclusive=yes'"  # hog a GPU node because I'm greedy
+  - "-m 'gpu74-v100-hosts'"

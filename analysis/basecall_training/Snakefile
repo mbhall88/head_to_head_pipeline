@@ -20,6 +20,7 @@ fast5: Dict = config["fast5"]
 fast5["outdir"] = Path(fast5["outdir"])
 fast5["indir"] = Path(fast5["indir"])
 samples: Set[str] = {*assemblies.keys()}
+model_training_params = config["model_training_params"]
 
 # ======================================================
 # Global functions and variables
@@ -37,8 +38,8 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(evaluation_fast5_dir / "filename_mapping.txt")
-    output_files.add(training_dir / "mapped_reads.hdf5")
+output_files.add(evaluation_fast5_dir / "filename_mapping.txt")
+output_files.add(training_dir / "model" / "model.done")
 
 # ======================================================
 # Rules
@@ -300,4 +301,43 @@ rule create_mapped_read_file:
             {output.hdf5} \
             {input.checkpoint} \
             {input.references}
+        """
+
+# https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#train-a-model
+# https://github.com/nanoporetech/taiyaki#guppy-compatibility
+rule train_model:
+    input:
+        mapped_reads=rules.create_mapped_read_file.output.hdf5
+    output:
+        checkpoint=training_dir / "model" / "model.done"
+    threads: 4
+    resources:
+        mem_mb=int(32 * GB)
+    params:
+        model=model_training_params["model"],
+        chunk_len_min = model_training_params["chunk_len_min"],
+        chunk_len_max = model_training_params["chunk_len_max"],
+        size = model_training_params["size"],
+        stride = model_training_params["stride"],
+        winlen = model_training_params["winlen"],
+        outdir=lambda wildcards, output: Path(output.checkpoint).parent,
+        num_gpus=model_training_params["num_gpus"],
+    singularity: containers["taiyaki"]
+    shell:
+        """
+        OPENBLAS_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS
+        OMP_NUM_THREADS={threads}
+        export OMP_NUM_THREADS
+
+        # have to use absolute path in container to train_flipflop script
+        python3 -m torch.distributed.launch --nproc_per_node {params.num_gpus} \
+        /taiyaki/bin/train_flipflop.py --size {params.size} \
+            --stride {params.stride} \
+            --winlen {params.winlen} \
+            --chunk_len_min {params.chunk_len_min} \
+            --chunk_len_max {params.chunk_len_max} \
+            --outdir {params.outdir} \
+            {params.model} {input.mapped_reads}
+        touch {output.checkpoint}
         """
