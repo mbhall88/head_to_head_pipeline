@@ -11,7 +11,7 @@ model_training_params:  # hard-coding defaults as of 10/04/2020 https://github.c
   size:          256
   stride:        2
   winlen:        19
-  num_gpus:      8
+  num_gpus:      2
 
 fast5:
   indir:      "/hps/nobackup/research/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files

@@ -312,7 +312,7 @@ rule train_model:
         checkpoint=training_dir / "model" / "model.done"
     threads: 4
     resources:
-        mem_mb=int(32 * GB)
+        mem_mb=int(22 * GB)
     params:
         model=model_training_params["model"],
         chunk_len_min = model_training_params["chunk_len_min"],
