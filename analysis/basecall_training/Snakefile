@@ -310,9 +310,9 @@ rule train_model:
         mapped_reads=rules.create_mapped_read_file.output.hdf5
     output:
         checkpoint=training_dir / "model" / "model.done"
-    threads: 4
+    threads: 2
     resources:
-        mem_mb=int(26 * GB)
+        mem_mb=int(56 * GB)
     params:
         model=model_training_params["model"],
         chunk_len_min = model_training_params["chunk_len_min"],
