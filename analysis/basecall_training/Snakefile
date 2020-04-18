@@ -322,6 +322,7 @@ rule train_model:
         winlen = model_training_params["winlen"],
         outdir=lambda wildcards, output: Path(output.checkpoint).parent,
         num_gpus=model_training_params["num_gpus"],
+        extras="--overwrite"  # because snakemake creates this directory first taiyaki thinks a model already exists
     singularity: containers["taiyaki"]
     shell:
         """
@@ -332,7 +333,8 @@ rule train_model:
 
         # have to use absolute path in container to train_flipflop script
         python3 -m torch.distributed.launch --nproc_per_node {params.num_gpus} \
-        /taiyaki/bin/train_flipflop.py --size {params.size} \
+        /taiyaki/bin/train_flipflop.py {params.extras} \
+            --size {params.size} \
             --stride {params.stride} \
             --winlen {params.winlen} \
             --chunk_len_min {params.chunk_len_min} \
