@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import math
 from typing import Dict, Set, Union
 
 from snakemake.utils import min_version
@@ -303,6 +304,12 @@ rule create_mapped_read_file:
             {input.references}
         """
 
+
+def calculate_starting_learning_rate() -> int:
+    scale_by = math.sqrt(model_training_params["num_gpus"])
+    base_lrate = model_training_params["base_learning_rate"]
+    return base_lrate * scale_by
+
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#train-a-model
 # https://github.com/nanoporetech/taiyaki#guppy-compatibility
 rule train_model:
@@ -312,7 +319,7 @@ rule train_model:
         checkpoint=training_dir / "model" / "model.done"
     threads: 2
     resources:
-        mem_mb=int(56 * GB)
+        mem_mb=int(60 * GB)
     params:
         model=model_training_params["model"],
         chunk_len_min = model_training_params["chunk_len_min"],
@@ -322,6 +329,7 @@ rule train_model:
         winlen = model_training_params["winlen"],
         outdir=lambda wildcards, output: Path(output.checkpoint).parent,
         num_gpus=model_training_params["num_gpus"],
+        starting_learning_rate=calculate_starting_learning_rate(),
         extras="--overwrite"  # because snakemake creates this directory first taiyaki thinks a model already exists
     singularity: containers["taiyaki"]
     shell:
@@ -337,6 +345,7 @@ rule train_model:
             --size {params.size} \
             --stride {params.stride} \
             --winlen {params.winlen} \
+            --lr_max {params.starting_learning_rate} \
             --chunk_len_min {params.chunk_len_min} \
             --chunk_len_max {params.chunk_len_max} \
             --outdir {params.outdir} \
