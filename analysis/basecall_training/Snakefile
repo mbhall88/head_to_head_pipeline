@@ -375,7 +375,7 @@ rule basecall_evaluation_data:
         mem_mb=int(8 * GB)
     singularity: containers["guppy-gpu"]
     params:
-        num_callers=config["num_callers"],
+        num_callers=8,
         fast5_dir=lambda wildcards, input: Path(input.mapping).parent,
         save_path=lambda wildcards, output: Path(output.summary).parent,
         device="cuda:all:100%",
