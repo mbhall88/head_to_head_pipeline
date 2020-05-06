@@ -1,5 +1,6 @@
 data_dir:      "/hps/nobackup/research/zi/projects/tech_wars/data"
 outdir:        "results"
+model_config: "dna_r9.4.1_450bps_hac_prom.cfg"  # the model to use when basecalling eval data
 min_covg:      0.8  # Ignore reads with alignments shorter than min_covg * read length
 model:         "resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.jsn"  # model used to basecall original data
 seed:          88  # random seed to use for randomly subsample read ids into training set
@@ -26,6 +27,7 @@ containers:
   conda:   "docker://continuumio/miniconda3:4.7.12"
   taiyaki: "library://mbhall88/default/taiyaki:ce0cfbf"
   fast5:   "docker://quay.io/biocontainers/ont-fast5-api:3.0.1--py_0"
+  guppy-gpu: "library://mbhall88/default/guppy-gpu:3.4.5"
 
 envs:
   aln_tools: "envs/aln_tools.yaml"

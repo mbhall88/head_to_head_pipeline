@@ -39,8 +39,7 @@ output_files = set()
 
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-output_files.add(evaluation_fast5_dir / "filename_mapping.txt")
-output_files.add(training_dir / "model" / "model.json")
+output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 
 # ======================================================
 # Rules
@@ -363,4 +362,38 @@ rule export_to_guppy:
     shell:
         """
         dump_json.py {input.checkpoint} > {output.model}
+        """
+
+rule basecall_evaluation_data:
+    input:
+        mapping=rules.extract_fast5s_for_evaluation.output.filename_mapping,
+        model=rules.export_to_guppy.output.model,
+    output:
+        summary=evaluation_dir / "basecall" / "sequencing_summary.txt"
+    threads: 2
+    resources:
+        mem_mb=int(8 * GB)
+    singularity: containers["guppy-gpu"]
+    params:
+        num_callers=config["num_callers"],
+        fast5_dir=lambda wildcards, input: Path(input.mapping).parent,
+        save_path=lambda wildcards, output: Path(output.summary).parent,
+        device="cuda:all:100%",
+        config=config["model_config"],
+        extras=" ".join(
+            [
+                "--recursive",
+                "--compress_fastq"
+            ]
+        )
+    shell:
+        """
+        guppy_basecaller \
+                    {params.extras} \
+                    --input_path {params.fast5_dir} \
+            --save_path {params.save_path} \
+            --config {params.config} \
+            --device {params.device} \
+            --num_callers {params.num_callers} \
+            --model_file {input.model}
         """
