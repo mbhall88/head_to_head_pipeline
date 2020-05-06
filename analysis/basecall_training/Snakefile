@@ -40,7 +40,7 @@ output_files = set()
 for sample in samples:
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
 output_files.add(evaluation_fast5_dir / "filename_mapping.txt")
-output_files.add(training_dir / "model" / "model.done")
+output_files.add(training_dir / "model" / "model.json")
 
 # ======================================================
 # Rules
@@ -316,7 +316,7 @@ rule train_model:
     input:
         mapped_reads=rules.create_mapped_read_file.output.hdf5
     output:
-        checkpoint=training_dir / "model" / "model.done"
+        checkpoint=training_dir / "model" / "model_final.checkpoint"
     threads: 2
     resources:
         mem_mb=int(60 * GB)
@@ -350,5 +350,17 @@ rule train_model:
             --chunk_len_max {params.chunk_len_max} \
             --outdir {params.outdir} \
             {params.model} {input.mapped_reads}
-        touch {output.checkpoint}
+        """
+
+
+# https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#export-to-guppy
+rule export_to_guppy:
+    input:
+        checkpoint=rules.train_model.output.checkpoint,
+    output:
+        model=training_dir / "model" / "model.json"
+    singularity: containers["taiyaki"]
+    shell:
+        """
+        dump_json.py {input.checkpoint} > {output.model}
         """
