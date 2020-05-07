@@ -397,3 +397,76 @@ rule basecall_evaluation_data:
             --num_callers {params.num_callers} \
             --model_file {input.model}
         """
+
+rule map_id_to_sample_eval:
+    """Create a file mapping read IDs to the sample that read originally came from"""
+    input:
+        # all of the original fastq files
+        # a list of the eval read ids used
+    output:
+        # a csv file
+
+rule create_guppy_eval_fastqs:
+    input:
+        # csv file of id to sample mappings
+        # original fastqs
+    output:
+        # 8 fastq files
+
+rule create_mtb_model_eval_fastqs:
+    input:
+        # csv file of id to sample mappings
+        # basecalled fastqs from Mtb model
+    output:
+        # 8 fastq files
+
+rule map_basecalls_to_reference:
+    input:
+        # fastq files for each model and sample
+        # reference for that sample
+    output:
+        # PAF file
+
+rule calculate_blast_identity:
+    """Aggregate for each model. For each read from all samples, calculate the BLAST 
+    identity from the PAF files. Look into whether I need to add some kind of coverage 
+    threshold on this to make sure we aren't assessing small alignments."""
+    input:
+        # All PAFs for a given model
+    output:
+        # a csv file with id, sample, identity, read length, mismatches, insertions, deletions
+    shell:
+        """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L94"""
+
+rule rebaler:
+    input:
+        # fastq files for each model and sample
+        # reference for that sample
+    output:
+        # assembly
+
+rule chop_assemblies:
+    input:
+        # rebaler assemblies
+    output:
+        # fasta file of assembly "reads"
+    shell:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L138"""
+
+rule map_asm_pieces_to_reference:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L139"""
+
+rule calculate_consensus_accuracy:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L140"""
+
+rule calculate_consensus_errors:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L142-L151"""
+
+rule report:
+    """Generate plots:
+      - Violin of read BLAST identity
+      - Blast identity vs read length
+      - Relative read length
+      - Consensus accuracy
+      - Consensus sequence error types
+    """
