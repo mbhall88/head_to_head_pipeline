@@ -406,7 +406,7 @@ rule map_id_to_sample_eval:
     """Create a file mapping read IDs to the sample that read originally came from"""
     input:
         read_ids=rules.subset_read_ids.output.evaluation_read_ids,
-        fastas=expand(f"{outdir}/{{sample}}/{{sample}}.read_references.fasta", sample=samples)
+        fastqs=expand(f"{ont_dir}/{{sample}}/{{sample}}.nanopore.fastq.gz", sample=samples)
     output:
         id_map=evaluation_dir / "id_to_sample_map.csv",
     threads: 4
@@ -419,9 +419,8 @@ rule map_id_to_sample_eval:
     shell:
         """
         echo 'id,sample' > {output.id_map}
-        rg {params.extras} --threads {threads} \
-            --file {input.read_ids} \
-            {input.fastas} | \
+        zcat {input.fastqs} | rg {params.extras} --threads {threads} \
+            --file {input.read_ids} | \
         rg --pcre2 {params.pattern} \
             --replace {params.output_format} >> {output.id_map}
         """
