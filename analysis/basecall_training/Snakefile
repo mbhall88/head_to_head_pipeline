@@ -436,7 +436,8 @@ def infer_fastq_for_model(wildcards) -> List[PathLike]:
     elif model == "tubby":
         basecall_dir = evaluation_dir / "basecall"
         return list(basecall_dir.glob("*.fastq*"))
-
+    else:
+        raise ValueError(f"Got unexpected model. Wildcards: {wildcards}")
 
 rule create_eval_fastqs:
     input:
