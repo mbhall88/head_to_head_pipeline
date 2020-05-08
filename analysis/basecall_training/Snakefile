@@ -415,12 +415,13 @@ rule map_id_to_sample_eval:
     params:
         pattern="'.*\/(?<sample>mada_[0-9\-]+)\/.*:(?<id>[\w\d\-]+)$'",
         output_format="'$id,$sample'",
-        extras="--no-heading --no-line-number --only-matching",
+        extras="--no-heading --no-line-number --only-matching --search-zip",
     shell:
         """
         echo 'id,sample' > {output.id_map}
-        zcat {input.fastqs} | rg {params.extras} --threads {threads} \
-            --file {input.read_ids} | \
+        rg {params.extras} --threads {threads} \
+            --file {input.read_ids} \
+            {input.fastqs} | \
         rg --pcre2 {params.pattern} \
             --replace {params.output_format} >> {output.id_map}
         """
