@@ -1,7 +1,8 @@
 from pathlib import Path
 import os
 import math
-from typing import Dict, Set, Union
+from typing import Dict, Set, Union, List
+from itertools import product
 
 from snakemake.utils import min_version
 
@@ -21,6 +22,7 @@ fast5: Dict = config["fast5"]
 fast5["outdir"] = Path(fast5["outdir"])
 fast5["indir"] = Path(fast5["indir"])
 samples: Set[str] = {*assemblies.keys()}
+models = {"guppy", "tubby"}
 model_training_params = config["model_training_params"]
 
 # ======================================================
@@ -37,8 +39,9 @@ evaluation_fast5_dir = fast5["outdir"] / "evaluation"
 
 output_files = set()
 
-for sample in samples:
+for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
+    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.fq.gz")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
 
@@ -422,6 +425,46 @@ rule map_id_to_sample_eval:
         rg --pcre2 {params.pattern} \
             --replace {params.output_format} >> {output.id_map}
         """
+
+
+def infer_fastq_for_model(wildcards) -> List[PathLike]:
+    model = wildcards.model
+    sample = wildcards.sample
+
+    if model == "guppy":
+        return [ont_dir / f"{sample}" / f"{sample}.nanopore.fastq.gz"]
+    elif model == "tubby":
+        basecall_dir = evaluation_dir / "basecall"
+        return list(basecall_dir.glob("*.fastq*"))
+
+
+rule create_eval_fastqs:
+    input:
+        fastqs=infer_fastq_for_model,
+        id_map=rules.map_id_to_sample_eval.output.id_map
+    output:
+        fastq=evaluation_dir / "{model}" / "{sample}.{model}.fq.gz"
+    resources:
+        mem_mb=int(4 * GB)
+    run:
+        import pysam
+        import gzip
+
+        read_ids_for_sample = set()
+        with open(input.id_map) as csvfile:
+            for row in map(str.rstrip, csvfile):
+                read_id, sample = row.split(",")
+                if sample == wildcards.sample:
+                    read_ids_for_sample.add(read_id)
+
+        out_fq = gzip.open(output.fastq, "wb")
+        for fastq in input.fastqs:
+            with pysam.FastxFile(fastq) as in_fq:
+                for record in in_fq:
+                    if record.name in read_ids_for_sample:
+                        content = str(record) + "\n"
+                        out_fq.write(content.encode("utf-8"))
+        out_fq.close()
 
 # rule create_guppy_eval_fastqs:
 #     input:
