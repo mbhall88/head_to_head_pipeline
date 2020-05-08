@@ -41,7 +41,7 @@ output_files = set()
 
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.fq.gz")
+    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.paf")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
 
@@ -469,26 +469,36 @@ rule create_eval_fastqs:
             in_fq.close()
         out_fq.close()
 
-# rule create_guppy_eval_fastqs:
-#     input:
-#         # csv file of id to sample mappings
-#         # original fastqs
-#     output:
-#         # 8 fastq files
-#
-# rule create_mtb_model_eval_fastqs:
-#     input:
-#         # csv file of id to sample mappings
-#         # basecalled fastqs from Mtb model
-#     output:
-#         # 8 fastq files
-#
-# rule map_basecalls_to_reference:
-#     input:
-#         # fastq files for each model and sample
-#         # reference for that sample
-#     output:
-#         # PAF file
+
+rule map_basecalls_to_reference:
+    input:
+        query=infer_fastq_for_model,
+        target=lambda wildcards: assemblies[wildcards.sample],
+    output:
+        paf=evaluation_dir / "{model}" / "{sample}.{model}.paf"
+    threads: 8
+    resources:
+        mem_mb=int(10 * GB)
+    singularity: containers["conda"]
+    conda: envs["aln_tools"]
+    params:
+        preset="map-ont",
+        extras=" ".join([
+            "--secondary=no",  # don't output secondary alignments
+            "-2",  # use two threads for IO
+            "-L",  # Write CIGAR with >65535 operators at the CG tag
+            "-c",  # generate CIGAR
+        ]),
+    shell:
+        """
+        minimap2 -x {params.preset} \
+            {params.extras} \
+            -t {threads} \
+            -o {output.paf} \
+            {input.target} \
+            {input.query}
+        """
+
 #
 # rule calculate_blast_identity:
 #     """Aggregate for each model. For each read from all samples, calculate the BLAST
