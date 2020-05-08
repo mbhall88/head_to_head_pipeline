@@ -406,7 +406,9 @@ rule map_id_to_sample_eval:
         fastas=expand(f"{outdir}/{{sample}}/{{sample}}.read_references.fasta", sample=samples)
     output:
         id_map=evaluation_dir / "id_to_sample_map.csv",
-    threads: 2
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB * 16) * attempt
     params:
         pattern="'.*\/(?<sample>mada_[0-9\-]+)\/.*:(?<id>[\w\d\-]+)$'",
         output_format="'$id,$sample'",
