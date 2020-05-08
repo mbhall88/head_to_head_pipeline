@@ -427,15 +427,15 @@ rule map_id_to_sample_eval:
         """
 
 
-def infer_fastq_for_model(wildcards) -> List[PathLike]:
+def infer_fastq_for_model(wildcards) -> List[str]:
     model = wildcards.model
     sample = wildcards.sample
 
     if model == "guppy":
-        return [ont_dir / f"{sample}" / f"{sample}.nanopore.fastq.gz"]
+        return [str(ont_dir / f"{sample}" / f"{sample}.nanopore.fastq.gz")]
     elif model == "tubby":
         basecall_dir = evaluation_dir / "basecall"
-        return list(basecall_dir.glob("*.fastq*"))
+        return list(map(str, basecall_dir.glob("*.fastq*")))
     else:
         raise ValueError(f"Got unexpected model. Wildcards: {wildcards}")
 
