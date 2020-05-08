@@ -448,7 +448,7 @@ rule create_eval_fastqs:
     resources:
         mem_mb=int(4 * GB)
     run:
-        import pysam
+        from pyfastaq import sequences
         import gzip
 
         read_ids_for_sample = set()
@@ -460,11 +460,13 @@ rule create_eval_fastqs:
 
         out_fq = gzip.open(output.fastq, "wb")
         for fastq in input.fastqs:
-            with pysam.FastxFile(fastq) as in_fq:
-                for record in in_fq:
-                    if record.name in read_ids_for_sample:
-                        content = str(record) + "\n"
-                        out_fq.write(content.encode("utf-8"))
+            in_fq = sequences.file_reader(fastq)
+            for record in in_fq:
+                rid = record.id.split()[0]
+                if rid in read_ids_for_sample:
+                    content = str(record) + "\n"
+                    out_fq.write(content.encode("utf-8"))
+            in_fq.close()
         out_fq.close()
 
 # rule create_guppy_eval_fastqs:
