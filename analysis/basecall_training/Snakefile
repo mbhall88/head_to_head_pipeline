@@ -42,6 +42,7 @@ output_files = set()
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
     output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.paf")
+    output_files.add(evaluation_dir / f"{model}" / "rebaler" / f"{sample}.{model}.rebaler.fa")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
 
@@ -511,13 +512,22 @@ rule map_basecalls_to_reference:
 #     shell:
 #         """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L94"""
 #
-# rule rebaler:
-#     input:
-#         # fastq files for each model and sample
-#         # reference for that sample
-#     output:
-#         # assembly
-#
+rule rebaler:
+    input:
+        reads=rules.create_eval_fastqs.output.fastq,
+        reference=lambda wildcards: assemblies[wildcards.sample],
+    output:
+        assembly=evaluation_dir / "{model}" / "rebaler" / "{sample}.{model}.rebaler.fa"
+    shadow: "shallow"
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt
+    singularity: containers["rebaler"]
+    shell:
+        """
+        rebaler --threads {threads} {input.reference} {input.reads} > {output.assembly}
+        """
+
 # rule chop_assemblies:
 #     input:
 #         # rebaler assemblies
