@@ -43,7 +43,7 @@ output_files = set()
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
     output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.read_identity.csv")
-    output_files.add(evaluation_dir / f"{model}" / "rebaler" / f"{sample}.{model}.rebaler.fa")
+    output_files.add(evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.fa")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
 
@@ -545,13 +545,27 @@ rule rebaler:
         rebaler --threads {threads} {input.reference} {input.reads} > {output.assembly}
         """
 
-# rule chop_assemblies:
-#     input:
-#         # rebaler assemblies
-#     output:
-#         # fasta file of assembly "reads"
-#     shell:
-#     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L138"""
+rule chop_assemblies:
+    input:
+        assembly=rules.rebaler.output.assembly
+    output:
+        chunks=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.fa"
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB)
+    params:
+        script=scripts["chop_assembly"],
+        min_tail_len=1_000,
+        chunk_size=10_000,
+    singularity: containers["conda"]
+    conda: envs["chop"]
+    shell:
+        """
+        python {params.script} -i {input.assembly} \
+            -o {output.chunks} \
+            --chunk-size {params.chunk_size} \
+            --min-tail-size {params.min_tail_len}
+        """
 #
 # rule map_asm_pieces_to_reference:
 #     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L139"""

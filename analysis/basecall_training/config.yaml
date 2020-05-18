@@ -33,9 +33,11 @@ containers:
 envs:
   aln_tools: "envs/aln_tools.yaml"
   paf:       "envs/paf.yaml"
+  chop:      "envs/chop.yaml"
 
 scripts:
   read_identity: "scripts/read_assessment.py"
+  chop_assembly: "scripts/chop_assembly.py"
 
 assemblies:  # mada_1-2 is not being used as they are not of sufficient quality
   mada_101:  "/hps/nobackup/research/zi/projects/tech_wars/analysis/assembly/results/mada_101/flye/pacbio/polished_assembly.flye.pacbio.fasta"
