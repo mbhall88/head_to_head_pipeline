@@ -17,6 +17,7 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
 assemblies: Dict[str, PathLike] = config["assemblies"]
 fast5: Dict = config["fast5"]
 fast5["outdir"] = Path(fast5["outdir"])
@@ -41,7 +42,7 @@ output_files = set()
 
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
-    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.paf")
+    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.read_identity.csv")
     output_files.add(evaluation_dir / f"{model}" / "rebaler" / f"{sample}.{model}.rebaler.fa")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
@@ -500,18 +501,34 @@ rule map_basecalls_to_reference:
             {input.query}
         """
 
-#
-# rule calculate_blast_identity:
-#     """Aggregate for each model. For each read from all samples, calculate the BLAST
-#     identity from the PAF files. Look into whether I need to add some kind of coverage
-#     threshold on this to make sure we aren't assessing small alignments."""
-#     input:
-#         # All PAFs for a given model
-#     output:
-#         # a csv file with id, sample, identity, read length, mismatches, insertions, deletions
-#     shell:
-#         """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L94"""
-#
+
+rule calculate_read_blast_identity:
+    """Aggregate for each model. For each read from all samples, calculate the BLAST
+    identity from the PAF files. Look into whether I need to add some kind of coverage
+    threshold on this to make sure we aren't assessing small alignments."""
+    input:
+        paf=rules.map_basecalls_to_reference.output.paf
+    output:
+        csv=evaluation_dir / "{model}" / "{sample}.{model}.read_identity.csv"
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB)
+    params:
+        script=scripts["read_identity"],
+        delim=",",
+        min_cov=0,
+        extras="--primary-only"
+    singularity: containers["conda"]
+    conda: envs["paf"]
+    shell:
+        """
+        python {params.script} -i {input.paf} \
+            -o {output.csv} \
+            --delim {params.delim} \
+            --min-cov {params.min_cov} \
+            {params.extras}
+        """
+
 rule rebaler:
     input:
         reads=rules.create_eval_fastqs.output.fastq,
