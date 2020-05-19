@@ -326,3 +326,6 @@ ipython_config.py
 
 # End of https://www.gitignore.io/api/jupyternotebooks
 *.ipynb
+
+# ignore all results by default
+results/
