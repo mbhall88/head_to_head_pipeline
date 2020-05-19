@@ -637,7 +637,8 @@ rule calculate_consensus_errors:
     threads: 1
     resources:
         mem_mb=int(4 * GB)
-    singularity: containers["mummer"]
+    singularity: containers["conda"]
+    conda: envs["mummer"]
     params:
         error_summary_script=scripts["error_summary"],
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.model}",
