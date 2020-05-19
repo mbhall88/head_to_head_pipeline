@@ -34,12 +34,12 @@ from pafpy import PafFile, PafRecord
             "is defined as the proportion of the query sequence involved in the "
             "alignment. It is the aligned length minus the read length."
     ),
-    type=int,
+    type=float,
     default=0,
     show_default=True,
 )
 def main(
-        infile: str, output: TextIO, primary_only: bool, min_cov: int, delim: str,
+        infile: str, output: TextIO, primary_only: bool, min_cov: float, delim: str,
 ):
     """A script to produce data relevant to assessing the per-read accuracy for a PAF
     file. The output is a file with columns containing read identifier, read

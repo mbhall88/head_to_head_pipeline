@@ -639,6 +639,7 @@ rule calculate_consensus_errors:
         mem_mb=int(4 * GB)
     singularity: containers["conda"]
     conda: envs["mummer"]
+    shadow: "shallow"
     params:
         error_summary_script=scripts["error_summary"],
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.model}",
