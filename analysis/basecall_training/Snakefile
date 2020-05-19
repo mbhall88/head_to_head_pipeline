@@ -43,6 +43,7 @@ output_files = set()
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
     output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.read_identity.csv")
+    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.consensus_identity.csv")
     output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
