@@ -6,7 +6,7 @@ from itertools import product
 
 from snakemake.utils import min_version
 
-min_version("5.10.0")
+min_version("5.14.0")
 
 GB = 1_024
 PathLike = Union[str, Path, os.PathLike]
@@ -55,6 +55,8 @@ localrules: all, extract_read_ids, subset_read_ids, convert_model_json_to_checkp
 
 rule all:
     input: output_files
+
+report: "report/workflow.rst"
 
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#bam-of-mapped-basecalls
 rule map_basecalls:
