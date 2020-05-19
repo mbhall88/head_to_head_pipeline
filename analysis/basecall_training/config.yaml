@@ -29,6 +29,7 @@ containers:
   fast5:     "docker://quay.io/biocontainers/ont-fast5-api:3.0.1--py_0"
   guppy-gpu: "library://mbhall88/default/guppy-gpu:3.4.5"
   rebaler:   "docker://quay.io/biocontainers/rebaler:0.2.0--py_0"
+  mummer:    "docker://quay.io/biocontainers/mummer:3.23--pl526he1b5a44_11"
 
 envs:
   aln_tools: "envs/aln_tools.yaml"
@@ -38,6 +39,7 @@ envs:
 scripts:
   read_identity: "scripts/read_assessment.py"
   chop_assembly: "scripts/chop_assembly.py"
+  error_summary: "scripts/error_summary.py"
 
 assemblies:  # mada_1-2 is not being used as they are not of sufficient quality
   mada_101:  "/hps/nobackup/research/zi/projects/tech_wars/analysis/assembly/results/mada_101/flye/pacbio/polished_assembly.flye.pacbio.fasta"

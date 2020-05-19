@@ -43,7 +43,7 @@ output_files = set()
 for sample, model in product(samples, models):
     output_files.add(outdir / f"{sample}" / f"{sample}.read_references.fasta")
     output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.read_identity.csv")
-    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.rebaler_asm_chunks.fa")
+    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv")
 output_files.add(evaluation_dir / "basecall" / "sequencing_summary.txt")
 output_files.add(evaluation_dir / "id_to_sample_map.csv")
 
@@ -516,7 +516,7 @@ rule calculate_read_blast_identity:
     params:
         script=scripts["read_identity"],
         delim=",",
-        min_cov=0,
+        min_cov=0.5,  # only assess reads where more than half the read align
         extras="--primary-only"
     singularity: containers["conda"]
     conda: envs["paf"]
@@ -567,14 +567,106 @@ rule chop_assemblies:
             --min-tail-size {params.min_tail_len}
         """
 #
-# rule map_asm_pieces_to_reference:
-#     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L139"""
+rule map_asm_pieces_to_reference:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L139"""
+    input:
+        query=rules.chop_assemblies.output.chunks,
+        target=lambda wildcards: assemblies[wildcards.sample],
+    output:
+        paf=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.paf"
+    threads: 8
+    resources:
+        mem_mb=int(10 * GB)
+    singularity: containers["conda"]
+    conda: envs["aln_tools"]
+    params:
+        preset="asm5",
+        extras=" ".join([
+            "--secondary=no",  # don't output secondary alignments
+            "-2",  # use two threads for IO
+            "-L",  # Write CIGAR with >65535 operators at the CG tag
+            "-c",  # generate CIGAR
+        ]),
+    shell:
+        """
+        minimap2 -x {params.preset} \
+            {params.extras} \
+            -t {threads} \
+            -o {output.paf} \
+            {input.target} \
+            {input.query}
+        """
+
+rule calculate_consensus_accuracy:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L140"""
+    """Aggregate for each model. For each read from all samples, calculate the BLAST
+    identity from the PAF files. Look into whether I need to add some kind of coverage
+    threshold on this to make sure we aren't assessing small alignments."""
+    input:
+        paf=rules.map_asm_pieces_to_reference.output.paf
+    output:
+        csv=evaluation_dir / "{model}" / "{sample}.{model}.consensus_identity.csv"
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB)
+    params:
+        script=scripts["read_identity"],
+        delim=",",
+        min_cov=0.5,  # only assess when over half the chunk aligns
+        extras="--primary-only"
+    singularity: containers["conda"]
+    conda: envs["paf"]
+    shell:
+        """
+        python {params.script} -i {input.paf} \
+            -o {output.csv} \
+            --delim {params.delim} \
+            --min-cov {params.min_cov} \
+            {params.extras}
+        """
 #
-# rule calculate_consensus_accuracy:
-#     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L140"""
-#
-# rule calculate_consensus_errors:
-#     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L142-L151"""
+rule calculate_consensus_errors:
+    """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L142-L151"""
+    input:
+        assembly=lambda wildcards: assemblies[wildcards.sample],
+        rebaler_asm=rules.rebaler.output.assembly,
+    output:
+        err_details=evaluation_dir / "{model}" / "{sample}.{model}.assembly_error_details.tsv",
+        sub_counts=evaluation_dir / "{model}" / "{sample}.{model}.substitution_counts.tsv"
+    threads: 1
+    resources:
+        mem_mb=int(4 * GB)
+    singularity: containers["mummer"]
+    params:
+        error_summary_script=scripts["error_summary"],
+        prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.model}",
+        context=5,
+        delta_extras=" ".join([
+            "-r",  # Maps each position of each reference to its best hit in the query, allowing for query overlaps
+            "-q",  # Maps each position of each query to its best hit in the reference, allowing for reference overlaps
+        ]),
+        snps_extras=" ".join([
+            "-C",  # Do not report SNPs from alignments with an ambiguous mapping
+            "-l",  # Include sequence length information in the output
+            "-r",  # Sort output lines by reference IDs and SNP positions
+            "-T",  # Switch to tab-delimited format
+            "-H",  # Do not print the output header
+        ])
+    shell:
+        """
+        printf "assembly\tdcm\thomo_del\thomo_ins\tother_del\tother_ins\tsub\n" > {output.err_details}
+        printf "{params.prefix}\t" >> {output.err_details}
+        nucmer --prefix={params.prefix} {input.assembly} {input.rebaler_asm}
+        delta-filter {params.delta_extras} {params.prefix}.delta > {params.prefix}.filter
+        show-snps {params.snps_extras} \
+            -x{params.context} {params.prefix}.filter | \
+          python3 {params.error_summary_script} >> {output.err_details}
+        printf "{params.prefix}\tassembly\t" >> {output.sub_counts}
+        show-snps {params.snps_extras} {params.prefix}.filter | \
+          awk '$2 != "." && $3 != "."' | \
+          wc -l >> {output.sub_counts}
+        rm {params.prefix}.delta {params.prefix}.filter
+        """
 #
 # rule report:
 #     """Generate plots:
