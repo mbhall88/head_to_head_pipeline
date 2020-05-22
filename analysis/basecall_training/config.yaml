@@ -36,6 +36,7 @@ envs:
   paf:         "envs/paf.yaml"
   chop:        "envs/chop.yaml"
   mummer:      "envs/mummer.yaml"
+  report:      "envs/report.yaml"
 
 scripts:
   read_identity: "scripts/read_assessment.py"
