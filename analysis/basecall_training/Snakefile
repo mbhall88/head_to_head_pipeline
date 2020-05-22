@@ -671,9 +671,9 @@ rule calculate_consensus_errors:
 
 rule report:
     input:
-        rules.calculate_consensus_errors.output,
-        rules.calculate_consensus_accuracy.output,
-        rules.calculate_read_blast_identity.output,
+        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.assembly_error_details.tsv", sample=samples, model=models),
+        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.consensus_identity.csv", sample=samples, model=models),
+        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.read_identity.csv", sample=samples, model=models),
     output:
         report_dir / "read-identity.png",
         report_dir / "read-relative-len.png",
