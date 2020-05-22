@@ -28,7 +28,7 @@ containers:
   taiyaki:   "library://mbhall88/default/taiyaki:ce0cfbf"
   fast5:     "docker://quay.io/biocontainers/ont-fast5-api:3.0.1--py_0"
   guppy-gpu: "library://mbhall88/default/guppy-gpu:3.4.5"
-  rebaler:   "docker://quay.io/biocontainers/rebaler:0.2.0--py_0"
+  rebaler:   "docker://quay.io/biocontainers/rebaler:0.2.0--py_1"
 
 envs:
   aln_tools:   "envs/aln_tools.yaml"
