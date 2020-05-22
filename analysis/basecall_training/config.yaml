@@ -1,10 +1,11 @@
-data_dir:      "/hps/nobackup/research/zi/projects/tech_wars/data"
-outdir:        "results"
-model_config:  "dna_r9.4.1_450bps_hac_prom.cfg"  # the model to use when basecalling eval data
-min_covg:      0.8  # Ignore reads with alignments shorter than min_covg * read length
-model:         "resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.jsn"  # model used to basecall original data
-seed:          88  # random seed to use for randomly subsample read ids into training set
-training_size: 0.2  # percentage of reads to use for training - refer to https://github.com/nanoporetech/taiyaki/issues/73
+data_dir:        "/hps/nobackup/research/zi/projects/tech_wars/data"
+outdir:          "results"
+model_config:    "dna_r9.4.1_450bps_hac_prom.cfg"  # the model to use when basecalling eval data
+report_notebook: "report/report.py.ipynb"
+min_covg:        0.8  # Ignore reads with alignments shorter than min_covg * read length
+model:           "resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.jsn"  # model used to basecall original data
+seed:            88  # random seed to use for randomly subsample read ids into training set
+training_size:   0.2  # percentage of reads to use for training - refer to https://github.com/nanoporetech/taiyaki/issues/73
 model_training_params:  # hard-coding defaults as of 10/04/2020 https://github.com/nanoporetech/taiyaki#standard-model-parameters
   model:              "results/training/model/model_checkpoint_00006.checkpoint"
   chunk_len_min:      2000
