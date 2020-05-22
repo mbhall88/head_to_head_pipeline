@@ -8,6 +8,12 @@ basecalling model.
 - [Setup](#setup)
 - [Usage](#usage)
 - [Method](#method)
+- [Results](#results)
+  - [Read identity](#read-identity)
+  - [Relative read length](#relative-read-length)
+  - [Consensus accuracy](#consensus-accuracy)
+  - [Consensus error types](#consensus-error-types)
+- [Conclusion](#conclusion)
 
 
 ## Prerequisites
@@ -110,6 +116,11 @@ The above plot shows that there is clearly a bias toward deletions in the tubby 
 Here we show consensus accuracy in a similar manner to read identity. Each "read" in this context is a result of chopping the [`rebaler`](https://github.com/rrwick/Rebaler) assembly of the reads up into 10Kbps "chunks" to simulate reads, and then mapping those chunks back to the original assembly using `minimap2` (and the `-x asm5` preset).
 
 We see in the above plot that the tubby model produces reads that, once assembled, do not give as accurate an assembly as with guppy.
+
+| model   |   count |     mean |        std |      min |      25% |      50% |      75% |      max |
+|:--------|--------:|---------:|-----------:|---------:|---------:|---------:|---------:|---------:|
+| guppy   |    3534 | 0.998776 | 0.00442863 | 0.863168 | 0.998801 | 0.999201 | 0.9995   | 1        |
+| tubby   |    3526 | 0.997348 | 0.00520924 | 0.862076 | 0.997108 | 0.997804 | 0.998402 | 0.999816 |
 
 ### Consensus error types
 

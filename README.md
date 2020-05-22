@@ -6,3 +6,4 @@ It is currently in progress.
 See subdirectories for more specific information about different pipelines.
 
 -   [Assembly](analysis/assembly)
+-   [Basecall training](analysis/basecall_training)
