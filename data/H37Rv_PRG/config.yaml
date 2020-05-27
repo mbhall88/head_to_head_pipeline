@@ -1,4 +1,3 @@
-outdir:                       "."  # directory under which all output will be written
 genome_size:                  4411532
 h37rv:
   genome:     "resources/h37rv.fa"

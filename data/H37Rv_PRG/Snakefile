@@ -16,6 +16,7 @@ configfile: "config.yaml"
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 H37RV = config["h37rv"]
+prg_dir = Path("prgs")
 
 # ======================================================
 # Global functions and variables
@@ -23,10 +24,21 @@ H37RV = config["h37rv"]
 outdir = Path(config["outdir"])
 
 output_files = set()
+output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 
 # ======================================================
 # Rules
 # ======================================================
 rule all:
     input: output_files
+
+rule split_h37rv:
+    input:
+        genome=H37RV["genome"],
+        features=H37RV["features"]
+    output:
+        info=prg_dir / "reference_loci" / "loci-info.csv"
+    threads: 1
+    resources:
+        mem_mb=GB
 
