@@ -323,7 +323,7 @@ def main(
     for contig, tree in index_trees.items():
         logging.info(f"Writing IGR output file(s) for {contig}...")
         for interval in tree:
-            is_valid_len = min_igr_len <= len(interval) <= max_igr_len
+            is_valid_len = min_igr_len <= interval.length() <= max_igr_len
             if not is_valid_len:
                 logging.debug(
                     f"{interval} is not within the requested IGR length range. "
