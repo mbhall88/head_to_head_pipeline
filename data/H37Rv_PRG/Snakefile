@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-from typing import Dict, Set, Union
+from typing import Dict, Union
 
 from snakemake.utils import min_version
 
@@ -15,14 +15,13 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
 H37RV = config["h37rv"]
 prg_dir = Path("prgs")
 
 # ======================================================
 # Global functions and variables
 # ======================================================
-outdir = Path(config["outdir"])
-
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 
@@ -35,10 +34,24 @@ rule all:
 rule split_h37rv:
     input:
         genome=H37RV["genome"],
-        features=H37RV["features"]
+        features=H37RV["features"],
     output:
-        info=prg_dir / "reference_loci" / "loci-info.csv"
+        info=prg_dir / "reference_loci" / "loci-info.csv",
     threads: 1
     resources:
-        mem_mb=GB
-
+        mem_mb=1 * GB
+    singularity: containers["conda"]
+    conda: envs["gff_split"]
+    params:
+        script=scripts["gff_split"],
+        outdir=lambda wildcards, output: output.info.parent,
+        types="gene",
+        min_igr_len=100,
+    shell:
+        """
+        python {params.script} --fasta {input.genome} \
+            --gff {input.features} \
+            --outdir {params.outdir} \
+            --types {params.types} \
+            --min-igr-len {params.min_igr_len} 
+        """

@@ -3,8 +3,9 @@ h37rv:
   genome:     "resources/h37rv.fa"
   annotation: "resources/h37rv.gbk"
   features:   "resources/h37rv.gff3"
-#containers:
-#  samtools:    "docker://quay.io/biocontainers/samtools:1.10--h9402c20_2"
-#  conda:       "docker://continuumio/miniconda3:4.7.12"
-#envs:
-#scripts:
+containers:
+  conda:       "docker://continuumio/miniconda3:4.7.12"
+envs:
+  gff_split: "envs/gff_split.yaml"
+scripts:
+  gff_split: "scripts/gff_splitter.py"

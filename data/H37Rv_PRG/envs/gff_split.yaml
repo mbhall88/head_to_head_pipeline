@@ -1,0 +1,7 @@
+name: gff_split
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - intervaltree=3.0.2
+  - click=7.1.2

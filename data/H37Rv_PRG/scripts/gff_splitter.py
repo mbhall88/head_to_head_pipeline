@@ -274,7 +274,7 @@ def main(
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    file_mapping_path = outdir / "file_mapping.csv"
+    file_mapping_path = outdir / "loci-info.csv"
     mapping_stream = file_mapping_path.open("w")
     print(
         ",".join(["filename", "type", "start", "end", "name", "contig"]),
