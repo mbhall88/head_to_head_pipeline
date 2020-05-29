@@ -1,4 +1,4 @@
-genome_size:                  4411532
+genome_size: 4411532
 h37rv:
   genome:     "resources/h37rv.fa"
   annotation: "resources/h37rv.gbk"
@@ -9,3 +9,5 @@ envs:
   gff_split: "envs/gff_split.yaml"
 scripts:
   gff_split: "scripts/gff_splitter.py"
+
+min_igr_len: 100  # the minimum length for IGRs when building the PRG skeleton from H37Rv

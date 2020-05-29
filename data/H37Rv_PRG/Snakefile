@@ -46,7 +46,7 @@ rule split_h37rv:
         script=scripts["gff_split"],
         outdir=lambda wildcards, output: Path(output.info).parent,
         types="gene",
-        min_igr_len=100,
+        min_igr_len=config["min_igr_len"],
     shell:
         """
         python {params.script} --fasta {input.genome} \
