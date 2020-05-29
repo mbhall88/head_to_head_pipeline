@@ -44,7 +44,7 @@ rule split_h37rv:
     conda: envs["gff_split"]
     params:
         script=scripts["gff_split"],
-        outdir=lambda wildcards, output: output.info.parent,
+        outdir=lambda wildcards, output: Path(output.info).parent,
         types="gene",
         min_igr_len=100,
     shell:
