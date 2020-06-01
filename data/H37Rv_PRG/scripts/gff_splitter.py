@@ -30,8 +30,8 @@ class GffFeature:
     seqid: Contig
     source: str
     method: str  # correct term is type, but that is a python reserved variable name
-    start: int  # 1-based
-    end: int  # 1-based
+    start: int  # 1-based inclusive
+    end: int  # 1-based inclusive
     score: float
     strand: Strand
     phase: int
@@ -55,6 +55,15 @@ class GffFeature:
             phase=phase,
             attributes=attributes,
         )
+
+    def slice(self, zero_based: bool = True) -> Tuple[int, int]:
+        """Get a tuple for slicing a python object.
+        The reason this method is required is that GFF uses 1-based INCLUSIVE
+        coordinates. Meaning the end position is also included in the slice.
+        """
+        if zero_based:
+            return self.start - 1, self.end
+        return self.start, self.end + 1
 
 
 class DuplicateContigsError(Exception):
@@ -109,9 +118,9 @@ def data_reducer(current_reduced_data: str, new_data: str) -> str:
     return f"{current_reduced_data}+{new_data}"
 
 
-def slice_seq(seq: Seq, interval: Interval, zero_based: bool = True) -> Seq:
-    i = interval.begin - 1 if zero_based else interval.begin
-    j = interval.end - 1 if zero_based else interval.end
+def slice_seq(seq: Seq, interval: Interval) -> Seq:
+    i = interval.begin
+    j = interval.end
     return seq[i:j]
 
 
@@ -128,17 +137,19 @@ def construct_feature_trees(
         if feature.method not in types:
             continue
 
+        start, end = feature.slice(zero_based=True)
+
         if "Name" in feature.attributes:
             name = feature.attributes["Name"]
         elif "ID" in feature.attributes:
             name = feature.attributes["ID"]
         else:
-            name = f"{feature.method};{feature.start}-{feature.end}"
+            name = f"{feature.method};{start}-{end}"
             logging.warning(
                 f"Can't find a Name or ID for feature {feature}. Using {name}"
             )
 
-        iv = Interval(feature.start, feature.end, data=name)
+        iv = Interval(start, end, data=name)
         feature_trees[feature.seqid].add(iv)
     return feature_trees
 
