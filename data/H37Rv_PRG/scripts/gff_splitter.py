@@ -65,6 +65,10 @@ class OverlapError(Exception):
     pass
 
 
+class NoDataError(Exception):
+    pass
+
+
 def is_header(s: str) -> bool:
     if not s:
         return False
@@ -111,41 +115,70 @@ def slice_seq(seq: Seq, interval: Interval, zero_based: bool = True) -> Seq:
     return seq[i:j]
 
 
-def get_surrounding_intervals(
-    interval: Interval, tree: IntervalTree
-) -> Tuple[str, str]:
-    if tree.overlaps(interval.begin, interval.end):
-        raise OverlapError(
-            "Expected interval to have no overlaps in tree in order to get surrounding "
-            "intervals."
-        )
+def construct_feature_trees(
+    gff: TextIO, types: Tuple[str]
+) -> Dict[Contig, IntervalTree]:
+    feature_trees: Dict[Contig, IntervalTree] = defaultdict(IntervalTree)
 
-    left_iv = tree.at(interval.begin - 1)
-    if not left_iv:
-        left_name = "NA"
-    elif len(left_iv) > 1:
-        raise OverlapError(
-            f"Expected to get only one interval to left, but got {len(left_iv)}..."
-        )
+    for line in map(str.rstrip, gff):
+        if not line or line.startswith("#"):
+            continue
+
+        feature = GffFeature.from_str(line)
+        if feature.method not in types:
+            continue
+
+        if "Name" in feature.attributes:
+            name = feature.attributes["Name"]
+        elif "ID" in feature.attributes:
+            name = feature.attributes["ID"]
+        else:
+            name = f"{feature.method};{feature.start}-{feature.end}"
+            logging.warning(
+                f"Can't find a Name or ID for feature {feature}. Using {name}"
+            )
+
+        iv = Interval(feature.start, feature.end, data=name)
+        feature_trees[feature.seqid].add(iv)
+    return feature_trees
+
+
+def merge_short_intervals(tree: IntervalTree, min_len: int = 1) -> IntervalTree:
+    """Merge short intervals with their neighbour.
+    It is expected that there are no gaps between intervals.
+    """
+    intervals: List[Interval] = []
+    for i, iv in enumerate(sorted(tree)):
+        if iv.length() >= min_len:
+            intervals.append(iv)
+            continue
+        if not intervals:
+            intervals.append(Interval(iv.begin, iv.end + 1, data=iv.data))
+        else:
+            intervals.append(Interval(iv.begin - 1, iv.end, data=iv.data))
+
+    tree = IntervalTree(intervals)
+    tree.merge_overlaps(data_reducer=data_reducer)
+
+    if any(iv.length() < min_len for iv in tree) and len(tree) > 1:
+        return merge_short_intervals(tree, min_len=min_len)
     else:
-        left_name = list(left_iv)[0].data
-
-    right_iv = tree.at(interval.end + 1)
-    if not right_iv:
-        right_name = "NA"
-    elif len(right_iv) > 1:
-        raise OverlapError(
-            f"Expected to get only one interval to right, but got {len(right_iv)}..."
-        )
-    else:
-        right_name = list(right_iv)[0].data
-
-    return left_name, right_name
+        return tree
 
 
-def igr_name(interval: Interval, left_interval: str, right_interval: str) -> str:
-    igr = f"IGR:{interval.begin}-{interval.end}"
-    return "+".join([left_interval, igr, right_interval])
+def infer_interval_type(interval: Interval) -> str:
+    if not interval.data:
+        raise NoDataError(f"Expected data in interval, but gone none: {interval}")
+    names = str(interval.data).split("+")
+    num_intervals = len(names)
+    if num_intervals > 1:
+        if all("IGR" in name for name in names):
+            return "merged_igrs"
+        elif any("IGR" in name for name in names):
+            return "merged_feature_and_igr"
+        else:
+            return "merged_features"
+    return "igr" if "IGR" in names[0] else "feature"
 
 
 @click.command()
@@ -185,30 +218,34 @@ def igr_name(interval: Interval, left_interval: str, right_interval: str) -> str
     show_default=True,
 )
 @click.option(
-    "--min-igr-len",
-    help="The minimum length of the intergenic regions to output.",
+    "--min-len",
+    help=(
+        "The minimum length of the chunks to output. If a chunk is shorter than this "
+        "value, it is joined to a neighbouring chunk."
+    ),
     type=int,
-    default=0,
+    default=1,
     show_default=True,
 )
 @click.option(
-    "--max-igr-len",
-    help="The maximum length of the intergenic regions to output. Set to 0 to disable "
-    "IGR output.",
+    "--max-len",
+    help=(
+        "The maximum length of the chunks to output. Use this option with caution. If "
+        "a chunk is greater than this value it is discarded."
+    ),
+    metavar="INTEGER",
     type=float,
     default=float("inf"),
     show_default=True,
 )
-@click.option("--no-merge", help="Don't merge features that overlap.", is_flag=True)
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
 def main(
     fasta: TextIO,
     gff: TextIO,
     outdir: str,
     types: Tuple[str],
-    min_igr_len: int,
-    max_igr_len: float,
-    no_merge: bool,
+    min_len: int,
+    max_len: float,
     verbose: bool,
 ):
     """Splits a FASTA file into chunks based on a GFF3 file.
@@ -221,7 +258,6 @@ def main(
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
     )
-    no_igr = max_igr_len == 0
 
     logging.info("Indexing fasta file...")
     index: Index = index_fasta(fasta)
@@ -232,45 +268,41 @@ def main(
     }
 
     logging.info("Constructing interval tree for features...")
-    feature_trees: Dict[Contig, IntervalTree] = defaultdict(IntervalTree)
-    for line in map(str.rstrip, gff):
-        if not line or line.startswith("#"):
-            continue
+    feature_trees: Dict[Contig, IntervalTree] = construct_feature_trees(gff, types)
 
-        feature = GffFeature.from_str(line)
-        if feature.method not in types:
-            continue
-
-        if "Name" in feature.attributes:
-            name = feature.attributes["Name"]
-        elif "ID" in feature.attributes:
-            name = feature.attributes["ID"]
-        else:
-            name = f"{feature.method};{feature.start}-{feature.end}"
-            logging.warning(
-                f"Can't find a Name or ID for feature {feature}. Using {name}"
-            )
-
-        iv = Interval(feature.start, feature.end, data=name)
-        feature_trees[feature.seqid].add(iv)
-
-    if not no_merge:
-        for contig in feature_trees:
-            logging.info(f"Merging overlapping features for {contig}...")
-            feature_trees[contig].merge_overlaps(data_reducer=data_reducer)
+    for contig in feature_trees:
+        logging.info(f"Merging overlapping features for {contig}...")
+        feature_trees[contig].merge_overlaps(data_reducer=data_reducer)
 
     for contig, tree in feature_trees.items():
         logging.info(f"Found {len(tree)} feature(s) for {contig}")
 
-    if not no_igr:
-        for contig in index_trees:
-            logging.info(f"Inferring intergenic region interval(s) for {contig}...")
-            for iv in feature_trees[contig]:
-                index_trees[contig].chop(iv.begin, iv.end)
-            logging.info(
-                f"Found {len(index_trees[contig])} intergenic region interval(s) for "
-                f"{contig}"
-            )
+    for contig in index_trees:
+        logging.info(f"Inferring intergenic region interval(s) for {contig}...")
+        for iv in feature_trees[contig]:
+            index_trees[contig].chop(iv.begin, iv.end)
+
+        intervals_with_names = set()
+        for iv in index_trees[contig]:
+            name = f"IGR:{iv.begin}-{iv.end}"
+            intervals_with_names.add(Interval(iv.begin, iv.end, data=name))
+
+        index_trees[contig] = IntervalTree(intervals_with_names)
+
+        logging.info(
+            f"Found {len(index_trees[contig])} intergenic region interval(s) for "
+            f"{contig}"
+        )
+
+    logging.debug("Joining IGR and feature trees...")
+    trees = {
+        contig: index_trees[contig].union(feature_trees[contig])
+        for contig in feature_trees
+    }
+    for contig, tree in trees.items():
+        logging.info(f"Merging short intervals for {contig}...")
+        trees[contig] = merge_short_intervals(tree, min_len=min_len)
+        logging.info(f"{len(trees[contig])} interval(s) after merging short ones.")
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -281,10 +313,17 @@ def main(
         file=mapping_stream,
     )
 
-    for contig, tree in feature_trees.items():
-        logging.info(f"Writing feature output file(s) for {contig}...")
+    for contig, tree in trees.items():
+        logging.info(f"Writing output file(s) for {contig}...")
         for interval in tree:
-            contig_dir = outdir / contig / "features"
+            if interval.length() > max_len:
+                logging.info(
+                    f"Interval {interval.data} ({interval.length()}bp) is longer than "
+                    f"the maximum allowed length. Skipping..."
+                )
+                continue
+
+            contig_dir = outdir / contig
             contig_dir.mkdir(parents=True, exist_ok=True)
             filepath = contig_dir / f"{interval.data}.fa"
             if filepath.exists():
@@ -297,69 +336,18 @@ def main(
             )
             seq = slice_seq(index[contig], interval)
             filepath.write_text(f"{header}\n{seq}")
+
+            interval_type = infer_interval_type(interval)
             print(
                 ",".join(
                     map(
                         str,
                         [
-                            "/".join(filepath.parts[-3:]),
-                            "feature",
+                            "/".join(filepath.parts[-2:]),
+                            interval_type,
                             interval.begin,
                             interval.end,
                             interval.data,
-                            contig,
-                        ],
-                    )
-                ),
-                file=mapping_stream,
-            )
-
-            logging.debug(f"{interval} written to {filepath}")
-
-    if no_igr:
-        logging.info("All done!")
-        return
-
-    for contig, tree in index_trees.items():
-        logging.info(f"Writing IGR output file(s) for {contig}...")
-        for interval in tree:
-            is_valid_len = min_igr_len <= interval.length() <= max_igr_len
-            if not is_valid_len:
-                logging.debug(
-                    f"{interval} is not within the requested IGR length range. "
-                    f"Skipping..."
-                )
-                continue
-
-            left_iv, right_iv = get_surrounding_intervals(
-                interval, feature_trees[contig]
-            )
-            contig_dir = outdir / contig / "igrs"
-            contig_dir.mkdir(parents=True, exist_ok=True)
-            name = igr_name(interval, left_iv, right_iv)
-            filename = name + ".fa"
-            filepath = contig_dir / filename
-
-            if filepath.exists():
-                raise FileExistsError(
-                    f"A file already exists for {interval} at {filepath}"
-                )
-            header = (
-                f">{filename} contig={contig}|start={interval.begin}|"
-                f"end={interval.end}"
-            )
-            seq = slice_seq(index[contig], interval)
-            filepath.write_text(f"{header}\n{seq}")
-            print(
-                ",".join(
-                    map(
-                        str,
-                        [
-                            "/".join(filepath.parts[-3:]),
-                            "igr",
-                            interval.begin,
-                            interval.end,
-                            name,
                             contig,
                         ],
                     )

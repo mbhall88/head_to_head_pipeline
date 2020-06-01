@@ -4,7 +4,7 @@ from typing import Dict, Union
 
 from snakemake.utils import min_version
 
-min_version("5.10.0")
+min_version("5.14.0")
 
 GB = 1_024
 PathLike = Union[str, Path, os.PathLike]
@@ -46,12 +46,12 @@ rule split_h37rv:
         script=scripts["gff_split"],
         outdir=lambda wildcards, output: Path(output.info).parent,
         types="gene",
-        min_igr_len=config["min_igr_len"],
+        min_len=config["min_chunk_len"],
     shell:
         """
         python {params.script} --fasta {input.genome} \
             --gff {input.features} \
             --outdir {params.outdir} \
             --types {params.types} \
-            --min-igr-len {params.min_igr_len} 
+            --min-len {params.min_len} 
         """

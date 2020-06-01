@@ -10,4 +10,4 @@ envs:
 scripts:
   gff_split: "scripts/gff_splitter.py"
 
-min_igr_len: 100  # the minimum length for IGRs when building the PRG skeleton from H37Rv
+min_chunk_len: 500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
