@@ -329,3 +329,10 @@ ipython_config.py
 
 # ignore all results by default
 results/
+
+# VCFs can be big
+*.vcf*
+
+# ignore fasta indexes
+*.fai
+*.fxi
