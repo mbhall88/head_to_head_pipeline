@@ -1,6 +1,7 @@
-import pytest
-from unittest.mock import patch
 from io import StringIO
+from unittest.mock import patch
+
+import pytest
 from assign_lineages import (
     PanelVariant,
     RowError,
@@ -30,8 +31,9 @@ class TestLineageFromStr:
         s = "lineage4"
 
         actual = Lineage.from_str(s).minor
+        expected = ()
 
-        assert actual is None
+        assert actual == expected
 
     def test_majorAndMinor_allMinorsLumpedInTogether(self):
         s = "lineage4.1.2.3.4.5"
@@ -40,6 +42,38 @@ class TestLineageFromStr:
         expected = Lineage(major="4", minor="1.2.3.4.5")
 
         assert actual == expected
+
+
+class TestLineageLessThan:
+    def test_sameLineage_returnsFalse(self):
+        lineage = Lineage("foo")
+        other = Lineage("foo")
+
+        assert not lineage < other
+
+    def test_differentMajorsButNoMinor_returnsFalse(self):
+        lineage = Lineage("foo")
+        other = Lineage("bar")
+
+        assert not lineage < other
+
+    def test_otherHasMinor_returnsFalse(self):
+        lineage = Lineage("4")
+        other = Lineage("5", minor="1")
+
+        assert not lineage < other
+
+    def test_otherHasNoMinor_returnsTrue(self):
+        lineage = Lineage("4", minor="3")
+        other = Lineage("2")
+
+        assert lineage < other
+
+    def test_bothHaveMinor_returnsFalse(self):
+        lineage = Lineage("4", minor="3")
+        other = Lineage("2", minor="3")
+
+        assert not lineage < other
 
 
 class TestPanelVariantFromRow:
@@ -249,6 +283,7 @@ class TestClassifierIsVariantValid:
         classifier = Classifier(index)
         mock_variant.POS = 4
         mock_variant.REF = "G"
+        mock_variant.FILTER = None
 
         assert not classifier.is_variant_valid(mock_variant)
 
@@ -260,6 +295,7 @@ class TestClassifierIsVariantValid:
         classifier = Classifier(index)
         mock_variant.POS = 1
         mock_variant.REF = "d"
+        mock_variant.FILTER = None
 
         assert not classifier.is_variant_valid(mock_variant)
 
@@ -272,6 +308,7 @@ class TestClassifierIsVariantValid:
         mock_variant.POS = 1
         mock_variant.REF = "G"
         mock_variant.ALT = ["T", "C"]
+        mock_variant.FILTER = None
 
         assert not classifier.is_variant_valid(mock_variant)
 
@@ -284,8 +321,22 @@ class TestClassifierIsVariantValid:
         mock_variant.POS = 1
         mock_variant.REF = "G"
         mock_variant.ALT = ["T", "A"]
+        mock_variant.FILTER = None
 
         assert classifier.is_variant_valid(mock_variant)
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_panelVariantFailsFilter_returnsFalse(self, mock_variant):
+        index = {
+            1: PanelVariant(Lineage("1"), 1, "G", "A"),
+        }
+        classifier = Classifier(index)
+        mock_variant.POS = 1
+        mock_variant.REF = "G"
+        mock_variant.ALT = ["T", "A"]
+        mock_variant.FILTER = "FAIL"
+
+        assert not classifier.is_variant_valid(mock_variant)
 
 
 class TestGenotypeIsNull:
@@ -417,6 +468,7 @@ class TestClassifierSamplesWithLineageVariant:
         mocked_variant.REF = "G"
         mocked_variant.ALT = ["T", "A"]
         mocked_variant.genotypes = [[0, 0, False], [1, 1, False]]
+        mocked_variant.format.side_effect = KeyError
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = []
@@ -433,6 +485,7 @@ class TestClassifierSamplesWithLineageVariant:
         mocked_variant.REF = "G"
         mocked_variant.ALT = ["T", "A"]
         mocked_variant.genotypes = [[0, 0, False], [2, 2, False]]
+        mocked_variant.format.side_effect = KeyError
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = [1]
@@ -449,6 +502,7 @@ class TestClassifierSamplesWithLineageVariant:
         mocked_variant.REF = "G"
         mocked_variant.ALT = ["T", "A"]
         mocked_variant.genotypes = [[2, -1, False], [2, 2, False]]
+        mocked_variant.format.side_effect = KeyError
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = [0, 1]
@@ -465,6 +519,7 @@ class TestClassifierSamplesWithLineageVariant:
         mocked_variant.REF = "G"
         mocked_variant.ALT = ["T", "A"]
         mocked_variant.genotypes = [[2, -1, False], [2, 2, False]]
+        mocked_variant.format.side_effect = KeyError
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = []
@@ -472,53 +527,265 @@ class TestClassifierSamplesWithLineageVariant:
         assert actual == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
-    def test_hetSampleHasLineageVariantIncludeHet_returnsHetIndex(self, mocked_variant):
+    def test_hetSampleHasLineageVariantIncludeHetAndIncrementHetCount_returnsHetIndex(
+        self, mocked_variant
+    ):
         index = {
             1: PanelVariant(Lineage("1"), 1, "G", "A"),
         }
-        classifier = Classifier(index, include_het=True)
+        classifier = Classifier(index)
         mocked_variant.POS = 1
         mocked_variant.REF = "G"
         mocked_variant.ALT = ["T", "A"]
         mocked_variant.genotypes = [[-1, -1, False], [2, 0, False]]
+        mocked_variant.format.side_effect = KeyError
+
+        actual = classifier.samples_with_lineage_variant(mocked_variant)
+        expected = [1]
+
+        assert actual == expected
+        assert classifier.het_counts[1] == 1
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_hetSampleDoesntHaveLineageVariant_returnsEmpty(self, mocked_variant):
+        index = {
+            1: PanelVariant(Lineage("1"), 1, "G", "A"),
+        }
+        classifier = Classifier(index)
+        mocked_variant.POS = 1
+        mocked_variant.REF = "G"
+        mocked_variant.ALT = ["T", "A", "N"]
+        mocked_variant.genotypes = [[-1, -1, False], [1, 3, False]]
+        mocked_variant.format.side_effect = KeyError
+
+        actual = classifier.samples_with_lineage_variant(mocked_variant)
+        expected = []
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_sampleHasLineageVariantButFailsFilter_returnsEmpty(self, mocked_variant):
+        index = {
+            1: PanelVariant(Lineage("1"), 1, "G", "A"),
+        }
+        classifier = Classifier(index)
+        mocked_variant.POS = 1
+        mocked_variant.REF = "G"
+        mocked_variant.ALT = ["T", "A", "N"]
+        mocked_variant.genotypes = [[-1, -1, False], [2, 2, False]]
+        mocked_variant.format.return_value = ["PASS", "FAIL"]
+
+        actual = classifier.samples_with_lineage_variant(mocked_variant)
+        expected = []
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_sampleHasLineageVariantAndPassesFilter_returnsIndex(self, mocked_variant):
+        index = {
+            1: PanelVariant(Lineage("1"), 1, "G", "A"),
+        }
+        classifier = Classifier(index)
+        mocked_variant.POS = 1
+        mocked_variant.REF = "G"
+        mocked_variant.ALT = ["T", "A", "N"]
+        mocked_variant.genotypes = [[-1, -1, False], [2, 2, False]]
+        mocked_variant.format.return_value = ["PASS", "PASS"]
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = [1]
 
         assert actual == expected
 
-    @patch("cyvcf2.Variant", autospec=True, create=True)
-    def test_hetSampleDoesntHaveLineageVariantIncludeHet_returnsEmpty(
-        self, mocked_variant
-    ):
-        index = {
-            1: PanelVariant(Lineage("1"), 1, "G", "A"),
-        }
-        classifier = Classifier(index, include_het=True)
-        mocked_variant.POS = 1
-        mocked_variant.REF = "G"
-        mocked_variant.ALT = ["T", "A", "N"]
-        mocked_variant.genotypes = [[-1, -1, False], [1, 3, False]]
 
-        actual = classifier.samples_with_lineage_variant(mocked_variant)
-        expected = []
+class TestLineageMRCA:
+    def test_differentMajor_returnsNone(self):
+        lineage = Lineage(major="4", minor="3.2")
+        other = Lineage(major="3", minor="3.2")
+
+        assert lineage.mrca(other) is None
+
+    def test_sameMajorNoMinors_returnsMajor(self):
+        lineage = Lineage(major="4")
+        other = Lineage(major="4")
+
+        actual = lineage.mrca(other)
+        expected = lineage
 
         assert actual == expected
 
-    @patch("cyvcf2.Variant", autospec=True, create=True)
-    def test_hetSampleHasLineageVariantDontIncludeHet_doesntReturnHetIndex(
-        self, mocked_variant
-    ):
-        index = {
-            1: PanelVariant(Lineage("1"), 1, "G", "A"),
-        }
-        classifier = Classifier(index, include_het=False)
-        mocked_variant.POS = 1
-        mocked_variant.REF = "G"
-        mocked_variant.ALT = ["T", "A"]
-        mocked_variant.genotypes = [[2, 2, False], [2, 0, False]]
+    def test_sameMajorAndMinors_returnsSame(self):
+        lineage = Lineage(major="4", minor="3.4.5.8")
+        other = Lineage(major="4", minor="3.4.5.8")
 
-        actual = classifier.samples_with_lineage_variant(mocked_variant)
-        expected = [0]
+        actual = lineage.mrca(other)
+        expected = lineage
+
+        assert actual == expected
+
+    def test_sameMajorOneHasMinors_returnsMajor(self):
+        lineage = Lineage(major="4", minor="8.9")
+        other = Lineage(major="4")
+
+        actual = lineage.mrca(other)
+        expected = other
+
+        assert actual == expected
+
+    def test_sameMajorBothHaveMinorsOnSameBranches_returnsFirstMinor(self):
+        lineage = Lineage(major="4", minor="8.9")
+        other = Lineage(major="4", minor="8.7.6")
+
+        actual = lineage.mrca(other)
+        expected = Lineage(major="4", minor="8")
+
+        assert actual == expected
+
+    def test_sameMajorBothHaveMinorsOnSameBranches_returnsSecondMinor(self):
+        lineage = Lineage(major="4", minor="8.7.8")
+        other = Lineage(major="4", minor="8.7.6")
+
+        actual = lineage.mrca(other)
+        expected = Lineage(major="4", minor="8.7")
+
+        assert actual == expected
+
+    def test_sameMajorBothHaveMinorsOnDifferentBranches_returnsMajor(self):
+        lineage = Lineage(major="4", minor="8.9")
+        other = Lineage(major="4", minor="4.7.6")
+
+        actual = lineage.mrca(other)
+        expected = Lineage(major="4")
+
+        assert actual == expected
+
+
+class TestLineageCall:
+    def test_emptyInput_returnsNone(self):
+        lineages = []
+
+        assert Lineage.call(lineages) is None
+
+    def test_oneLineage_returnsSameLineage(self):
+        lineage = Lineage(major="foo", minor="bar")
+
+        actual = Lineage.call([lineage])
+        expected = lineage
+
+        assert actual == expected
+
+    def test_twoLineagesSameMajorOneWithMinor_returnsOneWithMinor(self):
+        l1 = Lineage(major="foo", minor="bar")
+        l2 = Lineage(major="foo")
+
+        actual = Lineage.call([l1, l2])
+        expected = l1
+
+        assert actual == expected
+
+    def test_twoLineagesSameMajorSameDepthMinor_returnsMRCA(self):
+        l1 = Lineage(major="4", minor="1.3.4.5")
+        l2 = Lineage(major="4", minor="1.3.6.6")
+        l3 = Lineage(major="4", minor="1")
+
+        actual = Lineage.call([l1, l2, l3])
+        expected = Lineage(major="4", minor="1.3")
+
+        assert actual == expected
+
+    def test_threeLineagesSameMajorSameDepthMinor_returnsMRCA(self):
+        l1 = Lineage(major="4", minor="1.3.4.5")
+        l2 = Lineage(major="4", minor="1.3.6.6")
+        l3 = Lineage(major="4", minor="1.3.6.8")
+
+        actual = Lineage.call([l1, l2, l3])
+        expected = Lineage(major="4", minor="1.3")
+
+        assert actual == expected
+
+    def test_threeLineagesWithMinorsDiffLen_returnsLongest(self):
+        l1 = Lineage(major="4", minor="1.3.4.5.9")
+        l2 = Lineage(major="4", minor="1.3.6")
+        l3 = Lineage(major="4", minor="1.3.6.8")
+
+        actual = Lineage.call([l1, l2, l3])
+        expected = Lineage(major="4", minor="1.3.4.5.9")
+
+        assert actual == expected
+
+    def test_threeLineagesWithDiffMinorsSameLen_returnsMajor(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="4", minor="2.3.6")
+        l3 = Lineage(major="4", minor="3.3.6")
+
+        actual = Lineage.call([l1, l2, l3])
+        expected = Lineage(major="4")
+
+        assert actual == expected
+
+
+class TestClassifierCallLineage:
+    def test_emptyList_returnsNone(self):
+        lineages = []
+        classifier = Classifier()
+        sample_idx = 0
+
+        expected = "unknown"
+        actual = classifier.call_sample_lineage(lineages, sample_idx, default=expected)
+
+        assert actual == expected
+
+    def test_oneLineageTooManyHets_returnsTooManyHets(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        classifier = Classifier(max_het=1)
+        sample_idx = 0
+        classifier.het_counts[sample_idx] = 5
+
+        actual = classifier.call_sample_lineage([l1], sample_idx)
+        expected = "too_many_hets"
+
+        assert actual == expected
+
+    def test_oneLineage_returnsOnlyElement(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        classifier = Classifier()
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1], sample_idx)
+        expected = str(l1)
+
+        assert actual == expected
+
+    def test_twoLineagesSameMajor_returnsLowestOnTree(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="4", minor="8.3")
+        classifier = Classifier()
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1, l2], sample_idx)
+        expected = str(l1)
+
+        assert actual == expected
+
+    def test_twoLineagesDiffMajor_returnsMixed(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="5", minor="8.3")
+        classifier = Classifier()
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1, l2], sample_idx)
+        expected = "mixed"
+
+        assert actual == expected
+
+    def test_mixedLineagesBelowThreshold_returnsMostCommon(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="4", minor="1.3")
+        l3 = Lineage(major="5", minor="8.3")
+        classifier = Classifier(max_alt_lineages=1)
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1, l2, l3], sample_idx)
+        expected = str(l1)
 
         assert actual == expected

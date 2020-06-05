@@ -1,16 +1,20 @@
 import logging
 import re
-from itertools import starmap
+from itertools import starmap, repeat, takewhile
 
 from collections import Counter, defaultdict
+from enum import Enum
 from dataclasses import dataclass
-from typing import TextIO, Dict, Optional, NamedTuple, List
+from typing import TextIO, Dict, Optional, NamedTuple, List, Union
 
 import click
 from cyvcf2 import VCF, Variant
 
 Indices = List[int]
-LINEAGE_REGEX = re.compile(r"^(lineage)?(?P<major>[\w]+)\.?(?P<minor>.*)?$")
+LINEAGE_DELIM = "."
+LINEAGE_REGEX = re.compile(
+    rf"^(lineage)?(?P<major>[\w]+)\{LINEAGE_DELIM}?(?P<minor>.*)?$"
+)
 
 
 class RowError(Exception):
@@ -19,6 +23,15 @@ class RowError(Exception):
 
 class InvalidLineageString(Exception):
     pass
+
+
+class Filter(Enum):
+    Pass = "PASS"
+    Fail = "FAIL"
+
+    @staticmethod
+    def from_str(s: str) -> "Filter":
+        return Filter.Pass if s in {"PASS", "."} else Filter.Fail
 
 
 class Genotype(NamedTuple):
@@ -59,12 +72,27 @@ class Genotype(NamedTuple):
         return max(self.allele1, self.allele2) - 1
 
 
-@dataclass
 class Lineage:
     """A class representing a lineage and any of its sublineage information."""
 
-    major: str
-    minor: Optional[str] = None
+    def __init__(
+        self,
+        major: str,
+        minor: Optional[Union[str, List[str]]] = None,
+        minor_delim: str = ".",
+    ):
+        self.major = major
+        if minor is None:
+            minor = tuple()
+        if isinstance(minor, str):
+            minor = tuple(minor.split(minor_delim))
+        self.minor = tuple(minor)
+        self._minor_delim = minor_delim
+
+    def __str__(self):
+        if not self.minor:
+            return self.major
+        return self.major + self._minor_delim + self._minor_delim.join(self.minor)
 
     @staticmethod
     def from_str(s: str) -> "Lineage":
@@ -77,6 +105,56 @@ class Lineage:
         major = match.group("major")
         minor = match.group("minor") or None
         return Lineage(major=major, minor=minor)
+
+    def __eq__(self, other: "Lineage") -> bool:
+        return self.major == other.major and self.minor == other.minor
+
+    def __lt__(self, other: "Lineage") -> bool:
+        if (not self.minor and not other.minor) or not self.minor:
+            return False
+        if not other.minor:
+            return True
+        # we now know that both have minors
+        return len(self.minor) > len(other.minor)
+
+    def mrca(self, other: "Lineage") -> Optional["Lineage"]:
+        """Determine the most recent common ancestor between two Lineages.
+        Returns None if there is no MRCA.
+        """
+        if self.major != other.major:
+            return None
+        if not self.minor or not other.minor:
+            return Lineage(major=self.major)
+
+        try:
+            common_minors, _ = zip(
+                *takewhile(lambda xy: xy[0] == xy[1], zip(self.minor, other.minor))
+            )
+            minor_str = LINEAGE_DELIM.join(common_minors)
+        except ValueError:
+            minor_str = None
+
+        return Lineage(self.major, minor_str)
+
+    @staticmethod
+    def call(lineages: List["Lineage"]) -> Optional["Lineage"]:
+        """Returns the Lineage with the most specific minor.
+        if the majors are different, returns None. If minors are the same, then takes
+        MRCA of the lineages with the same minor length.
+        """
+        if not lineages:
+            return None
+        if len(lineages) == 1:
+            return lineages[0]
+        lineages.sort()
+        minors_of_same_len = filter(
+            lambda l: len(l.minor) == len(lineages[0].minor), lineages
+        )
+        lineage = lineages[0]
+        for lin in minors_of_same_len:
+            lineage = lin.mrca(lineage)
+
+        return lineage
 
 
 class PanelVariant(NamedTuple):
@@ -127,18 +205,28 @@ class Classifier:
     panel."""
 
     def __init__(
-        self, index: Optional[Dict[int, PanelVariant]] = None, include_het: bool = False
+        self,
+        index: Optional[Dict[int, PanelVariant]] = None,
+        max_het: int = 0,
+        max_alt_lineages: int = 0,
     ):
         if index is None:
             index = dict()
         self.index = index
-        self.include_het = include_het
+        self.max_het = max_het
+        self.het_counts: Dict[int, int] = defaultdict(int)
+        self.max_alt_lineages = max_alt_lineages
 
     def _is_position_valid(self, pos: int) -> bool:
         return pos in self.index
 
     def is_variant_valid(self, variant: Variant) -> bool:
         if not self._is_position_valid(variant.POS):
+            return False
+
+        failed_filter = variant.FILTER is not None
+        if failed_filter:
+            logging.debug(f"Position {variant.POS} failed FILTER with {variant.FILTER}")
             return False
 
         panel_variant = self.index[variant.POS]
@@ -167,20 +255,51 @@ class Classifier:
         if panel_variant is None:
             return indices
 
+        try:
+            filters = map(Filter.from_str, variant.format("FT"))
+        except KeyError:
+            filters = repeat(Filter.Pass)
+
         for sample_idx, gt in enumerate(starmap(Genotype, variant.genotypes)):
+            failed_filter = next(filters) is Filter.Fail
+            if failed_filter:
+                continue
+
             if gt.is_hom_alt():
                 alt_idx = gt.alt_index()
                 alt_base = variant.ALT[alt_idx]
                 if alt_base == panel_variant.alt:
                     indices.append(sample_idx)
                     continue
-            if self.include_het and gt.is_het():
+            if gt.is_het():
                 alt_idxs = [a - 1 for a in [gt.allele1, gt.allele2] if a > 0]
                 alt_bases = {variant.ALT[i] for i in alt_idxs}
                 if panel_variant.alt in alt_bases:
                     indices.append(sample_idx)
+                    self.het_counts[sample_idx] += 1
 
         return indices
+
+    def call_sample_lineage(
+        self, lineages: List[Lineage], sample_idx: int, default: str = ""
+    ) -> str:
+        if not lineages:
+            return default
+
+        num_hets = self.het_counts[sample_idx]
+        if num_hets > self.max_het:
+            return "too_many_hets"
+
+        if len(lineages) == 1:
+            return str(lineages[0])
+
+        majors = Counter([l.major for l in lineages])
+        most_common_major = majors.most_common(n=1)[0]
+        num_alt_lineages = len(lineages) - most_common_major[-1]
+        if num_alt_lineages > self.max_alt_lineages:
+            return "mixed"
+
+        return str(Lineage.call(lineages))
 
 
 def load_panel(
@@ -244,7 +363,7 @@ def load_panel(
 )
 @click.option(
     "--output-delim",
-    help="Delimiting character used in the output file.",
+    help="Delimiting character used in the output file. Do not use `;`.",
     default=",",
     show_default=True,
 )
@@ -254,9 +373,23 @@ def load_panel(
     is_flag=True,
 )
 @click.option(
-    "--include-het",
-    help="Consider heterozygous (with relevant ALT) as lineage-defining.",
-    is_flag=True,
+    "--max-het",
+    help=(
+        "Maximum allowed heterozygous lineage-defining variants before abandoning "
+        "lineage assignment for a sample."
+    ),
+    default=0,
+    show_default=True,
+)
+@click.option(
+    "--max-alt-lineages",
+    help=(
+        "Maximum allowed number of variants from different major lineages. For example "
+        "if a sample has 2 L4 variants and 1 L3 variant, this sample would be called "
+        "L4 if this parameter is set to 1 or 'mixed' if set to 0"
+    ),
+    default=0,
+    show_default=True,
 )
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
 def main(
@@ -268,7 +401,8 @@ def main(
     output_delim: str,
     no_header: bool,
     verbose: bool,
-    include_het: bool,
+    max_het: int,
+    max_alt_lineages: int,
 ):
     """Call Mycobacterium tuberculosis lineages for samples in a VCF file."""
     log_level = logging.DEBUG if verbose else logging.INFO
@@ -283,7 +417,9 @@ def main(
 
     logging.info("Searching VCF for lineage-defining variants...")
     classification: Dict[str, List[Lineage]] = defaultdict(list)
-    classifier = Classifier(panel_index, include_het=include_het)
+    classifier = Classifier(
+        panel_index, max_het=max_het, max_alt_lineages=max_alt_lineages
+    )
     vcf = VCF(input)
     for variant in vcf:
         if not classifier.is_variant_valid(variant):
@@ -297,21 +433,41 @@ def main(
             logging.debug(f"{sample} has variant for {panel_variant.lineage}")
 
     logging.info("Calling lineages for samples based on found lineage variants...")
-    output_header = output_delim.join(["sample", "called_lineage", "found_lineages"])
+    output_header = output_delim.join(
+        ["sample", "major_lineage", "full_lineage", "found_lineages"]
+    )
     print(output_header, file=output)
 
-    for sample in vcf.samples:
+    for idx, sample in enumerate(vcf.samples):
         if sample not in classification:
             # todo: what is a good default?
             logging.warning(
                 f"No panel variants were found for {sample}. Defaulting to "
                 f"{default_lineage}"
             )
-            print(output_delim.join([sample, default_lineage, ""]), file=output)
+            print(
+                output_delim.join([sample, default_lineage, default_lineage, ""]),
+                file=output,
+            )
             continue
 
         found_lineages = classification[sample]
-        called_lineage = classifier.call_lineage(found_lineages)  # todo: implement method
+        called_lineage = Lineage.from_str(
+            classifier.call_sample_lineage(
+                found_lineages, sample_idx=idx, default=default_lineage
+            )
+        )
+        print(
+            output_delim.join(
+                [
+                    sample,
+                    called_lineage.major,
+                    str(called_lineage),
+                    ";".join(map(str, found_lineages)),
+                ]
+            ),
+            file=output,
+        )
 
     logging.info("All done!")
     vcf.close()
