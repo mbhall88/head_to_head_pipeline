@@ -1,10 +1,8 @@
 import logging
 import re
-from itertools import starmap, repeat, takewhile
-
 from collections import Counter, defaultdict
 from enum import Enum
-from dataclasses import dataclass
+from itertools import starmap, repeat, takewhile
 from typing import TextIO, Dict, Optional, NamedTuple, List, Union
 
 import click

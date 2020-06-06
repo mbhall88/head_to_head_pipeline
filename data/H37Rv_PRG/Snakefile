@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 from typing import Dict, Union
 
 from snakemake.utils import min_version
@@ -9,10 +9,13 @@ min_version("5.14.0")
 GB = 1_024
 PathLike = Union[str, Path, os.PathLike]
 
+
 # ======================================================
 # Config files
 # ======================================================
 configfile: "config.yaml"
+
+
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
@@ -24,12 +27,16 @@ prg_dir = Path("prgs")
 # ======================================================
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
+output_files.add("resources/cryptic.lineages.csv")
+
 
 # ======================================================
 # Rules
 # ======================================================
 rule all:
-    input: output_files
+    input:
+        output_files,
+
 
 rule split_h37rv:
     input:
@@ -39,9 +46,11 @@ rule split_h37rv:
         info=prg_dir / "reference_loci" / "loci-info.csv",
     threads: 1
     resources:
-        mem_mb=1 * GB
-    singularity: containers["conda"]
-    conda: envs["gff_split"]
+        mem_mb=1 * GB,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["gff_split"]
     params:
         script=scripts["gff_split"],
         outdir=lambda wildcards, output: Path(output.info).parent,
@@ -54,4 +63,34 @@ rule split_h37rv:
             --outdir {params.outdir} \
             --types {params.types} \
             --min-len {params.min_len} 
+        """
+
+
+rule assign_lineages:
+    input:
+        vcf=config["cryptic_vcf"],
+        panel=config["lineage_panel"],
+    output:
+        "resources/cryptic.lineages.csv",
+    threads: 1
+    resources:
+        mem_mb=8 * GB,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["assign_lineages"]
+    params:
+        script=scripts["assign_lineages"],
+        default_lineage=config["default_lineage"], # the name given to samples with no hits in the panel
+        max_het=1,
+        max_alt_lineages=1,
+        extras="--verbose",
+    shell:
+        """
+        python {params.script} --input {input.vcf} \
+            --panel {input.panel} \
+            --output {output} \
+            --default-lineage {params.default_lineage} \
+            --max-het {params.max_het} \
+            --max-alt_lineages {params.max_alt_lineages} {params.extras}
         """
