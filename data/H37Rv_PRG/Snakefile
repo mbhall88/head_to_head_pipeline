@@ -92,5 +92,5 @@ rule assign_lineages:
             --output {output} \
             --default-lineage {params.default_lineage} \
             --max-het {params.max_het} \
-            --max-alt_lineages {params.max_alt_lineages} {params.extras}
+            --max-alt-lineages {params.max_alt_lineages} {params.extras}
         """
