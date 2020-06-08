@@ -74,7 +74,7 @@ rule assign_lineages:
         "resources/cryptic.lineages.csv",
     threads: 1
     resources:
-        mem_mb=8 * GB,
+        mem_mb=GB,
     singularity:
         containers["conda"]
     conda:
