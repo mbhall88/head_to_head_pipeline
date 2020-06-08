@@ -313,17 +313,45 @@ class TestClassifierIsVariantValid:
         assert not classifier.is_variant_valid(mock_variant)
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
-    def test_panelVariantAltInVariantAlts_returnsTrue(self, mock_variant):
+    def test_refLineagePosPanelRefInAlt_returnsTrue(self, mock_variant):
         index = {
             1: PanelVariant(Lineage("1"), 1, "G", "A"),
         }
         classifier = Classifier(index)
         mock_variant.POS = 1
         mock_variant.REF = "G"
-        mock_variant.ALT = ["T", "A"]
+        mock_variant.ALT = ["T", "C"]
+        mock_variant.FILTER = None
+
+        assert not classifier.is_variant_valid(mock_variant)
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_panelVariantAltIsVariantRef_returnsTrue(self, mock_variant):
+        pos = 1692141
+        index = {
+            pos: PanelVariant(Lineage.from_str("4.10"), position=pos, ref="C", alt="A"),
+        }
+        classifier = Classifier(index, ref_lineage_position=pos)
+        mock_variant.POS = pos
+        mock_variant.REF = "A"
+        mock_variant.ALT = ["C"]
         mock_variant.FILTER = None
 
         assert classifier.is_variant_valid(mock_variant)
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_panelVariantAltIsNotVariantRef_returnsFalse(self, mock_variant):
+        pos = 1692141
+        index = {
+            pos: PanelVariant(Lineage.from_str("4.10"), position=pos, ref="C", alt="T"),
+        }
+        classifier = Classifier(index, ref_lineage_position=pos)
+        mock_variant.POS = pos
+        mock_variant.REF = "A"
+        mock_variant.ALT = ["C"]
+        mock_variant.FILTER = None
+
+        assert not classifier.is_variant_valid(mock_variant)
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_panelVariantFailsFilter_returnsFalse(self, mock_variant):
@@ -594,6 +622,26 @@ class TestClassifierSamplesWithLineageVariant:
 
         actual = classifier.samples_with_lineage_variant(mocked_variant)
         expected = [1]
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_panelVariantAltIsVariantRefForRefLineagePos_returnsIndex(
+        self, mock_variant
+    ):
+        pos = 1692141
+        index = {
+            pos: PanelVariant(Lineage.from_str("4.10"), position=pos, ref="C", alt="A"),
+        }
+        classifier = Classifier(index, ref_lineage_position=pos)
+        mock_variant.POS = pos
+        mock_variant.REF = "A"
+        mock_variant.ALT = ["C"]
+        mock_variant.genotypes = [[0, 0, False], [1, 1, False]]
+        mock_variant.format.return_value = ["PASS", "PASS"]
+
+        actual = classifier.samples_with_lineage_variant(mock_variant)
+        expected = [0]
 
         assert actual == expected
 

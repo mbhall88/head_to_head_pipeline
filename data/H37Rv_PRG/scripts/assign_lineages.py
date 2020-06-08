@@ -207,6 +207,7 @@ class Classifier:
         index: Optional[Dict[int, PanelVariant]] = None,
         max_het: int = 0,
         max_alt_lineages: int = 0,
+        ref_lineage_position: int = 0,
     ):
         if index is None:
             index = dict()
@@ -214,6 +215,7 @@ class Classifier:
         self.max_het = max_het
         self.het_counts: Dict[int, int] = defaultdict(int)
         self.max_alt_lineages = max_alt_lineages
+        self.ref_lineage_position = ref_lineage_position
 
     def _is_position_valid(self, pos: int) -> bool:
         return pos in self.index
@@ -228,6 +230,15 @@ class Classifier:
             return False
 
         panel_variant = self.index[variant.POS]
+        if variant.POS == self.ref_lineage_position:
+            if panel_variant.alt != variant.REF:
+                logging.warning(
+                    f"Panel alternate base does not match REF at reference lineage "
+                    f"position {variant.POS}."
+                )
+                return False
+            return True
+
         if panel_variant.ref != variant.REF:
             logging.warning(
                 f"Reference allele {variant.REF} at position {variant.POS} does "
@@ -261,6 +272,10 @@ class Classifier:
         for sample_idx, gt in enumerate(starmap(Genotype, variant.genotypes)):
             failed_filter = next(filters) is Filter.Fail
             if failed_filter:
+                continue
+
+            if variant.POS == self.ref_lineage_position and gt.is_hom_ref():
+                indices.append(sample_idx)
                 continue
 
             if gt.is_hom_alt():
@@ -366,6 +381,17 @@ def load_panel(
     show_default=True,
 )
 @click.option(
+    "--ref-lineage-position",
+    help=(
+        "Variant position that defines the lineage of the VCF reference. When "
+        "classifying lineages a REF call at this position will be considered a call "
+        "for the reference lineage as opposed to other variants which require an ALT "
+        "call. Set to 0 to disable this option."
+    ),
+    default=0,
+    show_default=True,
+)
+@click.option(
     "--default-lineage",
     help="Lineage to use when no panel variants are found for a sample.",
     default="unknown",
@@ -408,6 +434,7 @@ def main(
     output: TextIO,
     delim: str,
     default_lineage: str,
+    ref_lineage_position: int,
     output_delim: str,
     no_header: bool,
     verbose: bool,
@@ -428,7 +455,10 @@ def main(
     logging.info("Searching VCF for lineage-defining variants...")
     classification: Dict[str, List[Lineage]] = defaultdict(list)
     classifier = Classifier(
-        panel_index, max_het=max_het, max_alt_lineages=max_alt_lineages
+        panel_index,
+        max_het=max_het,
+        max_alt_lineages=max_alt_lineages,
+        ref_lineage_position=ref_lineage_position,
     )
     vcf = VCF(input)
     for variant in vcf:
