@@ -778,10 +778,33 @@ class TestClassifierCallLineage:
 
         assert actual == expected
 
+    def test_twoLineagesDiffMajor_returnsMixedDisregardMaxAlt(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="5", minor="8.3")
+        classifier = Classifier(max_alt_lineages=5)
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1, l2], sample_idx)
+        expected = "mixed"
+
+        assert actual == expected
+
     def test_mixedLineagesBelowThreshold_returnsMostCommon(self):
         l1 = Lineage(major="4", minor="1.3.4")
         l2 = Lineage(major="4", minor="1.3")
         l3 = Lineage(major="5", minor="8.3")
+        classifier = Classifier(max_alt_lineages=1)
+        sample_idx = 0
+
+        actual = classifier.call_sample_lineage([l1, l2, l3], sample_idx)
+        expected = str(l1)
+
+        assert actual == expected
+
+    def test_mixedLineagesBelowThresholdWithAltLineageMinorDeeperThanOthers_returnsMostCommon(self):
+        l1 = Lineage(major="4", minor="1.3.4")
+        l2 = Lineage(major="4", minor="1.3")
+        l3 = Lineage(major="5", minor="8.3.6.7")
         classifier = Classifier(max_alt_lineages=1)
         sample_idx = 0
 
