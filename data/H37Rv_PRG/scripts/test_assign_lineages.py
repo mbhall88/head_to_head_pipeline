@@ -801,7 +801,9 @@ class TestClassifierCallLineage:
 
         assert actual == expected
 
-    def test_mixedLineagesBelowThresholdWithAltLineageMinorDeeperThanOthers_returnsMostCommon(self):
+    def test_mixedLineagesBelowThresholdWithAltLineageMinorDeeperThanOthers_returnsMostCommon(
+        self,
+    ):
         l1 = Lineage(major="4", minor="1.3.4")
         l2 = Lineage(major="4", minor="1.3")
         l3 = Lineage(major="5", minor="8.3.6.7")

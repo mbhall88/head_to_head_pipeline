@@ -291,7 +291,7 @@ class Classifier:
         if len(lineages) == 1:
             return str(lineages[0])
 
-        majors = Counter([l.major for l in lineages])
+        majors = Counter([lin.major for lin in lineages])
         two_most_common = majors.most_common(n=2)
         most_common_count = two_most_common[0][-1]
         most_common_major = two_most_common[0][0]
@@ -306,7 +306,9 @@ class Classifier:
         if num_alt_lineages > self.max_alt_lineages:
             return "mixed"
 
-        non_alt_lineages = [l for l in lineages if l.major == most_common_major[0]]
+        non_alt_lineages = [
+            lin for lin in lineages if lin.major == most_common_major[0]
+        ]
         return str(Lineage.call(non_alt_lineages))
 
 
