@@ -84,6 +84,7 @@ rule assign_lineages:
         default_lineage=config["default_lineage"], # the name given to samples with no hits in the panel
         max_het=1,
         max_alt_lineages=1,
+        ref_lineage_position=config["ref_lineage_position"],
         extras="--verbose",
     shell:
         """
@@ -92,5 +93,6 @@ rule assign_lineages:
             --output {output} \
             --default-lineage {params.default_lineage} \
             --max-het {params.max_het} \
+            --ref-lineage-position {params.ref_lineage_position} \
             --max-alt-lineages {params.max_alt_lineages} {params.extras}
         """
