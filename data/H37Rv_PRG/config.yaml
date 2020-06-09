@@ -5,6 +5,7 @@ h37rv:
   features:   "resources/h37rv.gff3"
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
+  bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
 envs:
   gff_split:       "envs/gff_split.yaml"
   assign_lineages: "envs/assign_lineages.yaml"
@@ -14,6 +15,18 @@ scripts:
 
 min_chunk_len:        500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
 lineage_panel:        "resources/snps_for_typing.csv"
-cryptic_vcf:          "vcfs/original/cryptic_release.2020-04.GPI.vcf"
+cryptic_vcf:          "vcfs/original/cryptic_release.2020-04.GPI.bcf.gz"
 default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants
 ref_lineage_position: 1692141  # the position in the lineage panel that defines the lineage of H37Rv
+rare_lineages:
+  - "5"
+  - "6"
+  - "7"
+  - "bovis"
+  - "caprae"
+lineages:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "rare"

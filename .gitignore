@@ -331,7 +331,7 @@ ipython_config.py
 results/
 
 # VCFs can be big
-*.vcf*
+*.[bv]cf*
 
 # ignore fasta indexes
 *.fai

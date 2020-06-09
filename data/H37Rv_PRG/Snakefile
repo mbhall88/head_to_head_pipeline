@@ -21,13 +21,17 @@ envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
 H37RV = config["h37rv"]
 prg_dir = Path("prgs")
+rare_lineages = set(config["rare_lineages"])
+lineages = set(config["lineages"])
+vcf_dir = Path("vcf")
 
 # ======================================================
 # Global functions and variables
 # ======================================================
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
-output_files.add("resources/cryptic.lineages.csv")
+for lineage in lineages:
+    output_files.add(vcf_dir / "lineage" / f"cryptic.L{lineage}.bcf.gz")
 
 
 # ======================================================
@@ -71,7 +75,7 @@ rule assign_lineages:
         vcf=config["cryptic_vcf"],
         panel=config["lineage_panel"],
     output:
-        "resources/cryptic.lineages.csv",
+        assignments="resources/cryptic.lineages.csv",
     threads: 1
     resources:
         mem_mb=GB,
@@ -90,9 +94,50 @@ rule assign_lineages:
         """
         python {params.script} --input {input.vcf} \
             --panel {input.panel} \
-            --output {output} \
+            --output {output.assignments} \
             --default-lineage {params.default_lineage} \
             --max-het {params.max_het} \
             --ref-lineage-position {params.ref_lineage_position} \
             --max-alt-lineages {params.max_alt_lineages} {params.extras}
+        """
+
+
+def samples_for_lineage(lineage: str, assignment_file: str) -> str:
+    samples = []
+    with open(assignment_file) as stream:
+        for row in map(str.rstrip, stream):
+            fields = row.split(",")
+            sample = fields[0]
+            lin = fields[1]
+            if (lineage == "rare" and lin.lower() in rare_lineages) or lin == lineage:
+                samples.append(sample)
+
+    return ",".join(samples)
+
+
+rule split_into_lineage_vcfs:
+    input:
+        vcf=config["cryptic_vcf"],
+        assignments=rules.assign_lineages.output.assignments,
+    output:
+        vcf=vcf_dir / "lineage" / "cryptic.L{lineage}.bcf.gz",
+    threads: 4
+    resources:
+        mem_mb=2 * GB,
+    singularity:
+        containers["bcftools"]
+    params:
+        samples=lambda wildcards, input: samples_for_lineage(
+            wildcards.lineage, input.assignments
+        ),
+        output_type="b", # compressed BCF
+        extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
+    shell:
+        """
+        bcftools view --threads {threads} \
+            --samples {params.samples} \
+            --output-type {params.output_type} \
+            --output {output.vcf} \
+            {params.extras} \
+            {input.vcf}
         """
