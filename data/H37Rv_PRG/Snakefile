@@ -112,15 +112,15 @@ rule create_samples_files:
         mem_mb=int(0.2 * GB),
     run:
         samples = []
-        with open(output.samples_file, "w") as stream:
-            for row in map(str.rstrip, stream):
+        with open(output.samples_file, "w") as outstream, open(input.assignments) as instream:
+            for row in map(str.rstrip, instream):
                 fields = row.split(",")
                 sample = fields[0]
                 lin = fields[1]
                 if (
                     wildcards.lineage == "rare" and lin.lower() in rare_lineages
                 ) or lin == wildcards.lineage:
-                    print(sample, file=stream)
+                    print(sample, file=outstream)
 
 
 
