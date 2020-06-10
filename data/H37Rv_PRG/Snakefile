@@ -23,7 +23,7 @@ H37RV = config["h37rv"]
 prg_dir = Path("prgs")
 rare_lineages = set(config["rare_lineages"])
 lineages = set(config["lineages"])
-vcf_dir = Path("vcf")
+vcf_dir = Path("vcfs")
 
 # ======================================================
 # Global functions and variables
@@ -137,7 +137,7 @@ rule split_into_lineage_vcfs:
         bcftools view --threads {threads} \
             --samples {params.samples} \
             --output-type {params.output_type} \
-            --output {output.vcf} \
+            --output-file {output.vcf} \
             {params.extras} \
             {input.vcf}
         """
