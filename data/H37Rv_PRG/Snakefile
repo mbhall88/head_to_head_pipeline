@@ -1,4 +1,5 @@
 import os
+from itertools import product
 from pathlib import Path
 from typing import Dict, Union
 
@@ -23,6 +24,7 @@ H37RV = config["h37rv"]
 prg_dir = Path("prgs")
 rare_lineages = set(config["rare_lineages"])
 lineages = set(config["lineages"])
+thresholds = set(config["thresholds"])
 vcf_dir = Path("vcfs")
 
 # ======================================================
@@ -30,8 +32,8 @@ vcf_dir = Path("vcfs")
 # ======================================================
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
-for lineage in lineages:
-    output_files.add(vcf_dir / "lineage" / f"cryptic.L{lineage}.bcf.gz")
+for lineage, threshold in product(lineages, thresholds):
+    output_files.add(vcf_dir / "lineage" / f"cryptic.L{lineage}.subsampled-{threshold}.bcf.gz")
 
 
 # ======================================================
@@ -106,7 +108,7 @@ rule create_samples_files:
     input:
         assignments=rules.assign_lineages.output.assignments,
     output:
-        samples_file=temp("resources/sample-list.L{lineage}.txt"),
+        samples_file="resources/sample-list.L{lineage}.txt",
     threads: 1
     resources:
         mem_mb=int(0.2 * GB),
@@ -132,7 +134,7 @@ rule split_into_lineage_vcfs:
         vcf=vcf_dir / "lineage" / "cryptic.L{lineage}.bcf.gz",
     threads: 4
     resources:
-        mem_mb=2 * GB,
+        mem_mb=GB,
     singularity:
         containers["bcftools"]
     params:
@@ -140,6 +142,42 @@ rule split_into_lineage_vcfs:
         extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
     shell:
         """
+        bcftools view --threads {threads} \
+            --samples-file {input.samples_file} \
+            --output-type {params.output_type} \
+            --output-file {output.vcf} \
+            {params.extras} \
+            {input.vcf}
+        """
+
+
+rule subsample_vcfs:
+    input:
+        vcf=rules.split_into_lineage_vcfs.output.vcf,
+        samples_file=rules.create_samples_files.output.samples_file,
+    output:
+        vcf=vcf_dir / "lineage" / "cryptic.L{lineage}.subsampled-{threshold}.bcf.gz",
+        samples_file="resources/sample-list.L{lineage}.subsampled-{threshold}.txt",
+    threads: 4
+    resources:
+        mem_mb=GB,
+    singularity:
+        containers["bcftools"]
+    params:
+        output_type="b", # compressed BCF
+        seed=88,
+        extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
+    shell:
+        """
+        get_seeded_random()
+        {{
+          seed={params.seed}
+          openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+            </dev/zero 2>/dev/null
+        }}
+        sort --random-source=<(get_seeded_random) -R {input.samples_file} | \ 
+          head -n{wildcards.threshold} > {output.samples_file}
+
         bcftools view --threads {threads} \
             --samples-file {input.samples_file} \
             --output-type {params.output_type} \

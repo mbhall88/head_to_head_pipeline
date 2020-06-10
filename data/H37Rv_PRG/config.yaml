@@ -31,3 +31,7 @@ lineages:
   - "3"
   - "4"
   - "rare"
+# the max number of samples for the different subsampling levels
+thresholds:
+  - 100  # sparse PRG
+  - 500  # dense PRG
