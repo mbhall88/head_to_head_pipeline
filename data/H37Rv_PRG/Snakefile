@@ -102,23 +102,32 @@ rule assign_lineages:
         """
 
 
-def samples_for_lineage(lineage: str, assignment_file: str) -> str:
-    samples = []
-    with open(assignment_file) as stream:
-        for row in map(str.rstrip, stream):
-            fields = row.split(",")
-            sample = fields[0]
-            lin = fields[1]
-            if (lineage == "rare" and lin.lower() in rare_lineages) or lin == lineage:
-                samples.append(sample)
+rule create_samples_files:
+    input:
+        assignments=rules.assign_lineages.output.assignments,
+    output:
+        samples_file=temp("resources/sample-list.L{lineage}.txt"),
+    threads: 1
+    resources:
+        mem_mb=int(0.2 * GB),
+    run:
+        samples = []
+        with open(output.samples_file, "w") as stream:
+            for row in map(str.rstrip, stream):
+                fields = row.split(",")
+                sample = fields[0]
+                lin = fields[1]
+                if (
+                    wildcards.lineage == "rare" and lin.lower() in rare_lineages
+                ) or lin == wildcards.lineage:
+                    print(sample, file=stream)
 
-    return ",".join(samples)
 
 
 rule split_into_lineage_vcfs:
     input:
         vcf=config["cryptic_vcf"],
-        assignments=rules.assign_lineages.output.assignments,
+        samples_file=rules.create_samples_files.output.samples_file,
     output:
         vcf=vcf_dir / "lineage" / "cryptic.L{lineage}.bcf.gz",
     threads: 4
@@ -127,15 +136,12 @@ rule split_into_lineage_vcfs:
     singularity:
         containers["bcftools"]
     params:
-        samples=lambda wildcards, input: samples_for_lineage(
-            wildcards.lineage, input.assignments
-        ),
         output_type="b", # compressed BCF
         extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
     shell:
         """
         bcftools view --threads {threads} \
-            --samples {params.samples} \
+            --samples-file {input.samples_file} \
             --output-type {params.output_type} \
             --output-file {output.vcf} \
             {params.extras} \
