@@ -33,7 +33,7 @@ vcf_dir = Path("vcfs")
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 for lineage, threshold in product(lineages, thresholds):
-    output_files.add(vcf_dir / "lineage" / f"cryptic.L{lineage}.subsampled-{threshold}.bcf.gz")
+    output_files.add(vcf_dir / "lineage" / f"cryptic.subsampled-{threshold}.L{lineage}.bcf.gz")
 
 
 # ======================================================
@@ -156,8 +156,8 @@ rule subsample_vcfs:
         vcf=rules.split_into_lineage_vcfs.output.vcf,
         samples_file=rules.create_samples_files.output.samples_file,
     output:
-        vcf=vcf_dir / "lineage" / "cryptic.L{lineage}.subsampled-{threshold}.bcf.gz",
-        samples_file="resources/sample-list.L{lineage}.subsampled-{threshold}.txt",
+        vcf=vcf_dir / "lineage" / "cryptic.subsampled-{threshold}.L{lineage}.bcf.gz",
+        samples_file="resources/sample-list.subsampled-{threshold}.L{lineage}.txt",
     threads: 4
     resources:
         mem_mb=GB,
