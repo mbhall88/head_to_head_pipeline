@@ -16,7 +16,7 @@ scripts:
 min_chunk_len:        500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
 lineage_panel:        "resources/snps_for_typing.csv"
 cryptic_vcf:          "vcfs/original/cryptic_release.2020-04.GPI.bcf.gz"
-comas_vcf:            "vcfs/original/cryptic_release.2020-04.comas.bcf.gz"
+comas_vcf:            "vcfs/original/cryptic_release.2020-04.comas.bcf.gz"  # must be indexed
 default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants
 ref_lineage_position: 1692141  # the position in the lineage panel that defines the lineage of H37Rv
 rare_lineages:

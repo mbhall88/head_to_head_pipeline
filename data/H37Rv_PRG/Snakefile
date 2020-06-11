@@ -33,9 +33,7 @@ vcf_dir = Path("vcfs")
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 for lineage, threshold in product(lineages, thresholds):
-    output_files.add(
-        vcf_dir / "lineage" / f"cryptic.subsampled-{threshold}.L{lineage}.bcf.gz"
-    )
+    output_files.add(vcf_dir / f"subsampled-{threshold}.bcf.gz")
 
 
 # ======================================================
@@ -147,7 +145,7 @@ rule split_into_lineage_vcfs:
         bcftools view --threads {threads} \
             --samples-file {input.samples_file} \
             --output-type {params.output_type} \
-            --output-file {output.vcf} \
+            -o {output.vcf} \
             {params.extras} \
             {input.vcf}
         """
@@ -195,7 +193,58 @@ rule subsample_vcfs:
         bcftools view --threads {threads} \
             --samples-file {input.samples_file} \
             --output-type {params.output_type} \
-            --output-file {output.vcf} \
+            -o {output.vcf} \
             {params.extras} \
             {input.vcf}
+        """
+
+
+rule index_vcfs:
+    input:
+        vcf=rules.subsample_vcfs.output.vcf,
+    output:
+        index=vcf_dir / "lineage" / "cryptic.subsampled-{threshold}.L{lineage}.bcf.gz.csi",
+    threads: 4
+    resources:
+        mem_mb=GB,
+    singularity:
+        containers["bcftools"]
+    params:
+        extras=" ".join(["--csi", "--force"]),
+    shell:
+        """
+        bcftools index --threads {threads} \
+            {params.extras} \
+            {input.vcf}
+        """
+
+
+rule merge_vcfs:
+    input:
+        cryptic_vcfs=expand(
+            vcf_dir / "lineage" / "cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz",
+            lineage=lineages,
+        ),
+        cryptic_indexes=expand(
+            vcf_dir / "lineage" / "cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz.csi",
+            lineage=lineages,
+        ),
+        comas_vcf=config["comas_vcf"],
+    output:
+        vcf=vcf_dir / "subsampled-{threshold}.bcf.gz",
+    threads: 4
+    resources:
+        mem_mb=4 * GB,
+    singularity:
+        containers["bcftools"]
+    params:
+        output_type="b", # compressed BCF
+        extras="",
+    shell:
+        """
+        bcftools merge --threads {threads} \
+            --output-type {params.output_type} \
+            -o {output.vcf} \
+            {params.extras} \
+            {input.cryptic_vcfs} {input.comas_vcf}
         """
