@@ -33,7 +33,7 @@ vcf_dir = Path("vcfs")
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 for lineage, threshold in product(lineages, thresholds):
-    output_files.add(vcf_dir / f"subsampled-{threshold}.bcf.gz")
+    output_files.add(vcf_dir / "filtered" / f"subsampled-{threshold}.filtered.bcf.gz")
 
 
 # ======================================================
@@ -222,8 +222,7 @@ rule index_vcfs:
 rule merge_vcfs:
     input:
         cryptic_vcfs=expand(
-            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz",
-            lineage=lineages,
+            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz", lineage=lineages,
         ),
         cryptic_indexes=expand(
             "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz.csi",
@@ -231,7 +230,7 @@ rule merge_vcfs:
         ),
         comas_vcf=config["comas_vcf"],
     output:
-        vcf=vcf_dir / "subsampled-{threshold}.bcf.gz",
+        vcf=vcf_dir / "merged" / "subsampled-{threshold}.bcf.gz",
     threads: 4
     resources:
         mem_mb=4 * GB,
@@ -247,4 +246,37 @@ rule merge_vcfs:
             -o {output.vcf} \
             {params.extras} \
             {input.cryptic_vcfs} {input.comas_vcf}
+        """
+
+
+rule filter_vcfs:
+    input:
+        vcf=rules.merge_vcfs.output.vcf,
+        mask=H37RV["mask"],
+    output:
+        vcf=vcf_dir / "filtered" / "subsampled-{threshold}.filtered.bcf.gz",
+    threads: 4
+    resources:
+        mem_mb=2 * GB,
+    singularity:
+        containers["bcftools"]
+    params:
+        output_type="b", # compressed BCF
+        filters=".,PASS",
+        extras=" ".join(
+            [
+                "--trim-alt-alleles",
+                "--exclude-uncalled",
+                "--min-ac=1:nref",  # remove any positions without an ALT call
+            ]
+        ),
+    shell:
+        """
+        bcftools view --threads {threads} \
+            --apply-filters {params.filters}
+            --output-type {params.output_type} \
+            --regions-file ^{input.mask} \  # ^ indicates to ignore regions in file
+            -o {output.vcf} \
+            {params.extras} \
+            {input.vcf}
         """

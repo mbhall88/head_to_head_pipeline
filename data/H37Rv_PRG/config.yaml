@@ -3,6 +3,7 @@ h37rv:
   genome:     "resources/h37rv.fa"
   annotation: "resources/h37rv.gbk"
   features:   "resources/h37rv.gff3"
+  mask:       "resources/compass-mask.bed"
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
