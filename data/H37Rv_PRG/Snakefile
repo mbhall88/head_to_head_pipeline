@@ -222,11 +222,11 @@ rule index_vcfs:
 rule merge_vcfs:
     input:
         cryptic_vcfs=expand(
-            f"{vcf_dir}/lineage/cryptic.subsampled-{{{threshold}}}.L{{lineage}}.bcf.gz",
+            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz",
             lineage=lineages,
         ),
         cryptic_indexes=expand(
-            f"{vcf_dir}/lineage/cryptic.subsampled-{{{threshold}}}.L{{lineage}}.bcf.gz.csi",
+            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz.csi",
             lineage=lineages,
         ),
         comas_vcf=config["comas_vcf"],
