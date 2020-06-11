@@ -33,7 +33,9 @@ vcf_dir = Path("vcfs")
 output_files = set()
 output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
 for lineage, threshold in product(lineages, thresholds):
-    output_files.add(vcf_dir / "lineage" / f"cryptic.subsampled-{threshold}.L{lineage}.bcf.gz")
+    output_files.add(
+        vcf_dir / "lineage" / f"cryptic.subsampled-{threshold}.L{lineage}.bcf.gz"
+    )
 
 
 # ======================================================
@@ -151,13 +153,35 @@ rule split_into_lineage_vcfs:
         """
 
 
+rule subsample_samples_files:
+    input:
+        samples_file=rules.create_samples_files.output.samples_file,
+    output:
+        samples_file="resources/sample-list.subsampled-{threshold}.L{lineage}.txt",
+    threads: 1
+    resources:
+        mem_mb=int(0.3 * GB),
+    params:
+        seed=88,
+    run:
+        import random
+        from pathlib import Path
+
+        random.seed(params.seed)
+        samples = list(filter(None, Path(input.samples_file).read_text().splitlines()))
+        k = min(int(wildcards.threshold), len(samples))
+        selections = random.sample(samples, k=k)
+        content = "\n".join(selections)
+        Path(output.samples_file).write_text(content)
+
+
+
 rule subsample_vcfs:
     input:
         vcf=rules.split_into_lineage_vcfs.output.vcf,
-        samples_file=rules.create_samples_files.output.samples_file,
+        samples_file=rules.subsample_samples_files.output.samples_file,
     output:
         vcf=vcf_dir / "lineage" / "cryptic.subsampled-{threshold}.L{lineage}.bcf.gz",
-        samples_file="resources/sample-list.subsampled-{threshold}.L{lineage}.txt",
     threads: 4
     resources:
         mem_mb=GB,
@@ -165,19 +189,9 @@ rule subsample_vcfs:
         containers["bcftools"]
     params:
         output_type="b", # compressed BCF
-        seed=88,
         extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
     shell:
         """
-        get_seeded_random()
-        {{
-          seed={params.seed}
-          openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
-            </dev/zero 2>/dev/null
-        }}
-        sort --random-source=<(get_seeded_random) -R {input.samples_file} | \ 
-          head -n{wildcards.threshold} > {output.samples_file}
-
         bcftools view --threads {threads} \
             --samples-file {input.samples_file} \
             --output-type {params.output_type} \
