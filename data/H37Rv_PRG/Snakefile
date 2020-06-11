@@ -273,9 +273,9 @@ rule filter_vcfs:
     shell:
         """
         bcftools view --threads {threads} \
-            --apply-filters {params.filters}
+            --apply-filters {params.filters} \
             --output-type {params.output_type} \
-            --regions-file ^{input.mask} \  # ^ indicates to ignore regions in file
+            --regions-file ^{input.mask} \
             -o {output.vcf} \
             {params.extras} \
             {input.vcf}
