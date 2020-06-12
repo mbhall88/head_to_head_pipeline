@@ -259,24 +259,28 @@ rule filter_vcfs:
     resources:
         mem_mb=2 * GB,
     singularity:
-        containers["bcftools"]
+        containers["conda"]
+    conda:
+        envs["filter_vcf"]
     params:
         output_type="b", # compressed BCF
         filters=".,PASS",
-        extras=" ".join(
+        vcf_extras=" ".join(
             [
                 "--trim-alt-alleles",
                 "--exclude-uncalled",
                 "--min-ac=1:nref",  # remove any positions without an ALT call
             ]
         ),
+        bedtools_extras=" ".join(["-header", "-A",])  # remove entire feature if any overlap,
     shell:
         """
         bcftools view --threads {threads} \
             --apply-filters {params.filters} \
-            --output-type {params.output_type} \
-            --regions-file ^{input.mask} \
+            --output-type v \
             -o {output.vcf} \
-            {params.extras} \
-            {input.vcf}
+            {params.vcf_extras} \
+            {input.vcf} | \
+        bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
+        bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
         """

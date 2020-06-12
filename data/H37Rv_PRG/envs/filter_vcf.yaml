@@ -1,0 +1,8 @@
+name: filter_vcf
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bcftools=1.10.2
+  - bedtools=2.29.2

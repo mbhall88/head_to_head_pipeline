@@ -10,6 +10,7 @@ containers:
 envs:
   gff_split:       "envs/gff_split.yaml"
   assign_lineages: "envs/assign_lineages.yaml"
+  filter_vcf:      "envs/filter_vcf.yaml"
 scripts:
   gff_split:       "scripts/gff_splitter.py"
   assign_lineages: "scripts/assign_lineages.py"
