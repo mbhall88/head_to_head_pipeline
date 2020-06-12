@@ -1,0 +1,10 @@
+name: records_to_loci
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bcftools=1.10.2
+  - cyvcf2=0.20.0
+  - intervaltree=3.0.2
+  - click=7.1.2

@@ -25,15 +25,15 @@ prg_dir = Path("prgs")
 rare_lineages = set(config["rare_lineages"])
 lineages = set(config["lineages"])
 thresholds = set(config["thresholds"])
+prg_names = config["prg_names"]
 vcf_dir = Path("vcfs")
 
 # ======================================================
 # Global functions and variables
 # ======================================================
 output_files = set()
-output_files.add(prg_dir / "reference_loci" / "loci-info.csv")
-for lineage, threshold in product(lineages, thresholds):
-    output_files.add(vcf_dir / "filtered" / f"subsampled-{threshold}.filtered.bcf.gz")
+for lineage, prg_name in product(lineages, prg_names.keys()):
+    output_files.add(vcf_dir / f"{prg_name}.bcf.gz")
 
 
 # ======================================================
@@ -155,7 +155,7 @@ rule subsample_samples_files:
     input:
         samples_file=rules.create_samples_files.output.samples_file,
     output:
-        samples_file="resources/sample-list.subsampled-{threshold}.L{lineage}.txt",
+        samples_file="resources/sample-list.{prg_name}.L{lineage}.txt",
     threads: 1
     resources:
         mem_mb=int(0.3 * GB),
@@ -167,7 +167,8 @@ rule subsample_samples_files:
 
         random.seed(params.seed)
         samples = list(filter(None, Path(input.samples_file).read_text().splitlines()))
-        k = min(int(wildcards.threshold), len(samples))
+        threshold = prg_names[wildcards.prg_name]
+        k = min(int(threshold), len(samples))
         selections = random.sample(samples, k=k)
         content = "\n".join(selections)
         Path(output.samples_file).write_text(content)
@@ -179,7 +180,7 @@ rule subsample_vcfs:
         vcf=rules.split_into_lineage_vcfs.output.vcf,
         samples_file=rules.subsample_samples_files.output.samples_file,
     output:
-        vcf=vcf_dir / "lineage" / "cryptic.subsampled-{threshold}.L{lineage}.bcf.gz",
+        vcf=vcf_dir / "lineage" / "cryptic.{prg_name}.L{lineage}.bcf.gz",
     threads: 4
     resources:
         mem_mb=GB,
@@ -203,7 +204,7 @@ rule index_vcfs:
     input:
         vcf=rules.subsample_vcfs.output.vcf,
     output:
-        index=vcf_dir / "lineage" / "cryptic.subsampled-{threshold}.L{lineage}.bcf.gz.csi",
+        index=vcf_dir / "lineage" / "cryptic.{prg_name}.L{lineage}.bcf.gz.csi",
     threads: 4
     resources:
         mem_mb=GB,
@@ -222,15 +223,14 @@ rule index_vcfs:
 rule merge_vcfs:
     input:
         cryptic_vcfs=expand(
-            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz", lineage=lineages,
+            "vcfs/lineage/cryptic.{{prg_name}}.L{lineage}.bcf.gz", lineage=lineages,
         ),
         cryptic_indexes=expand(
-            "vcfs/lineage/cryptic.subsampled-{{threshold}}.L{lineage}.bcf.gz.csi",
-            lineage=lineages,
+            "vcfs/lineage/cryptic.{{prg_name}}.L{lineage}.bcf.gz.csi", lineage=lineages,
         ),
         comas_vcf=config["comas_vcf"],
     output:
-        vcf=vcf_dir / "merged" / "subsampled-{threshold}.bcf.gz",
+        vcf=vcf_dir / "merged" / "{prg_name}.bcf.gz",
     threads: 4
     resources:
         mem_mb=4 * GB,
@@ -254,7 +254,8 @@ rule filter_vcfs:
         vcf=rules.merge_vcfs.output.vcf,
         mask=H37RV["mask"],
     output:
-        vcf=vcf_dir / "filtered" / "subsampled-{threshold}.filtered.bcf.gz",
+        vcf=vcf_dir / "filtered" / "{prg_name}.filtered.bcf.gz",
+        index=vcf_dir / "filtered" / "{prg_name}.filtered.bcf.gz.csi",
     threads: 4
     resources:
         mem_mb=2 * GB,
@@ -272,7 +273,7 @@ rule filter_vcfs:
                 "--min-ac=1:nref",  # remove any positions without an ALT call
             ]
         ),
-        bedtools_extras=" ".join(["-header", "-A",])  # remove entire feature if any overlap,
+        bedtools_extras=" ".join(["-header", "-A",]), # remove entire feature if any overlap,
     shell:
         """
         bcftools view --threads {threads} \
@@ -282,4 +283,32 @@ rule filter_vcfs:
             {input.vcf} | \
         bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
         bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
+        bcftools index --threads {threads} --csi --force {output.vcf}
+        """
+
+
+rule associate_vcf_records_to_loci:
+    input:
+        vcf=rules.filter_vcfs.output.vcf,
+        loci_info=rules.split_h37rv.output.info,
+    output:
+        vcf=vcf_dir / "{prg_name}.bcf.gz",
+        index=vcf_dir / "{prg_name}.bcf.gz.csi",
+    threads: 4
+    resources:
+        mem_mb=2 * GB,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["records_to_loci"]
+    params:
+        script=scripts["records_to_loci"],
+        extras="--verbose",
+    shell:
+        """
+        python {params.script} -i {input.vcf} \
+            --loci-info {input.loci_info} \
+            --output {output.vcf} \
+            {params.extras}
+        bcftools index --threads {threads} --force --csi {output.vcf}
         """
