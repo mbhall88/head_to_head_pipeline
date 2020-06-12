@@ -278,7 +278,6 @@ rule filter_vcfs:
         bcftools view --threads {threads} \
             --apply-filters {params.filters} \
             --output-type v \
-            -o {output.vcf} \
             {params.vcf_extras} \
             {input.vcf} | \
         bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
