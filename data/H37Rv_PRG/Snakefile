@@ -24,7 +24,6 @@ H37RV = config["h37rv"]
 prg_dir = Path("prgs")
 rare_lineages = set(config["rare_lineages"])
 lineages = set(config["lineages"])
-thresholds = set(config["thresholds"])
 prg_names = config["prg_names"]
 vcf_dir = Path("vcfs")
 
