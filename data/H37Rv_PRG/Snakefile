@@ -32,7 +32,7 @@ vcf_dir = Path("vcfs")
 # ======================================================
 output_files = set()
 for lineage, prg_name in product(lineages, prg_names.keys()):
-    output_files.add(vcf_dir / "final"/ f"{prg_name}.bcf.gz")
+    output_files.add(vcf_dir / "final" / f"{prg_name}.vcf.gz")
 
 
 # ======================================================
@@ -253,8 +253,8 @@ rule filter_vcfs:
         vcf=rules.merge_vcfs.output.vcf,
         mask=H37RV["mask"],
     output:
-        vcf=vcf_dir / "filtered" / "{prg_name}.filtered.bcf.gz",
-        index=vcf_dir / "filtered" / "{prg_name}.filtered.bcf.gz.csi",
+        vcf=vcf_dir / "filtered" / "{prg_name}.filtered.vcf.gz",
+        index=vcf_dir / "filtered" / "{prg_name}.filtered.vcf.gz.csi",
     threads: 4
     resources:
         mem_mb=2 * GB,
@@ -263,7 +263,7 @@ rule filter_vcfs:
     conda:
         envs["filter_vcf"]
     params:
-        output_type="b", # compressed BCF
+        output_type="z", # compressed VCF
         filters=".,PASS",
         vcf_extras=" ".join(
             [
@@ -282,6 +282,7 @@ rule filter_vcfs:
             {input.vcf} | \
         bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
         bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
+        
         bcftools index --threads {threads} --csi --force {output.vcf}
         """
 
@@ -291,8 +292,8 @@ rule associate_vcf_records_to_loci:
         vcf=rules.filter_vcfs.output.vcf,
         loci_info=rules.split_h37rv.output.info,
     output:
-        vcf=vcf_dir / "final" / "{prg_name}.bcf.gz",
-        index=vcf_dir / "final" / "{prg_name}.bcf.gz.csi",
+        vcf=vcf_dir / "final" / "{prg_name}.vcf.gz",
+        index=vcf_dir / "final" / "{prg_name}.vcf.gz.csi",
     threads: 4
     resources:
         mem_mb=2 * GB,

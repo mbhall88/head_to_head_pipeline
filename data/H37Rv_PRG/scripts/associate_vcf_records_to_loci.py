@@ -97,7 +97,7 @@ def main(vcf_path: str, loci_info: TextIO, output: str, verbose: bool, chrom: st
     vcf_writer = Writer(output, vcf)
     write_new_info_fields(vcf_writer)
 
-    logging.info("Associating loci info to VCF recvords...")
+    logging.info("Associating loci info to VCF records...")
     for iv in ivtree:
         start = iv.begin
         end = iv.end
