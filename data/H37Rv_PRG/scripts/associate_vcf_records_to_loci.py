@@ -105,9 +105,9 @@ def main(vcf_path: str, loci_info: TextIO, output: str, verbose: bool, chrom: st
         count = 0
         for record in vcf(f"{chrom}:{start}-{end}"):
             count += 1
-            record[LOCI_ID] = name
-            record[START_ID] = start
-            record[END_ID] = end
+            record.INFO[LOCI_ID] = name
+            record.INFO[START_ID] = start
+            record.INFO[END_ID] = end
             vcf_writer.write_record(record)
 
         if count < 1:
