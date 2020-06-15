@@ -314,30 +314,27 @@ rule associate_vcf_records_to_loci:
         """
 
 
-rule create_loci_vcfs:
+rule apply_variants_to_loci:
     input:
         vcf=rules.associate_vcf_records_to_loci.output.vcf,
+        loci_info=rules.split_h37rv.output.info,
     output:
-        vcf=vcf_dir / "loci" / "{prg_name}" / "{loci}.vcf.gz",
+        loci_dir=directory(prg_dir / "{prg_name}" / "applied_variants"),
     threads: 1
     resources:
-        mem_mb=int(0.3 * GB),
+        mem_mb=int(2 * GB),
     singularity:
-        containers["bcftools"]
+        containers["conda"]
+    conda:
+        envs["apply_variants"]
     params:
-        output_type="z", # compressed VCF
-        expression=lambda wildcards: f"INFO/LOCI='{wildcards.prg_name}'",
-        extra=" ".join(
-            [
-                "--drop-genotypes"  # we no longer need individual genotype info as any ALTs left have at least one call
-            ]
-        ),
+        script=scripts["records_to_loci"],
+        extras="--verbose",
     shell:
         """
-        bcftools view --threads {threads} \
-            -O {params.output_type} \
-            --include {params.expression} \
-            -o {output.vcf} \
-            {params.extra} \
-            {input.vcf}
+        python {params.script} -i {input.vcf} \
+            --loci-info {input.loci_info} \
+            --output - \
+            {params.extras} | bcftools sort -o {output.vcf} -O z
+        bcftools index --threads {threads} --force --csi {output.vcf}
         """
