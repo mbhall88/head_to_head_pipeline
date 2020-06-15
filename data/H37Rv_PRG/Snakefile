@@ -282,7 +282,7 @@ rule filter_vcfs:
             {input.vcf} | \
         bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
         bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
-        
+
         bcftools index --threads {threads} --csi --force {output.vcf}
         """
 
@@ -311,4 +311,33 @@ rule associate_vcf_records_to_loci:
             --output - \
             {params.extras} | bcftools sort -o {output.vcf} -O z
         bcftools index --threads {threads} --force --csi {output.vcf}
+        """
+
+
+rule create_loci_vcfs:
+    input:
+        vcf=rules.associate_vcf_records_to_loci.output.vcf,
+    output:
+        vcf=vcf_dir / "loci" / "{prg_name}" / "{loci}.vcf.gz",
+    threads: 1
+    resources:
+        mem_mb=int(0.3 * GB),
+    singularity:
+        containers["bcftools"]
+    params:
+        output_type="z", # compressed VCF
+        expression=lambda wildcards: f"INFO/LOCI='{wildcards.prg_name}'",
+        extra=" ".join(
+            [
+                "--drop-genotypes"  # we no longer need individual genotype info as any ALTs left have at least one call
+            ]
+        ),
+    shell:
+        """
+        bcftools view --threads {threads} \
+            -O {params.output_type} \
+            --include {params.expression} \
+            -o {output.vcf} \
+            {params.extra} \
+            {input.vcf}
         """
