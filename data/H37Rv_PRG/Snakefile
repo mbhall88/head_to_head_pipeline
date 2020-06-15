@@ -308,7 +308,7 @@ rule associate_vcf_records_to_loci:
         """
         python {params.script} -i {input.vcf} \
             --loci-info {input.loci_info} \
-            --output {output.vcf} \
-            {params.extras}
+            --output - \
+            {params.extras} | bcftools sort -o {output.vcf} -O z
         bcftools index --threads {threads} --force --csi {output.vcf}
         """
