@@ -22,8 +22,8 @@ def load_loci_info(instream: TextIO) -> IntervalTree:
     return IntervalTree.from_tuples(intervals)
 
 
-def write_new_info_fields(vcf_writer: Writer):
-    vcf_writer.add_info_to_header(
+def write_new_info_fields(vcf: VCF):
+    vcf.add_info_to_header(
         {
             "ID": LOCI_ID,
             "Description": "name of overlapping loci",
@@ -31,7 +31,7 @@ def write_new_info_fields(vcf_writer: Writer):
             "Number": "1",
         }
     )
-    vcf_writer.add_info_to_header(
+    vcf.add_info_to_header(
         {
             "ID": START_ID,
             "Description": "Loci start position; 1-based inclusive",
@@ -39,7 +39,7 @@ def write_new_info_fields(vcf_writer: Writer):
             "Number": "1",
         }
     )
-    vcf_writer.add_info_to_header(
+    vcf.add_info_to_header(
         {
             "ID": END_ID,
             "Description": "Loci end position; 1-based inclusive",
@@ -94,8 +94,8 @@ def main(vcf_path: str, loci_info: TextIO, output: str, verbose: bool, chrom: st
     logging.info("Loading loci info file...")
     ivtree = load_loci_info(loci_info)
     vcf = VCF(vcf_path)
+    write_new_info_fields(vcf)
     vcf_writer = Writer(output, vcf)
-    write_new_info_fields(vcf_writer)
 
     logging.info("Associating loci info to VCF records...")
     for iv in ivtree:
