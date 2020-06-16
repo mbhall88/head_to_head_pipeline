@@ -328,13 +328,8 @@ rule apply_variants_to_loci:
     conda:
         envs["apply_variants"]
     params:
-        script=scripts["records_to_loci"],
+        script=scripts["apply_variants"],
         extras="--verbose",
-    shell:
-        """
-        python {params.script} -i {input.vcf} \
-            --loci-info {input.loci_info} \
-            --output - \
-            {params.extras} | bcftools sort -o {output.vcf} -O z
-        bcftools index --threads {threads} --force --csi {output.vcf}
+    shell:  # todo
+        """ 
         """
