@@ -19,19 +19,31 @@ class Record(NamedTuple):
     def apply_variant(self, variant: Variant, relative_start: int) -> List["Record"]:
         records = []
         # variant start point on the loci sequence. 0-based; inclusive
-        i = variant.POS - relative_start
+        var_rel_start = variant.POS - relative_start
+        if var_rel_start < 0:
+            logging.debug(
+                f"Variant at POS {variant.POS} starts in the previous loci. Skipping..."
+            )
+            return records
+
         # variant end point on the loci sequence. 0-based; non-inclusive
-        j = i + len(variant.REF)
+        var_rel_end = var_rel_start + len(variant.REF)
+        if var_rel_end > len(self.seq):
+            logging.debug(
+                f"Variant at POS {variant.POS} ends in the next loci. Skipping..."
+            )
+            return records
+
         # check ref matches loci seq
-        if self.seq[i:j] != variant.REF:
+        if self.seq[var_rel_start:var_rel_end] != variant.REF:
             raise ValueError(
                 f"The variant REF does not match the corresponding sequence on "
-                f"the loci reference.\n{self.seq[i:j]} != {variant.REF}"
+                f"the loci reference.\n{self.seq[var_rel_start:var_rel_end]} != {variant.REF}"
             )
         for alt_num, alt in enumerate(variant.ALT):
-            mutated_seq = self.seq[:i] + alt + self.seq[j:]
+            mutated_seq = self.seq[:var_rel_start] + alt + self.seq[var_rel_end:]
             mutant_name = str(uuid.uuid4())
-            mutant_comment = f"POS={variant.POS}|ALT={alt_num}|ALT_POS_IN_SEQ=[{i},{i + len(alt)})"
+            mutant_comment = f"POS={variant.POS}|ALT={alt_num}|ALT_POS_IN_SEQ=[{var_rel_start},{var_rel_start + len(alt)})"
             mutant_record = Record(mutant_name, mutant_comment, mutated_seq)
             records.append(mutant_record)
 
@@ -139,8 +151,8 @@ def main(
 
     logging.info("Applying variants to loci...")
     for iv in ivtree:
-        start = iv.begin
-        end = iv.end
+        start = iv.begin  # 1-based inclusive
+        end = iv.end  # 1-based inclusive
         loci_name = iv.data
         loci_path = loci_dir / chrom / f"{loci_name}.fa"
         loci_record = get_record_for_loci(loci_path)
@@ -152,7 +164,7 @@ def main(
             for variant in vcf(f"{chrom}:{start}-{end}"):
                 count += 1
                 alt_records = loci_record.apply_variant(variant, relative_start=start)
-                
+
             for rec in alt_records:
                 write_record(rec, outstream)
 

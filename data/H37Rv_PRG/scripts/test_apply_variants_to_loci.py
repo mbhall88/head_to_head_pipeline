@@ -75,3 +75,39 @@ class TestRecordApplyVariant:
         ]
 
         assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_variantStartsInPreviousLoci_skips(self, mocked_variant):
+        name = "foo"
+        comment = ""
+        seq = "TACGTfoobar"
+        record = Record(name, comment, seq)
+        relative_start = 10
+        mocked_variant.POS = 7
+        mocked_variant.REF = "ACGTACGT"
+        mocked_variant.ALT = ["abcdefgh"]
+
+        with patch("uuid.uuid4", return_value=name) as mocked_uuid4:
+            actual = record.apply_variant(mocked_variant, relative_start)
+            assert mocked_uuid4.call_count == 0
+        expected = []
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_variantEndsInNextLoci_skips(self, mocked_variant):
+        name = "foo"
+        comment = ""
+        seq = "yyACG"
+        record = Record(name, comment, seq)
+        relative_start = 5
+        mocked_variant.POS = 7
+        mocked_variant.REF = "ACGTACGT"
+        mocked_variant.ALT = ["abcdefgh"]
+
+        with patch("uuid.uuid4", return_value=name) as mocked_uuid4:
+            actual = record.apply_variant(mocked_variant, relative_start)
+            assert mocked_uuid4.call_count == 0
+        expected = []
+
+        assert actual == expected
