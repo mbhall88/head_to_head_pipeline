@@ -13,6 +13,7 @@ envs:
   filter_vcf:      "envs/filter_vcf.yaml"
   records_to_loci: "envs/records_to_loci.yaml"
   apply_variants:  "envs/apply_variants.yaml"
+  msa:             "envs/msa.yaml"
 scripts:
   gff_split:       "scripts/gff_splitter.py"
   assign_lineages: "scripts/assign_lineages.py"

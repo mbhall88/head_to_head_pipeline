@@ -1,0 +1,8 @@
+name: msa
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - mafft=7.467
+  - fd-find=8.1.1

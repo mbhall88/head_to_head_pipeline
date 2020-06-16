@@ -32,7 +32,7 @@ vcf_dir = Path("vcfs")
 # ======================================================
 output_files = set()
 for lineage, prg_name in product(lineages, prg_names.keys()):
-    output_files.add(prg_dir / f"{prg_name}" / "applied_variants")
+    output_files.add(prg_dir / f"{prg_name}" / "multiple_sequence_alignments")
 
 
 # ======================================================
@@ -344,4 +344,33 @@ rule apply_variants_to_loci:
             --outdir {output.loci_dir} \
             --loci-dir {params.loci_dir} \
             --loci-info {input.loci_info} 2> {log}
+        """
+
+
+# See https://github.com/sharkdp/fd#parallel-command-execution for clarification of the --exec syntax used for fd
+rule multiple_sequence_alignment_of_loci:
+    input:
+        loci_dir=rules.apply_variants_to_loci.output.loci_dir,
+    output:
+        msa_dir=directory(prg_dir / "{prg_name}" / "multiple_sequence_alignments"),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["msa"]
+    params:
+        extras="",
+        extension=".fa",
+        pattern=".",
+    log:
+        "logs/multiple_sequence_alignment_of_loci/{prg_name}.log",
+    shell:
+        """
+        fd {params.extras} \
+            --extension {params.extension} \
+            --threads {threads} \
+            --exec linsi --thread -1 {{}} > {output.msa_dir}/{{/}}\; \
+            {params.pattern} {input.loci_dir} 2> {log}
         """
