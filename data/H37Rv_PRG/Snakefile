@@ -342,5 +342,6 @@ rule apply_variants_to_loci:
         python {params.script} {params.extras} \
             --vcf-path {input.vcf} \
             --outdir {output.loci_dir} \
+            --loci-dir {params.loci_dir} \
             --loci-info {input.loci_info} 2> {log}
         """
