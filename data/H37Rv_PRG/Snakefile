@@ -26,6 +26,7 @@ rare_lineages = set(config["rare_lineages"])
 lineages = set(config["lineages"])
 prg_names = config["prg_names"]
 vcf_dir = Path("vcfs")
+rule_log_dir = Path("logs/stderr")
 
 # ======================================================
 # Global functions and variables
@@ -307,7 +308,7 @@ rule associate_vcf_records_to_loci:
         script=scripts["records_to_loci"],
         extras="--verbose",
     log:
-        "logs/stderr/associate_vcf_records_to_loci/{prg_name}.log",
+        rule_log_dir / "associate_vcf_records_to_loci/{prg_name}.log",
     shell:
         """
         python {params.script} -i {input.vcf} \
@@ -336,7 +337,7 @@ rule apply_variants_to_loci:
         loci_dir=lambda wildcards, input: str(Path(input.loci_info).parent),
         extras="--verbose",
     log:
-        "logs/stderr/apply_variants_to_loci/{prg_name}.log",
+        rule_log_dir / "apply_variants_to_loci/{prg_name}.log",
     shell:
         """
         python {params.script} {params.extras} \
@@ -365,7 +366,7 @@ rule multiple_sequence_alignment_of_loci:
         extension=".fa",
         pattern=".",
     log:
-        "logs/stderr/multiple_sequence_alignment_of_loci/{prg_name}.log",
+        rule_log_dir / "multiple_sequence_alignment_of_loci/{prg_name}.log",
     shell:
         """
         mkdir -p {output.msa_dir}
