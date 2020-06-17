@@ -365,9 +365,10 @@ rule multiple_sequence_alignment_of_loci:
         extension=".fa",
         pattern=".",
     log:
-        "logs/multiple_sequence_alignment_of_loci/{prg_name}.log",
+        "logs/stderr/multiple_sequence_alignment_of_loci/{prg_name}.log",
     shell:
         """
+        mkdir -p {output.msa_dir}
         fd {params.extras} \
             --extension {params.extension} \
             --threads {threads} \
