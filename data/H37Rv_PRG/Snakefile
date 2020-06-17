@@ -371,6 +371,6 @@ rule multiple_sequence_alignment_of_loci:
         fd {params.extras} \
             --extension {params.extension} \
             --threads {threads} \
-            --exec 'linsi --thread -1 {{}} > {output.msa_dir}/{{/}} \;' \
+            --exec sh -c "linsi --thread -1 {{}} > {output.msa_dir}/{{/}}" \; \
             {params.pattern} {input.loci_dir} 2> {log}
         """
