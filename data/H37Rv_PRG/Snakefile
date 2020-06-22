@@ -356,15 +356,16 @@ rule multiple_sequence_alignment_of_loci:
         msa_dir=directory(prg_dir / "{prg_name}" / "multiple_sequence_alignments"),
     threads: 16
     resources:
-        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     singularity:
         containers["conda"]
     conda:
         envs["msa"]
     params:
-        extras="",
-        extension=".fa",
+        extras="--no-ignore --hidden",
+        extension="fa",
         pattern=".",
+        script=scripts["msa"],
     log:
         rule_log_dir / "multiple_sequence_alignment_of_loci/{prg_name}.log",
     shell:
@@ -373,6 +374,6 @@ rule multiple_sequence_alignment_of_loci:
         fd {params.extras} \
             --extension {params.extension} \
             --threads {threads} \
-            --exec sh -c "linsi --thread -1 '{{}}' > '{output.msa_dir}/{{/}}'" \; \
-            {params.pattern} {input.loci_dir} 2> {log}
+            --exec bash {params.script} '{{}}' {output.msa_dir}/'{{/}}' {log} \; \
+            {params.pattern} {input.loci_dir} 2>> {log}
         """
