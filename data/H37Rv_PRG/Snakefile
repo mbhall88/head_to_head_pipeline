@@ -389,8 +389,6 @@ rule build_local_prgs:
         msa_dir=rules.multiple_sequence_alignment_of_loci.output.msa_dir,
     output:
         local_prg_dir=directory(prg_dir / "{prg_name}" / "local_prgs"),
-    shadow:
-        "shallow"
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
@@ -430,7 +428,7 @@ rule combine_local_prgs:
         mem_mb=int(0.5 * GB),
     params:
         extras="--no-ignore --hidden",
-        extension="fa",
+        extension="prg",
         pattern=".",
     log:
         rule_log_dir / "combine_local_prgs/{prg_name}.log",
