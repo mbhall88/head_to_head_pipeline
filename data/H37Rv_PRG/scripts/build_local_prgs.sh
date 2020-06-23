@@ -1,9 +1,7 @@
 #!/usr/bin/env sh
 set -u
 msa="$1"
-outdir="$2"
-filename=$(basename "$msa")
-out_prefix="${outdir}/${filename%.*}"
+out_prefix="$2"
 nesting_lvl="$3"
 match_len="$4"
 logfile="$5"
