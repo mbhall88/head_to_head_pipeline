@@ -2,7 +2,8 @@
 set -u
 msa="$1"
 outdir="$2"
-out_prefix="${outdir}/${$(basename "$infile")%.*}"
+filename=$(basename "$msa")
+out_prefix="${outdir}/${filename%.*}"
 nesting_lvl="$3"
 match_len="$4"
 logfile="$5"
@@ -11,5 +12,7 @@ make_prg prg_from_msa --max_nesting "$nesting_lvl" \
     --min_match_length "$match_len" \
     --prefix "$out_prefix" \
     "$msa" 2>> "$logfile"
-cat "$out_prefix".log >> "$logfile"
-rm "$out_prefix".log "$out_prefix".gfa
+
+full_outprefix="${out_prefix}.max_nest${nesting_lvl}.min_match${match_len}"
+cat "${full_outprefix}.log" >> "$logfile"
+rm "$full_outprefix".log "$full_outprefix".gfa "$full_outprefix".bin
