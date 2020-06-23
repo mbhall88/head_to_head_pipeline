@@ -33,7 +33,7 @@ rule_log_dir = Path("logs/stderr")
 # ======================================================
 output_files = set()
 for lineage, prg_name in product(lineages, prg_names.keys()):
-    output_files.add(prg_dir / f"{prg_name}" / "multiple_sequence_alignments")
+    output_files.add(prg_dir / f"{prg_name}" / "local_prgs")
 
 
 # ======================================================
@@ -376,4 +376,32 @@ rule multiple_sequence_alignment_of_loci:
             --threads {threads} \
             --exec bash {params.script} '{{}}' {output.msa_dir}/'{{/}}' {log} \; \
             {params.pattern} {input.loci_dir} 2>> {log}
+        """
+
+
+rule build_local_prgs:
+    input:
+        msa_dir=rules.multiple_sequence_alignment_of_loci.output.msa_dir,
+    output:
+        local_prg_dir=directory(prg_dir / "{prg_name}" / "local_prgs"),
+    shadow:
+        "shallow"
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+    singularity:
+        containers["make_prg"]
+    params:
+        pattern="*.fa",
+        script=scripts["make_prg"],
+        nesting_lvl=config["nesting_level"],
+        match_len=config["match_length"],
+    log:
+        rule_log_dir / "build_local_prgs/{prg_name}.log",
+    shell:
+        """
+        mkdir -p {output.local_prg_dir} 2> {log}
+        find {input.msa_dir} -name {params.pattern} | \
+        xargs -P {threads} \ 
+          sh {params.script} '{{}}' {output.local_prg_dir} {params.nesting_lvl} {params.match_len} {log} 2>> {log}
         """

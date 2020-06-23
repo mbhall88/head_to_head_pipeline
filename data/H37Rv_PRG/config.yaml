@@ -7,6 +7,7 @@ h37rv:
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
+  make_prg:    "library://mbhall88/default/make_prg:0bb4a27"
 envs:
   gff_split:       "envs/gff_split.yaml"
   assign_lineages: "envs/assign_lineages.yaml"
@@ -20,6 +21,7 @@ scripts:
   records_to_loci: "scripts/associate_vcf_records_to_loci.py"
   apply_variants:  "scripts/apply_variants_to_loci.py"
   msa:             "scripts/msa.sh"
+  make_prg:        "scripts/build_local_prgs.sh"
 
 min_chunk_len:        500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
 lineage_panel:        "resources/snps_for_typing.csv"
@@ -43,3 +45,5 @@ lineages:
 prg_names:
   sparse: 100
   dense:  500
+nesting_level: 5  # for make_prg
+match_length: 7  # for make_prg
