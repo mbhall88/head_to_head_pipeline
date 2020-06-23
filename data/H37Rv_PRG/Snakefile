@@ -397,7 +397,7 @@ rule build_local_prgs:
         nesting_lvl=config["nesting_level"],
         match_len=config["match_length"],
         find_extras="-print0",
-        xargs_extras="--max-args=1 --null",
+        xargs_extras="-n 1 -0",
     log:
         rule_log_dir / "build_local_prgs/{prg_name}.log",
     shell:
