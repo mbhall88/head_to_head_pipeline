@@ -392,16 +392,18 @@ rule build_local_prgs:
     singularity:
         containers["make_prg"]
     params:
-        pattern="*.fa",
+        pattern="'*.fa'",
         script=scripts["make_prg"],
         nesting_lvl=config["nesting_level"],
         match_len=config["match_length"],
+        find_extras="-print0",
+        xargs_extras="--max-args=1 --null",
     log:
         rule_log_dir / "build_local_prgs/{prg_name}.log",
     shell:
         """
         mkdir -p {output.local_prg_dir} 2> {log}
-        find {input.msa_dir} -name {params.pattern} | \
-        xargs -P {threads} \ 
-          sh {params.script} '{{}}' {output.local_prg_dir} {params.nesting_lvl} {params.match_len} {log} 2>> {log}
+        find {input.msa_dir} -name {params.pattern} {params.find_extras} | \
+        xargs -P {threads} -I @ {params.xargs_extras} \ 
+          sh {params.script} "@" {output.local_prg_dir} {params.nesting_lvl} {params.match_len} {log} 2>> {log}
         """
