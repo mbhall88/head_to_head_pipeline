@@ -33,12 +33,17 @@ rule_log_dir = Path("logs/stderr")
 # ======================================================
 output_files = set()
 for lineage, prg_name in product(lineages, prg_names.keys()):
-    output_files.add(prg_dir / f"{prg_name}" / "local_prgs")
+    output_files.add(prg_dir / f"{prg_name}" / f"{prg_name}.prg")
 
 
 # ======================================================
 # Rules
 # ======================================================
+localrules:
+    all,
+    combine_local_prgs,
+
+
 rule all:
     input:
         output_files,
@@ -412,4 +417,27 @@ rule build_local_prgs:
                 {params.match_len} \
                 {log} \
             {params.pattern} {input.msa_dir} 2>> {log}
+        """
+
+
+rule combine_local_prgs:
+    input:
+        local_prg_dir=rules.build_local_prgs.output.local_prg_dir,
+    output:
+        prg=prg_dir / "{prg_name}" / "{prg_name}.prg",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        extras="--no-ignore --hidden",
+        extension="fa",
+        pattern=".",
+    log:
+        rule_log_dir / "combine_local_prgs/{prg_name}.log",
+    shell:
+        """
+        fd {params.extras} \
+            --extension {params.extension} \
+            --exec-batch awk 1 \; \
+            {params.pattern} {input.local_prg_dir} > {output.prg} 2> {log}
         """
