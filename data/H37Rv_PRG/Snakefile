@@ -413,7 +413,7 @@ rule build_local_prgs:
                 {output.local_prg_dir}/'{{/.}}' \
                 {params.nesting_lvl} \
                 {params.match_len} \
-                {log} \
+                {log} \; \
             {params.pattern} {input.msa_dir} 2>> {log}
         """
 
