@@ -395,7 +395,7 @@ rule build_local_prgs:
     singularity:
         containers["make_prg"]
     params:
-        extras="--no-ignore --hidden",
+        extras="--no-ignore --hidden --show-errors",
         extension="fa",
         pattern=".",
         script=scripts["make_prg"],

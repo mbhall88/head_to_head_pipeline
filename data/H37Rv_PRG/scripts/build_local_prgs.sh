@@ -13,4 +13,4 @@ make_prg prg_from_msa --max_nesting "$nesting_lvl" \
 
 full_outprefix="${out_prefix}.max_nest${nesting_lvl}.min_match${match_len}"
 cat "${full_outprefix}.log" >> "$logfile"
-rm "$full_outprefix".log "$full_outprefix".gfa "$full_outprefix".bin
+rm -f "$full_outprefix".log "$full_outprefix".gfa "$full_outprefix".bin
