@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-set -u
+set -eux
 msa="$1"
 out_prefix="$2"
 nesting_lvl="$3"
