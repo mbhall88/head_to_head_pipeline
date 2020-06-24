@@ -8,7 +8,7 @@ then
     exit 1
 fi
 
-MEMORY=8000
+MEMORY=4000
 THREADS=4
 PROFILE="lsf"
 
