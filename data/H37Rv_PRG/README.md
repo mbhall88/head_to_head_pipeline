@@ -1,5 +1,7 @@
 # *Mycobacterium tuberculosis* population reference graph construction
 
+todo: add rulegraph
+
 ## Introduction
 
 The code in this section of the repository is for construction of the
