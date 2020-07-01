@@ -59,13 +59,14 @@ rule build_decontamination_db:
         containers["conda"]
     conda:
         envs["decontam_db"]
+    log:
+        rule_log_dir / "build_decontamination_db.log",
     shell:
         """
-        perl {params.script} {params.outdir}
+        perl {params.script} {params.outdir} 2> {log}
         """
 
 
 # assign lineages for samples
-
 # subsample to max. coverage
 #
