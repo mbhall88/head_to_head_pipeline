@@ -6,4 +6,5 @@ channels:
 dependencies:
   - perl
   - wget
+  - bioconda::enabrowsertools=1.5.4
   - bioconda::seqtk=1.3

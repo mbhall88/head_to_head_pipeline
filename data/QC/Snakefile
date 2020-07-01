@@ -63,7 +63,7 @@ rule build_decontamination_db:
         rule_log_dir / "build_decontamination_db.log",
     shell:
         """
-        perl {params.script} {params.outdir} 2> {log}
+        perl {params.script} {params.outdir} &> {log}
         """
 
 
