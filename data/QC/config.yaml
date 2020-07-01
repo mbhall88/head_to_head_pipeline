@@ -1,0 +1,12 @@
+samplesheet: "../../docs/samplesheet.csv"
+genome_size:          4411532
+containers:
+  conda:       "docker://continuumio/miniconda3:4.7.12"
+  bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
+envs:
+  decontam_db: "envs/decontam_db.yaml"
+scripts:
+  download_decontam: "scripts/download_tb_reference_files.pl"
+
+default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants
+ref_lineage_position: 1692141  # the position in the lineage panel that defines the lineage of H37Rv

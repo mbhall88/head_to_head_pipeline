@@ -1,0 +1,71 @@
+import os
+from itertools import product
+from pathlib import Path
+from typing import Dict, Union
+
+from snakemake.utils import min_version
+import pandas as pd
+
+min_version("5.14.0")
+
+GB = 1_024
+PathLike = Union[str, Path, os.PathLike]
+
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+
+
+samplesheet = pd.read_csv(config["samplesheet"])
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
+rule_log_dir = Path("logs/stderr")
+decontam_db = Path("decontam_db")
+
+# ======================================================
+# Global functions and variables
+# ======================================================
+output_files = set()
+output_files.add(decontam_db / "remove_contam.fa.gz")
+
+
+# ======================================================
+# Rules
+# ======================================================
+localrules:
+    all,
+
+
+rule all:
+    input:
+        output_files,
+
+
+# decontaminate samples
+rule build_decontamination_db:
+    output:
+        fasta=decontam_db / "remove_contam.fa.gz",
+        metadata=decontam_db / "remove_contam.tsv",
+    threads: 1
+    resources:
+        mem_mb=GB,
+    params:
+        script=scripts["download_decontam"],
+        outdir=lambda wildcards, output: Path(output.fasta).parent,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["decontam_db"]
+    shell:
+        """
+        perl {params.script} {params.outdir}
+        """
+
+
+# assign lineages for samples
+
+# subsample to max. coverage
+#
