@@ -9,6 +9,7 @@ envs:
   decontam_db:          "envs/decontam_db.yaml"
   aln_tools:            "envs/aln_tools.yaml"
   generate_krona_input: "envs/generate_krona_input.yaml"
+  filter:               "envs/filter.yaml"
 scripts:
   download_decontam:    "scripts/download_tb_reference_files.pl"
   generate_krona_input: "scripts/generate_krona_input.py"

@@ -27,6 +27,7 @@ decontam_db = Path("decontam_db")
 data_dir = Path(config["data_dir"])
 report_dir = Path("report")
 plot_dir = report_dir / "plotting"
+filtered_dir = Path("filtered")
 
 # ======================================================
 # Global functions and variables
@@ -159,6 +160,31 @@ rule map_nanopore_to_decontam_db:
         samtools index -@ {threads} {output.cram} 2>> {log}
         """
 
+
+rule filter_contamination_illumina:
+    input:
+        cram=rules.map_illumina_to_decontam_db.output.cram,
+        metadata = rules.build_decontamination_db.output.metadata,
+        r1=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R1.fastq.gz",
+        r2=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R2.fastq.gz",
+    output:
+        r1 = filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R1.fastq.gz",
+        r2 = filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R2.fastq.gz",
+    threads: 1
+    resources:
+        mem_mb = GB
+    singularity:
+        containers["conda"]
+    conda:
+        envs["filter"]
+    params:
+        script=scripts["filter"]
+    log:
+        rule_log_dir / "filter_contamination_illumina" / "{site}" / "{sample}.log",
+    shell:
+        """
+        python {params.script} 2> {log}
+        """
 
 rule generate_krona_input:
     input:
