@@ -44,7 +44,7 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     for tech in technologies:
-        output_files.add(f"mapped/{site}/{sample}.{tech}.sorted.cram")
+        output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
 
 
 # ======================================================
@@ -54,12 +54,14 @@ localrules:
     all,
 
 
+report: report_dir / "workflow.rst"
+
+
 rule all:
     input:
         output_files,
 
 
-# decontaminate samples
 rule build_decontamination_db:
     output:
         fasta=decontam_db / "remove_contam.fa.gz",
@@ -180,6 +182,28 @@ rule generate_krona_input:
         """
         python {params.script} {params.extras} \
             -i {input.cram} -m {input.metadata} -o {output.krona_input} 2> {log}
+        """
+
+
+rule plot_sample_composition:
+    input:
+        tsv=rules.generate_krona_input.output.krona_input,
+    output:
+        chart=report(
+            plot_dir / "krona" / "{site}" / "{sample}.{tech}.krona.html",
+            category="Krona",
+            caption=report_dir / "krona.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * GB,
+    singularity:
+        containers["krona"]
+    log:
+        rule_log_dir / "plot_sample_composition" / "{site}" / "{sample}.{tech}.log",
+    shell:
+        """
+        ktImportText {input.tsv} -o {output.chart} &> {log}
         """
 
 

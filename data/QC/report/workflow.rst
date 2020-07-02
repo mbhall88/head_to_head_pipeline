@@ -1,0 +1,1 @@
+This is some text in the workflow RST template. Here is a link to the Krona_ section.
