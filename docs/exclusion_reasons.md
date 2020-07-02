@@ -79,3 +79,57 @@ by sequence identifier, the first reads in R1 do not match those in R2.
 The pairing of the Illumina data for this sample is incorrect. I.e. if you sort the reads 
 by sequence identifier, the first reads in R1 do not match those in R2.
 
+There is also no nanopore data for this sample.
+
+## R23880
+
+No nanopore data
+
+## R30042
+
+No nanopore data
+
+## R23594
+
+No nanopore data
+
+## R22246
+
+No nanopore data
+
+## R36134
+
+No nanopore data
+
+## R25564
+
+No nanopore data
+
+## R30021
+
+No nanopore data
+
+## R23013
+
+No nanopore data
+
+## R29577
+
+No nanopore data
+
+## R26984
+
+No nanopore data
+
+## R22435
+
+No nanopore data
+
+## R23824
+
+No nanopore data
+
+## R26840
+
+No nanopore data
+
