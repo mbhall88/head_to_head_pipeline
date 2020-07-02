@@ -90,7 +90,7 @@ rule index_decontam_db:
         mm2_index=decontam_db / "remove_contam.fa.gz.map-ont.mmi",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * int(8 * GB),
+        mem_mb=lambda wildcards, attempt: attempt * int(32 * GB),
     singularity:
         containers["conda"]
     conda:
