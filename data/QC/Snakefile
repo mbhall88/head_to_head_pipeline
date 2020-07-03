@@ -125,14 +125,14 @@ rule map_illumina_to_decontam_db:
         index="mapped/{site}/{sample}.illumina.sorted.cram.crai",
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * int(6 * GB),
+        mem_mb=lambda wildcards, attempt: attempt * int(12 * GB),
     params:
         map_extras="-M",
     log:
         rule_log_dir / "map_illumina_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | 
+        bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | \
         samtools sort -@ {threads} -o {output.cram} 2> {log}
         samtools index -@ {threads} {output.cram} 2>> {log}
         """
@@ -147,7 +147,7 @@ rule map_nanopore_to_decontam_db:
         index="mapped/{site}/{sample}.nanopore.sorted.cram.crai",
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * int(8 * GB),
+        mem_mb=lambda wildcards, attempt: attempt * int(16 * GB),
     params:
         map_extras="-aL2",
         preset=MM2_PRESET,
@@ -155,7 +155,7 @@ rule map_nanopore_to_decontam_db:
         rule_log_dir / "map_nanopore_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | 
+        minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | \
         samtools sort -@ {threads} -o {output.cram} 2> {log}
         samtools index -@ {threads} {output.cram} 2>> {log}
         """
