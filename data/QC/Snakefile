@@ -46,6 +46,9 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
     for tech in technologies:
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
+        output_files.add(
+            filtered_dir / f"{site}" / f"{tech}" / f"{sample}" / "keep.reads"
+        )
 
 
 # ======================================================
@@ -161,30 +164,35 @@ rule map_nanopore_to_decontam_db:
         """
 
 
-rule filter_contamination_illumina:
+rule filter_contamination:
     input:
-        bam=rules.map_illumina_to_decontam_db.output.bam,
-        metadata = rules.build_decontamination_db.output.metadata,
-        r1=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R1.fastq.gz",
-        r2=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R2.fastq.gz",
+        bam="mapped/{site}/{sample}.{tech}.sorted.bam",
+        metadata=rules.build_decontamination_db.output.metadata,
     output:
-        r1 = filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R1.fastq.gz",
-        r2 = filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R2.fastq.gz",
+        keep_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "keep.reads",
+        contam_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "contaminant.reads",
+        unmapped_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "unmapped.reads",
     threads: 1
     resources:
-        mem_mb = GB
+        mem_mb=GB,
     singularity:
         containers["conda"]
     conda:
         envs["filter"]
     params:
-        script=scripts["filter"]
+        script=scripts["filter"],
+        extra="--verbose --ignore-secondary",
+        outdir=lambda wildcards, output: Path(output.keep_ids).parent,
     log:
-        rule_log_dir / "filter_contamination_illumina" / "{site}" / "{sample}.log",
+        rule_log_dir / "filter_contamination" / "{site}" / "{sample}.{tech}.log",
     shell:
         """
-        python {params.script} 2> {log}
+        python {params.script} {params.extra} \
+            -i {input.bam} \
+            -m {input.metadata} \
+            -o {params.outdir} 2> {log}
         """
+
 
 rule generate_krona_input:
     input:
