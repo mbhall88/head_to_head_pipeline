@@ -76,7 +76,7 @@ rule build_decontamination_db:
     params:
         script=scripts["download_decontam"],
         outdir=lambda wildcards, output: Path(output.fasta).parent,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["decontam_db"]
@@ -97,7 +97,7 @@ rule index_decontam_db:
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: attempt * int(32 * GB),
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["aln_tools"]
@@ -175,7 +175,7 @@ rule filter_contamination:
     threads: 1
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["filter"]
@@ -203,7 +203,7 @@ rule generate_krona_input:
     threads: 1
     resources:
         mem_mb=int(0.4 * GB),
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["generate_krona_input"]
@@ -231,7 +231,7 @@ rule plot_sample_composition:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: attempt * GB,
-    singularity:
+    container:
         containers["krona"]
     log:
         rule_log_dir / "plot_sample_composition" / "{site}" / "{sample}.{tech}.log",
