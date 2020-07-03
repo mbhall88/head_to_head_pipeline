@@ -56,7 +56,7 @@ class Classifier:
             return Classification.Unmaped
 
         ref_id = record.reference_name
-        is_contam: bool = self.metadata[ref_id, IS_CONTAM_COL]
+        is_contam: bool = self.metadata.at[ref_id, IS_CONTAM_COL]
         if is_contam:
             return Classification.Contaminant
 

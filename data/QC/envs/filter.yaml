@@ -4,6 +4,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pandas
+  - pandas=1.0.3
   - click=7.1.2
   - bioconda::pysam=0.16.0.1
