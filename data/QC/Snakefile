@@ -152,7 +152,7 @@ rule map_nanopore_to_decontam_db:
         map_extras="-aL2",
         preset=MM2_PRESET,
     log:
-        rule_log_dir / "map_illumina_to_decontam_db" / "{site}" / "{sample}.log",
+        rule_log_dir / "map_nanopore_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
         minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | 
