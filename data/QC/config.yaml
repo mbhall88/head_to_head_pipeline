@@ -5,6 +5,7 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   krona:       "docker://quay.io/biocontainers/krona:2.7--pl526_2"
+  pyfastaq:    "docker://quay.io/biocontainers/pyfastaq:3.17.0--py_2"
 envs:
   decontam_db:          "envs/decontam_db.yaml"
   aln_tools:            "envs/aln_tools.yaml"

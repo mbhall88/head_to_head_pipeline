@@ -1,10 +1,9 @@
 import os
-from itertools import product
 from pathlib import Path
 from typing import Dict, Union
 
-from snakemake.utils import min_version
 import pandas as pd
+from snakemake.utils import min_version
 
 min_version("5.14.0")
 
@@ -47,7 +46,18 @@ for idx, row in samplesheet.iterrows():
     for tech in technologies:
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
         output_files.add(
-            filtered_dir / f"{site}" / f"{tech}" / f"{sample}" / "keep.reads"
+            filtered_dir
+            / f"{site}"
+            / "nanopore"
+            / f"{sample}"
+            / f"{sample}.filtered.fastq.gz",
+        )
+        output_files.add(
+            filtered_dir
+            / f"{site}"
+            / "illumina"
+            / f"{sample}"
+            / f"{sample}.filtered.R1.fastq.gz",
         )
 
 
@@ -191,6 +201,49 @@ rule filter_contamination:
             -i {input.bam} \
             -m {input.metadata} \
             -o {params.outdir} 2> {log}
+        """
+
+
+rule extract_decontaminated_illumina_reads:
+    input:
+        r1=rules.map_illumina_to_decontam_db.input.r1,
+        r2=rules.map_illumina_to_decontam_db.input.r2,
+        read_ids=filtered_dir / "{site}" / "illumina" / "{sample}" / "keep.reads",
+    output:
+        r1=filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R1.fastq.gz",
+        r2=filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R2.fastq.gz",
+    threads: 1
+    resources:
+        mem_mb=GB,
+    container:
+        containers["pyfastaq"]
+    params:
+        extras="--both_mates_pass",
+    log:
+        rule_log_dir / "extract_decontaminated_illumina_reads" / "{site}" / "{sample}.log",
+    shell:
+        """
+        fastaq filter {params.extras} --mate_in {input.r2} --mate_out {output.r2} \
+            --ids_file {input.read_ids} {input.r1} {output.r1} 2> {log}
+        """
+
+
+rule extract_decontaminated_nanopore_reads:
+    input:
+        r1=rules.map_nanopore_to_decontam_db.input.query,
+        read_ids=filtered_dir / "{site}" / "nanopore" / "{sample}" / "keep.reads",
+    output:
+        r1=filtered_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.filtered.fastq.gz",
+    threads: 1
+    resources:
+        mem_mb=GB,
+    container:
+        containers["pyfastaq"]
+    log:
+        rule_log_dir / "extract_decontaminated_nanopore_reads" / "{site}" / "{sample}.log",
+    shell:
+        """
+        fastaq filter --ids_file {input.read_ids} {input.r1} {output.r1} 2> {log}
         """
 
 
