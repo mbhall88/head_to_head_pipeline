@@ -95,6 +95,9 @@ rule build_decontamination_db:
     shell:
         """
         perl {params.script} {params.outdir} &> {log}
+        tmpfile=$(mktemp)
+        sed 's/NTM\t0/NTM\t1/g' {output.metadata} > "$tmpfile"
+        mv "$tmpfile" {output.metadata}
         """
 
 
