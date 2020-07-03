@@ -13,6 +13,7 @@ envs:
 scripts:
   download_decontam:    "scripts/download_tb_reference_files.pl"
   generate_krona_input: "scripts/generate_krona_input.py"
+  filter:               "scripts/filter_contamination.py"
 
 
 default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants
