@@ -121,8 +121,8 @@ rule map_illumina_to_decontam_db:
         r1=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R1.fastq.gz",
         r2=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R2.fastq.gz",
     output:
-        cram="mapped/{site}/{sample}.illumina.sorted.cram",
-        index="mapped/{site}/{sample}.illumina.sorted.cram.crai",
+        bam="mapped/{site}/{sample}.illumina.sorted.bam",
+        index="mapped/{site}/{sample}.illumina.sorted.bam.bai",
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: attempt * int(12 * GB),
@@ -132,8 +132,9 @@ rule map_illumina_to_decontam_db:
         rule_log_dir / "map_illumina_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | samtools sort -@ {threads} -o {output.cram} &> {log}
-        samtools index -@ {threads} {output.cram} &>> {log}
+        (bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | \
+            samtools sort -@ {threads} -o {output.bam}) 2> {log}
+        samtools index -@ {threads} {output.bam} &>> {log}
         """
 
 
@@ -142,8 +143,8 @@ rule map_nanopore_to_decontam_db:
         index=rules.index_decontam_db.output.mm2_index,
         query=data_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.nanopore.fastq.gz",
     output:
-        cram="mapped/{site}/{sample}.nanopore.sorted.cram",
-        index="mapped/{site}/{sample}.nanopore.sorted.cram.crai",
+        bam="mapped/{site}/{sample}.nanopore.sorted.bam",
+        index="mapped/{site}/{sample}.nanopore.sorted.bam.bai",
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: attempt * int(16 * GB),
@@ -154,14 +155,15 @@ rule map_nanopore_to_decontam_db:
         rule_log_dir / "map_nanopore_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | samtools sort -@ {threads} -o {output.cram} &> {log}
-        samtools index -@ {threads} {output.cram} &>> {log}
+        (minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | \
+            samtools sort -@ {threads} -o {output.bam}) 2> {log}
+        samtools index -@ {threads} {output.bam} &>> {log}
         """
 
 
 rule filter_contamination_illumina:
     input:
-        cram=rules.map_illumina_to_decontam_db.output.cram,
+        bam=rules.map_illumina_to_decontam_db.output.bam,
         metadata = rules.build_decontamination_db.output.metadata,
         r1=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R1.fastq.gz",
         r2=data_dir / "{site}" / "illumina" / "{sample}" / "{sample}.R2.fastq.gz",
@@ -186,7 +188,7 @@ rule filter_contamination_illumina:
 
 rule generate_krona_input:
     input:
-        cram="mapped/{site}/{sample}.{tech}.sorted.cram",
+        bam="mapped/{site}/{sample}.{tech}.sorted.bam",
         metadata=rules.build_decontamination_db.output.metadata,
     output:
         krona_input=plot_dir / "krona" / "{site}" / "{sample}.{tech}.krona.tsv",
@@ -205,7 +207,7 @@ rule generate_krona_input:
     shell:
         """
         python {params.script} {params.extras} \
-            -i {input.cram} -m {input.metadata} -o {output.krona_input} 2> {log}
+            -i {input.bam} -m {input.metadata} -o {output.krona_input} 2> {log}
         """
 
 
