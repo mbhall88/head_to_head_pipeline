@@ -132,9 +132,8 @@ rule map_illumina_to_decontam_db:
         rule_log_dir / "map_illumina_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | \
-        samtools sort -@ {threads} -o {output.cram} 2> {log}
-        samtools index -@ {threads} {output.cram} 2>> {log}
+        bwa mem {params.map_extras} -t {threads} {input.ref} {input.r1} {input.r2} | samtools sort -@ {threads} -o {output.cram} &> {log}
+        samtools index -@ {threads} {output.cram} &>> {log}
         """
 
 
@@ -155,9 +154,8 @@ rule map_nanopore_to_decontam_db:
         rule_log_dir / "map_nanopore_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
         """
-        minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | \
-        samtools sort -@ {threads} -o {output.cram} 2> {log}
-        samtools index -@ {threads} {output.cram} 2>> {log}
+        minimap2 {params.map_extras} -x {params.preset} -t {threads} {input.index} {input.query} | samtools sort -@ {threads} -o {output.cram} &> {log}
+        samtools index -@ {threads} {output.cram} &>> {log}
         """
 
 
