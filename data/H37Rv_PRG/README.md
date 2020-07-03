@@ -1,6 +1,8 @@
 # *Mycobacterium tuberculosis* population reference graph construction
 
-todo: add rulegraph
+## Pipeline overview
+
+![rulegraph](resources/rulegraph.png)
 
 ## Introduction
 
