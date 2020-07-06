@@ -1,4 +1,6 @@
 samplesheet:          "../../docs/samplesheet.csv"
+compass_vcf_dir:      "../../analysis/baseline_variants/illumina/gvcfs"
+lineage_panel:        "resources/snps_for_typing.csv"
 data_dir:             "../"
 genome_size:          4411532
 containers:
@@ -9,12 +11,14 @@ containers:
 envs:
   decontam_db:          "envs/decontam_db.yaml"
   aln_tools:            "envs/aln_tools.yaml"
+  assign_lineages:      "envs/assign_lineages.yaml"
   generate_krona_input: "envs/generate_krona_input.yaml"
   filter:               "envs/filter.yaml"
 scripts:
   download_decontam:    "scripts/download_tb_reference_files.pl"
   generate_krona_input: "scripts/generate_krona_input.py"
   filter:               "scripts/filter_contamination.py"
+  assign_lineages:      "scripts/assign_lineages.py"
 
 
 default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants

@@ -27,6 +27,7 @@ data_dir = Path(config["data_dir"])
 report_dir = Path("report")
 plot_dir = report_dir / "plotting"
 filtered_dir = Path("filtered")
+compass_vcf_dir = Path(config["compass_vcf_dir"])
 
 # ======================================================
 # Global functions and variables
@@ -36,6 +37,8 @@ BWA_EXTNS = [".amb", ".ann", ".bwt", ".pac", ".sa"]
 technologies = ["illumina", "nanopore"]
 
 output_files = set()
+samples = set()
+krona_inputs = set()
 for idx, row in samplesheet.iterrows():
     is_excluded = True if row["excluded"] == 1 else False
     if is_excluded:
@@ -43,7 +46,9 @@ for idx, row in samplesheet.iterrows():
 
     site = row["site"]
     sample = row["sample"]
+    samples.add(sample)
     for tech in technologies:
+        krona_inputs.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.tsv")
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
         output_files.add(
             filtered_dir
@@ -59,6 +64,7 @@ for idx, row in samplesheet.iterrows():
             / f"{sample}"
             / f"{sample}.filtered.R1.fastq.gz",
         )
+        output_files.add(report_dir / "lineage_assignment" / f"{sample}.lineage.csv")
 
 
 # ======================================================
@@ -296,6 +302,44 @@ rule plot_sample_composition:
         ktImportText {input.tsv} -o {output.chart} &> {log}
         """
 
+rule assign_lineages:
+    input:
+        vcf=compass_vcf_dir / "{sample}.compass.vcf.gz",
+        panel=config["lineage_panel"],
+    output:
+        assignments=report_dir / "lineage_assignment" / "{sample}.lineage.csv",
+    threads: 1
+    resources:
+        mem_mb=GB,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["assign_lineages"]
+    params:
+        script=scripts["assign_lineages"],
+        default_lineage=config["default_lineage"], # the name given to samples with no hits in the panel
+        max_het=1,
+        max_alt_lineages=1,
+        ref_lineage_position=config["ref_lineage_position"],
+        extras="--verbose",
+    shell:
+        """
+        python {params.script} --input {input.vcf} \
+            --panel {input.panel} \
+            --output {output.assignments} \
+            --default-lineage {params.default_lineage} \
+            --max-het {params.max_het} \
+            --ref-lineage-position {params.ref_lineage_position} \
+            --max-alt-lineages {params.max_alt_lineages} {params.extras}
+        """
+
+# rule collate_composition_information:
+#     input:
+#         lineage=expand(str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples),
+#         composition=krona_inputs
+#     output:
+#         html=report(report_dir / "composition.html")
+#
 
 # assign lineages for samples
 # subsample to max. coverage
