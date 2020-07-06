@@ -11,9 +11,9 @@ fi
 MEMORY=4000
 THREADS=4
 PROFILE="lsf"
-export SINGULARITY_BIND="/hps/nobackup/research/zi,/nfs/research1/zi"
+SINGULARITY_BINDS="/hps/nobackup/research/zi,/nfs/research1/zi"
 SINGULARITY_WORKDIR="/scratch"
-SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR"
+SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS"
 
 module load singularity/3.5.0
 
