@@ -11,6 +11,9 @@ fi
 MEMORY=4000
 THREADS=4
 PROFILE="lsf"
+export SINGULARITY_BIND="/hps/nobackup/research/zi,/nfs/research1/zi"
+SINGULARITY_WORKDIR="/scratch"
+SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR"
 
 module load singularity/3.5.0
 
@@ -20,6 +23,8 @@ bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -o "$LOG_DIR"/"$JOB_NAME".o \
     -e "$LOG_DIR"/"$JOB_NAME".e \
     -J "$JOB_NAME" \
-        snakemake --profile "$PROFILE" --local-cores "$THREADS" "$@"
+snakemake --profile "$PROFILE" \
+    --local-cores "$THREADS" \
+    --singularity-args "$SINGULARITY_ARGS" "$@"
 
 exit 0
