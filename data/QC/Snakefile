@@ -333,13 +333,13 @@ rule assign_lineages:
             --max-alt-lineages {params.max_alt_lineages} {params.extras}
         """
 
-# rule collate_composition_information:
-#     input:
-#         lineage=expand(str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples),
-#         composition=krona_inputs
-#     output:
-#         html=report(report_dir / "composition.html")
-#
+rule collate_composition_information:
+    input:
+        lineage=expand(str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples),
+        composition=krona_inputs
+    output:
+        html=report(report_dir / "composition.html")
+
 
 # assign lineages for samples
 # subsample to max. coverage
