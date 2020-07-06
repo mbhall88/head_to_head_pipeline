@@ -13,7 +13,7 @@ THREADS=4
 PROFILE="lsf"
 SINGULARITY_BINDS="/hps/nobackup/research/zi,/nfs/research1/zi"
 SINGULARITY_WORKDIR="/scratch"
-SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS"
+SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS --pwd $(pwd)"
 
 module load singularity/3.5.0
 
