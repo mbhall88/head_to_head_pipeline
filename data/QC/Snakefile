@@ -27,6 +27,7 @@ data_dir = Path(config["data_dir"])
 report_dir = Path("report")
 plot_dir = report_dir / "plotting"
 filtered_dir = Path("filtered")
+subsample_dir = Path("subsampled")
 compass_vcf_dir = Path(config["compass_vcf_dir"])
 
 # ======================================================
@@ -53,18 +54,18 @@ for idx, row in samplesheet.iterrows():
         )
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
         output_files.add(
-            filtered_dir
+            subsample_dir
             / f"{site}"
             / "nanopore"
             / f"{sample}"
-            / f"{sample}.filtered.fastq.gz",
+            / f"{sample}.subsampled.fastq.gz"
         )
         output_files.add(
-            filtered_dir
+            subsample_dir
             / f"{site}"
             / "illumina"
             / f"{sample}"
-            / f"{sample}.filtered.R1.fastq.gz",
+            / f"{sample}.subsampled.R1.fastq.gz",
         )
         output_files.add(report_dir / "composition.html")
 
@@ -314,7 +315,7 @@ rule assign_lineages:
     threads: 1
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["assign_lineages"]
@@ -354,7 +355,7 @@ rule composition_report:
     threads: 1
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["composition_report"]
@@ -378,5 +379,69 @@ rule composition_report:
         """
 
 
-# subsample to max. coverage
-#
+rule subsample_nanopore_reads:
+    input:
+        reads=rules.extract_decontaminated_nanopore_reads.output.r1,
+    output:
+        reads=(
+            subsample_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.subsampled.fastq.gz"
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["rasusa"]
+    params:
+        covg=config["max_nanopore_covg"],
+        genome_size=config["genome_size"],
+        seed=88,
+    log:
+        rule_log_dir / "subsample_nanopore_reads" / "{site}" / "{sample}.log",
+    shell:
+        """
+        rasusa -c {params.covg} \
+            -g {params.genome_size} \
+            -i {input.reads} \
+            -o {output.reads} \
+            -s {params.seed} 2> {log}
+        """
+
+
+rule subsample_illumina_reads:
+    input:
+        r1=rules.extract_decontaminated_illumina_reads.output.r1,
+        r2=rules.extract_decontaminated_illumina_reads.output.r2,
+    output:
+        r1=(
+            subsample_dir
+            / "{site}"
+            / "illumina"
+            / "{sample}"
+            / "{sample}.subsampled.R1.fastq.gz"
+        ),
+        r2=(
+            subsample_dir
+            / "{site}"
+            / "illumina"
+            / "{sample}"
+            / "{sample}.subsampled.R2.fastq.gz"
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["rasusa"]
+    params:
+        covg=config["max_illumina_covg"],
+        genome_size=config["genome_size"],
+        seed=88,
+    log:
+        rule_log_dir / "subsample_illumina_reads" / "{site}" / "{sample}.log",
+    shell:
+        """
+        rasusa -c {params.covg} \
+            -g {params.genome_size} \
+            -i {input.r1} {input.r2} \
+            -o {output.r1} {output.r2} \
+            -s {params.seed} 2> {log}
+        """
