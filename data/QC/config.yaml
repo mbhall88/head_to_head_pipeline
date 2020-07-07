@@ -13,13 +13,16 @@ envs:
   aln_tools:            "envs/aln_tools.yaml"
   assign_lineages:      "envs/assign_lineages.yaml"
   generate_krona_input: "envs/generate_krona_input.yaml"
+  composition_report:   "envs/composition_report.yaml"
   filter:               "envs/filter.yaml"
 scripts:
   download_decontam:    "scripts/download_tb_reference_files.pl"
   generate_krona_input: "scripts/generate_krona_input.py"
+  composition_report:   "scripts/composition_report.py"
   filter:               "scripts/filter_contamination.py"
   assign_lineages:      "scripts/assign_lineages.py"
 
 
 default_lineage:      "unknown"  # the name given to samples with no variants in the panel of lineage-defining variants
 ref_lineage_position: 1692141  # the position in the lineage panel that defines the lineage of H37Rv
+composition_template: "report/composition.html.jinja"

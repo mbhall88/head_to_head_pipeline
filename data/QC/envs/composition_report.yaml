@@ -1,0 +1,8 @@
+name: composition_report
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pandas=1.0.3
+  - click=7.1.2
+  - jinja2=2.11.2

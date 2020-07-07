@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Composition report</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+        }
+
+        tr:hover {
+            background-color: #88c0d0 !important;
+        }
+
+        tr:nth-child(even) {
+            background-color: #eceff4;
+        }
+
+        th, td {
+            padding: 5px;
+            color: #2e3440;
+        }
+
+        td {
+            font-family: 'Operator Mono', 'Source Sans Pro', Menlo, Monaco, Consolas, Courier New, monospace;
+            font-size: 14px;
+        }
+
+        th {
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .nord12 {
+            color: #d08770;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    The table below lists each sample (rows) and their values for the corresponding
+    statistic in the column heading. If a cell is <span
+        class="nord12">highlighted</span>, it indicates:
+<ul>
+    <li>Contamination percentage is above {{ contam_warning }}%</li>
+    <li>Unmapped percentage is above {{ unmapped_warning }}%</li>
+    <li>The lineage is not one of the standard (i.e. not L1-7)</li>
+</ul>
+</div>
+<div style="overflow-x:auto;">
+    {{ table }}
+</div>
+
+</body>
+</html>
