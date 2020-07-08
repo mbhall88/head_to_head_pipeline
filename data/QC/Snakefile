@@ -474,6 +474,6 @@ rule coverage_report:
     shell:
         """
         python {params.script} --assignment-dir {params.assignment_dir} \
-            --logs-dir {params.logs_dir} \
-            -o {output.html} 2> {log}
+            -o {output.html} \
+            {params.logs_dir} 2> {log}
         """

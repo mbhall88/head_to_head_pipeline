@@ -41,23 +41,15 @@ def ripgrep_extract_covg(file: Path) -> float:
 
 
 @click.command()
+@click.argument(
+    "log-dirs", type=click.Path(exists=True, file_okay=False), nargs=-1,
+)
 @click.help_option("--help", "-h")
 @click.option(
     "-a",
     "--assignment-dir",
     help="Directory containing lineage assignment CSV files.",
     type=click.Path(exists=True, file_okay=False),
-    required=True,
-)
-@click.option(
-    "-l",
-    "--logs-dir",
-    help=(
-        "Director(y/ies) containing the subsampling log files. (Coverage is extracted "
-        "from these)"
-    ),
-    type=click.Path(exists=True, file_okay=False),
-    multiple=True,
     required=True,
 )
 @click.option(
@@ -69,13 +61,16 @@ def ripgrep_extract_covg(file: Path) -> float:
     help="The filepath to write the output HTML file to.",
 )
 def main(
-    assignment_dir: str, logs_dir: List[str], outfile: str,
+    assignment_dir: str, log_dirs: List[str], outfile: str,
 ):
     """This script generates a HTML file containing a plot of the coverage for each
-    sample after they have been through the QC pipeline.
+    sample after they have been through the QC pipeline.\n
+    LOG_DIRS: Director(y/ies) containing the subsampling log files. (Coverage is
+    extracted from these)
+    ),
     """
     logfiles = []
-    for d in logs_dir:
+    for d in log_dirs:
         logfiles.extend(Path(d).rglob("*.log"))
 
     data = defaultdict(dict)
