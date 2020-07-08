@@ -12,5 +12,5 @@ decontaminated and contain no unmapped reads (as determined by the decontaminati
 database).
 
 The resulting report with sample composition and coverage is in
-[`report.html.gz`](report.html.gz). You will need to decompress the file before viewing
+[`report.html.gz`](report/report.html.gz). You will need to decompress the file before viewing
 it. Something like `gzip -d -c report.html.gz > report.html` should do the trick.
