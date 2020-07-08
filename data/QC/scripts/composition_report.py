@@ -92,6 +92,8 @@ def main(
     """This script generates a HTML file with a table containing information about the
     composition and lineage of each sample.
     """
+    contam_warning /= 100
+    unmapped_warning /= 100
 
     def highlight_high_contam(col: pd.Series):
         """Highlights cells in a column if their contamination level is over the
