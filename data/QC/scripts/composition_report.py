@@ -97,14 +97,17 @@ def main(
         """Highlights cells in a column if their contamination level is over the
         threshold
         """
-        is_high = col > contam_warning
-        return [f"background-color: {NORD12}" if v else "" for v in is_high]
+        return [
+            f"background-color: {NORD12}" if val > contam_warning else "" for val in col
+        ]
 
     def highlight_high_unmapped(col: pd.Series):
         """Highlights cells if their unmapped level is over the threshold
         """
-        is_high = col > unmapped_warning
-        return [f"background-color: {NORD12}" if v else "" for v in is_high]
+        return [
+            f"background-color: {NORD12}" if val > unmapped_warning else ""
+            for val in col
+        ]
 
     def highlight_abnormal_lineages(col: pd.Series):
         """Highlights cells if their lineage is not one of the numbered majors.
