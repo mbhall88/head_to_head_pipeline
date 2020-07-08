@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 import pandas as pd
 from snakemake.utils import min_version
@@ -40,6 +40,7 @@ technologies = ["illumina", "nanopore"]
 output_files = set()
 samples = set()
 filter_logfiles = set()
+subsample_logfiles = set()
 for idx, row in samplesheet.iterrows():
     is_excluded = True if row["excluded"] == 1 else False
     if is_excluded:
@@ -52,22 +53,12 @@ for idx, row in samplesheet.iterrows():
         filter_logfiles.add(
             rule_log_dir / "filter_contamination" / f"{site}" / f"{sample}.{tech}.log"
         )
+        subsample_logfiles.add(
+            rule_log_dir / f"subsample_{tech}_reads" / f"{site}" / f"{sample}.log"
+        )
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
-        output_files.add(
-            subsample_dir
-            / f"{site}"
-            / "nanopore"
-            / f"{sample}"
-            / f"{sample}.subsampled.fastq.gz"
-        )
-        output_files.add(
-            subsample_dir
-            / f"{site}"
-            / "illumina"
-            / f"{sample}"
-            / f"{sample}.subsampled.R1.fastq.gz",
-        )
         output_files.add(report_dir / "composition.html")
+        output_files.add(report_dir / "coverage.html")
 
 
 # ======================================================
@@ -444,4 +435,45 @@ rule subsample_illumina_reads:
             -i {input.r1} {input.r2} \
             -o {output.r1} {output.r2} \
             -s {params.seed} 2> {log}
+        """
+
+
+def infer_subsample_log_dirs(logfiles: List[PathLike]) -> List[str]:
+    # rule_log_dir / f"subsample_{tech}_reads" / f"{site}" / f"{sample}.log"
+    dirs = set()
+    for p in logfiles:
+        dirs.add(str(Path(p).parent.parent))
+    return list(dirs)
+
+
+rule coverage_report:
+    input:
+        lineage=expand(
+            str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples
+        ),
+        subsample_logs=list(subsample_logfiles),
+    output:
+        html=report(
+            report_dir / "coverage.html",
+            category="Coverage",
+            caption=report_dir / "coverage.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=GB,
+    container:
+        containers["conda"]
+    conda:
+        envs["coverage_report"]
+    params:
+        script=scripts["coverage_report"],
+        assignment_dir=lambda wildcards, input: Path(input.lineage[0]).parent,
+        logs_dir=lambda wildcards, input: infer_subsample_log_dirs(input.subsample_logs),
+    log:
+        rule_log_dir / "coverage_report.log",
+    shell:
+        """
+        python {params.script} --assignment-dir {params.assignment_dir} \
+            --logs-dir {params.logs_dir} \
+            -o {output.html} 2> {log}
         """
