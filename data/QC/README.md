@@ -11,6 +11,11 @@ In the end of this pipeline the FASTQ files in the `subsampled` directory are
 decontaminated and contain no unmapped reads (as determined by the decontamination
 database).
 
+## Results
+
 The resulting report with sample composition and coverage is in
 [`report.html.gz`](report/report.html.gz). You will need to decompress the file before viewing
 it. Something like `gzip -d -c report.html.gz > report.html` should do the trick.
+
+A description of why samples have been deemed to have failed QC can be found in
+[`failed_qc_reasons.md`](../../docs/failed_qc_reasons.md).
