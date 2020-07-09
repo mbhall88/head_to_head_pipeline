@@ -70,7 +70,6 @@ classified as unmapped when mapping to the decontamination database.*
 This sample's lineage assignment was considered `mixed`. The found lineages were:
 - 3
 - 4
-- 
 
 Nanopore coverage 10.15 is below cutoff of 30x. See
 https://github.com/mbhall88/head_to_head_pipeline/issues/23
