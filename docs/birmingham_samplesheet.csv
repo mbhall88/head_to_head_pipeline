@@ -1,9 +1,4 @@
 run,sample,guuid,barcode
-tb_low_input,17_616007,d3cf8149-526d-4a09-bfd0-d4a57fbc35c1,BC01
-tb_low_input,17_613843,489e21d0-4005-442d-9393-9b99dd3e0d8c,BC02
-tb_low_input,17_616229,43580f49-6b3f-4937-b007-d24264eb76e5,BC03
-tb_low_input,17_616205,a2179aee-f20b-486b-94ed-be090a39076a,BC04
-tb_low_input,17_616182,51e59814-626f-4cfa-8a89-6ca3b22650f7,BC05
 tb_birmingham_4,17_616026,ac132a9b-75ea-4ed5-9d16-a98754af9930,BC07
 tb_birmingham_4,17_616156,5a59bf2c-990e-43ca-89d0-c269f466d4b0,BC08
 tb_birmingham_4,17_616166,44f6d27e-f063-4b7f-874a-fc5e80a618e6,BC09
