@@ -157,7 +157,9 @@ rule map_illumina_to_decontam_db:
 rule map_nanopore_to_decontam_db:
     input:
         index=rules.index_decontam_db.output.mm2_index,
-        query=data_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.nanopore.fastq.gz",
+        query=(
+            data_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.nanopore.fastq.gz"
+        ),
     output:
         bam="mapped/{site}/{sample}.nanopore.sorted.bam",
         index="mapped/{site}/{sample}.nanopore.sorted.bam.bai",
@@ -183,8 +185,12 @@ rule filter_contamination:
         metadata=rules.build_decontamination_db.output.metadata,
     output:
         keep_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "keep.reads",
-        contam_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "contaminant.reads",
-        unmapped_ids=filtered_dir / "{site}" / "{tech}" / "{sample}" / "unmapped.reads",
+        contam_ids=(
+            filtered_dir / "{site}" / "{tech}" / "{sample}" / "contaminant.reads"
+        ),
+        unmapped_ids=(
+            filtered_dir / "{site}" / "{tech}" / "{sample}" / "unmapped.reads"
+        ),
     threads: 1
     resources:
         mem_mb=GB,
@@ -213,8 +219,20 @@ rule extract_decontaminated_illumina_reads:
         r2=rules.map_illumina_to_decontam_db.input.r2,
         read_ids=filtered_dir / "{site}" / "illumina" / "{sample}" / "keep.reads",
     output:
-        r1=filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R1.fastq.gz",
-        r2=filtered_dir / "{site}" / "illumina" / "{sample}" / "{sample}.filtered.R2.fastq.gz",
+        r1=(
+            filtered_dir
+            / "{site}"
+            / "illumina"
+            / "{sample}"
+            / "{sample}.filtered.R1.fastq.gz"
+        ),
+        r2=(
+            filtered_dir
+            / "{site}"
+            / "illumina"
+            / "{sample}"
+            / "{sample}.filtered.R2.fastq.gz"
+        ),
     threads: 1
     resources:
         mem_mb=GB,
@@ -236,7 +254,13 @@ rule extract_decontaminated_nanopore_reads:
         r1=rules.map_nanopore_to_decontam_db.input.query,
         read_ids=filtered_dir / "{site}" / "nanopore" / "{sample}" / "keep.reads",
     output:
-        r1=filtered_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.filtered.fastq.gz",
+        r1=(
+            filtered_dir
+            / "{site}"
+            / "nanopore"
+            / "{sample}"
+            / "{sample}.filtered.fastq.gz"
+        ),
     threads: 1
     resources:
         mem_mb=GB,
@@ -334,7 +358,8 @@ rule assign_lineages:
 rule composition_report:
     input:
         lineage=expand(
-            str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples
+            str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"),
+            sample=samples,
         ),
         filter_logs=list(filter_logfiles),
     output:
@@ -375,7 +400,11 @@ rule subsample_nanopore_reads:
         reads=rules.extract_decontaminated_nanopore_reads.output.r1,
     output:
         reads=(
-            subsample_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.subsampled.fastq.gz"
+            subsample_dir
+            / "{site}"
+            / "nanopore"
+            / "{sample}"
+            / "{sample}.subsampled.fastq.gz"
         ),
     threads: 1
     resources:
@@ -449,7 +478,8 @@ def infer_subsample_log_dirs(logfiles: List[PathLike]) -> List[str]:
 rule coverage_report:
     input:
         lineage=expand(
-            str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"), sample=samples
+            str(report_dir / "lineage_assignment" / "{sample}.lineage.csv"),
+            sample=samples,
         ),
         subsample_logs=list(subsample_logfiles),
     output:
@@ -468,7 +498,9 @@ rule coverage_report:
     params:
         script=scripts["coverage_report"],
         assignment_dir=lambda wildcards, input: Path(input.lineage[0]).parent,
-        logs_dir=lambda wildcards, input: infer_subsample_log_dirs(input.subsample_logs),
+        logs_dir=lambda wildcards, input: infer_subsample_log_dirs(
+            input.subsample_logs
+        ),
     log:
         rule_log_dir / "coverage_report.log",
     shell:
