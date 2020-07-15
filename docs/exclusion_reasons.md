@@ -26,6 +26,20 @@ This document is for noting the reason(s) for a sample's exclusion from the proj
 - [R22435](#r22435)
 - [R23824](#r23824)
 - [R26840](#r26840)
+- [17_619748](#17_619748)
+- [17_619267](#17_619267)
+- [17_609069_c2](#17_609069_c2)
+- [18_620949](#18_620949)
+- [18_0622371](#18_0622371)
+- [18_0622132](#18_0622132)
+- [18_0622296](#18_0622296)
+- [18_0622395](#18_0622395)
+- [18_0622314](#18_0622314)
+- [18_0622422](#18_0622422)
+- [18_0622394](#18_0622394)
+- [18_0622383](#18_0622383)
+- [18_0622439](#18_0622439)
+- [18_0622425](#18_0622425)
 
 
 ## mada_1-45
@@ -149,3 +163,58 @@ No nanopore data
 
 No nanopore data
 
+## 17_619748
+
+No Illumina data
+
+## 17_619267
+
+No Illumina data
+
+## 17_609069_c2
+
+No Illumina data
+
+## 18_620949
+
+No Illumina data
+
+## 18_0622371
+
+No nanopore data
+
+## 18_0622132
+
+No nanopore data
+
+## 18_0622296
+
+No nanopore data
+
+## 18_0622395
+
+No nanopore data
+
+## 18_0622314
+
+No nanopore data
+
+## 18_0622422
+
+No nanopore data
+
+## 18_0622394
+
+No nanopore data
+
+## 18_0622383
+
+No nanopore data
+
+## 18_0622439
+
+No nanopore data
+
+## 18_0622425
+
+No nanopore data
