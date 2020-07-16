@@ -5,10 +5,12 @@ from cyvcf2 import VCF, Variant
 
 import click
 
+
 class Bed:
     """Positions in this class are 1-based - in contrast to BED positions being 0-based.
     This is to align it with VCF positions which are 1-based."""
-    def __init__(self, file: Optional[str]=None, zero_based: bool=True):
+
+    def __init__(self, file: Optional[str] = None, zero_based: bool = True):
         self.zero_based = zero_based
         self.positions: Set[int] = set()
         if file is not None:
@@ -25,13 +27,8 @@ class Bed:
         return item in self.positions
 
 
-class Classifier:
-    def __init__(self, mask: Optional[Bed] = None, skip_null: bool=False):
-        self.skip_null = skip_null
 
-        if mask is None:
-            mask = Bed()
-        self.mask = mask
+
 
 class Outcome(Enum):
     TrueNull = "TRUE_NULL"
@@ -44,19 +41,52 @@ class Outcome(Enum):
     Masked = "MASKED"
     SkippedNull = "SKIPPED_NULL"
 
+
+class Classifier:
+    def __init__(self, mask: Optional[Bed] = None, skip_null: bool = False):
+        self.skip_null = skip_null
+
+        if mask is None:
+            mask = Bed()
+        self.mask = mask
+
+    def classify(self, a_variant: Variant, b_variant: Variant) -> Outcome:
+        if a_variant.POS != b_variant.POS:
+            raise IndexError(
+                f"Expected positions of variant to match but got a: {a_variant.POS} "
+                f"and b: {b_variant.POS}"
+            )
+        pos = a_variant.POS
+
+        if pos in self.mask:
+            return Outcome.Masked
+
+        a_is_null = a_variant.num_unknown > 0
+        b_is_null = b_variant.num_unknown > 0
+        if self.skip_null and (a_is_null or b_is_null):
+            return Outcome.SkippedNull
+
+        if a_is_null and b_is_null:
+            return Outcome.TrueNull
+
+
+
+
 @click.command()
 @click.help_option("--help", "-h")
 @click.option(
-    "-a", "--truth-vcf",
+    "-a",
+    "--truth-vcf",
     help="VCF file that is considered 'truth'.",
     type=click.Path(exists=True, dir_okay=False),
-    required=True
+    required=True,
 )
 @click.option(
-    "-b", "--query-vcf",
+    "-b",
+    "--query-vcf",
     help="VCF file to compare to 'truth'.",
     type=click.Path(exists=True, dir_okay=False),
-    required=True
+    required=True,
 )
 @click.option(
     "-m",
@@ -74,7 +104,8 @@ class Outcome(Enum):
     help="Write the classifications for each position to a CSV file.",
 )
 @click.option(
-    "-N", "--skip-null",
+    "-N",
+    "--skip-null",
     help="If either VCF has a NULL call at a position, skip classification.",
     is_flag=True,
 )
@@ -104,7 +135,6 @@ def main(
         mask = Bed()
 
     classifier = Classifier(mask=mask, skip_null=skip_null)
-
 
 
 if __name__ == "__main__":
