@@ -25,6 +25,7 @@ bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -J "$JOB_NAME" \
 snakemake --profile "$PROFILE" \
     --local-cores "$THREADS" \
-    --singularity-args "$SINGULARITY_ARGS" "$@"
+    "$@" \
+    --singularity-args "$SINGULARITY_ARGS"
 
 exit 0
