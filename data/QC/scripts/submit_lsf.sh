@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eux
 
 JOB_NAME="snakemake_master_process."$(date --iso-8601='minutes')
@@ -18,9 +18,6 @@ SINGULARITY_WORKDIR="/scratch"
 SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS --pwd $(pwd)"
 
 echo "Passing the following args to singularity: $SINGULARITY_ARGS"
-
-source /etc/profile.d/modules.sh
-module load singularity/3.5.0
 
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -M "$MEMORY" \
