@@ -17,8 +17,6 @@ SINGULARITY_BINDS="/hps/nobackup/research/zi,/nfs/research1/zi"
 SINGULARITY_WORKDIR="/scratch"
 SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS --pwd $(pwd)"
 
-echo "Passing the following args to singularity: $SINGULARITY_ARGS"
-
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -M "$MEMORY" \
     -n "$THREADS" \
