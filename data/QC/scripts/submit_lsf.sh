@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eux
 
 JOB_NAME="snakemake_master_process."$(date --iso-8601='minutes')
