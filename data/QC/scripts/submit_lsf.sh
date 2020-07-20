@@ -19,6 +19,7 @@ SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_B
 
 echo "Passing the following args to singularity: $SINGULARITY_ARGS"
 
+source /etc/profile.d/modules.sh
 module load singularity/3.5.0
 
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
