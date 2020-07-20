@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import TextIO, Set, Optional, NamedTuple, List
+from typing import TextIO, Set, Optional, NamedTuple, List, Tuple
 
 import click
 from cyvcf2 import Variant, VCF
@@ -78,8 +78,33 @@ class Genotype(NamedTuple):
         return Genotype(*alleles)
 
 
+class Classification(Enum):
+    Ref = "REF"
+    Alt = "ALT"
+    Null = "NULL"
+    Het = "HET"
+    Missing = "MISSING"
+
+    @staticmethod
+    def from_variant(variant: Variant) -> "Classification":
+        gt = Genotype.from_arr(variant.genotypes[0])
+        if gt.is_null():
+            classification = Classification.Null
+        elif gt.is_het():
+            classification = Classification.Het
+        elif gt.is_hom_ref():
+            classification = Classification.Ref
+        elif gt.is_hom_alt():
+            classification = Classification.Alt
+        else:
+            raise NotImplementedError(
+                f"Can't determine genotype for variant \n{str(variant)}"
+            )
+        return classification
+
+
 class Outcome(Enum):
-    TrueNull = "TRUE_NULL"
+    Null = "NULL"
     FalseNull = "FALSE_NULL"
     TrueRef = "TRUE_REF"
     FalseRef = "FALSE_REF"
@@ -87,79 +112,79 @@ class Outcome(Enum):
     FalseAlt = "FALSE_ALT"
     DiffAlt = "DIFF_ALT"
     Masked = "MASKED"
-    SkippedNull = "SKIPPED_NULL"
     BothFailFilter = "BOTH_FAIL_FILTER"
     AFailFilter = "A_FAIL_FILTER"
     BFailFilter = "B_FAIL_FILTER"
-    BothHet = "BOTH_HET"
-    AHet = "A_HET"
-    BHet = "B_HET"
-    AMissingPos = "A_MISSING_POS"
-    BMissingPos = "B_MISSING_POS"
+    Het = "HET"
+    MissingPos = "MISSING_POS"
+
+    @staticmethod
+    def from_variants(a_variant: Variant, b_variant: Variant) -> "Outcome":
+        class_a = Classification.from_variant(a_variant)
+        class_b = Classification.from_variant(b_variant)
+
+        if class_a is Classification.Null or class_b is Classification.Null:
+            return Outcome.Null if class_a is Classification.Null else Outcome.FalseNull
+
+        if class_a is Classification.Het or class_b is Classification.Het:
+            return Outcome.Het
+
+        if class_b is Classification.Ref:
+            return (
+                Outcome.TrueRef if class_a is Classification.Ref else Outcome.FalseRef
+            )
+
+        if class_b is Classification.Alt:
+            if class_a is not Classification.Alt:
+                return Outcome.FalseAlt
+
+            a_idx = Genotype.from_arr(a_variant.genotypes[0]).alt_index()
+            b_idx = Genotype.from_arr(b_variant.genotypes[0]).alt_index()
+            a_base = a_variant.ALT[a_idx]
+            b_base = b_variant.ALT[b_idx]
+
+            return Outcome.TrueAlt if a_base == b_base else Outcome.DiffAlt
+
+        # can't think of a way we could get here...
+        raise NotImplementedError(
+            f"Could not classify variants at position {a_variant.POS}"
+        )
 
 
 class Classifier:
     def __init__(
-        self,
-        mask: Optional[Bed] = None,
-        skip_null: bool = False,
-        apply_filter: bool = False,
+        self, mask: Optional[Bed] = None, apply_filter: bool = False,
     ):
-        self.skip_null = skip_null
         self.apply_filter = apply_filter
 
         if mask is None:
             mask = Bed()
         self.mask = mask
 
-    def classify(self, a_variant: Variant, b_variant: Variant) -> Outcome:
+    def classify(
+        self, a_variant: Variant, b_variant: Variant
+    ) -> Tuple[Classification, Classification, Outcome]:
         if a_variant.POS != b_variant.POS:
             raise IndexError(
                 f"Expected positions of variant to match but got a: {a_variant.POS} "
                 f"and b: {b_variant.POS}"
             )
         pos = a_variant.POS
+        a_class = Classification.from_variant(a_variant)
+        b_class = Classification.from_variant(b_variant)
+        outcome = Outcome.from_variants(a_variant, b_variant)
 
         if pos in self.mask:
-            return Outcome.Masked
-
-        if self.apply_filter:
+            outcome = Outcome.Masked
+        elif self.apply_filter:
             if a_variant.FILTER and b_variant.FILTER:
-                return Outcome.BothFailFilter
-            if a_variant.FILTER:
-                return Outcome.AFailFilter
-            if b_variant.FILTER:
-                return Outcome.BFailFilter
+                outcome = Outcome.BothFailFilter
+            elif a_variant.FILTER:
+                outcome = Outcome.AFailFilter
+            elif b_variant.FILTER:
+                outcome = Outcome.BFailFilter
 
-        a_gt = Genotype.from_arr(a_variant.genotypes[0])
-        b_gt = Genotype.from_arr(b_variant.genotypes[0])
-        if self.skip_null and (a_gt.is_null() or b_gt.is_null()):
-            return Outcome.SkippedNull
-
-        if b_gt.is_null():
-            return Outcome.TrueNull if a_gt.is_null() else Outcome.FalseNull
-
-        if a_gt.is_het() and b_gt.is_het():
-            return Outcome.BothHet
-        elif a_gt.is_het():
-            return Outcome.AHet
-        elif b_gt.is_het():
-            return Outcome.BHet
-
-        if b_gt.is_hom_ref():
-            return Outcome.TrueRef if a_gt.is_hom_ref() else Outcome.FalseRef
-
-        if b_gt.is_hom_alt():
-            if not a_gt.is_hom_alt():
-                return Outcome.FalseAlt
-
-            a_base = a_variant.ALT[a_gt.alt_index()]
-            b_base = b_variant.ALT[b_gt.alt_index()]
-
-            return Outcome.TrueAlt if a_base == b_base else Outcome.DiffAlt
-
-        # can't think of a way we could get here...
-        raise NotImplementedError(f"Could not classify variants at position {pos}")
+        return a_class, b_class, outcome
 
 
 @click.command()
@@ -194,12 +219,6 @@ class Classifier:
     help="Write the classifications for each position to a CSV file.",
 )
 @click.option(
-    "-N",
-    "--skip-null",
-    help="If either VCF has a NULL call at a position, skip classification.",
-    is_flag=True,
-)
-@click.option(
     "--apply-filter/--no-apply-filter",
     "-f/-F",
     default=True,
@@ -212,7 +231,6 @@ def main(
     query_vcf: str,
     bedfile: str,
     csv: TextIO,
-    skip_null: bool,
     apply_filter: bool,
     verbose: bool,
 ):
@@ -232,10 +250,10 @@ def main(
         logging.info("No mask given. Classifying all positions...")
         mask = Bed()
 
-    classifier = Classifier(mask=mask, skip_null=skip_null, apply_filter=apply_filter)
+    classifier = Classifier(mask=mask, apply_filter=apply_filter)
 
     logging.info("Classifying variants...")
-    print("pos,classification", file=csv)
+    print("pos,a,b,classification", file=csv)
     a_vcf = VCF(truth_vcf)
     a_variant = next(a_vcf, DUMMY)
     a_exhausted = a_variant.POS == float("inf")
@@ -245,31 +263,44 @@ def main(
 
     while (not a_exhausted) and (not b_exhausted):
         if a_variant.POS == b_variant.POS:
-            classification = classifier.classify(a_variant, b_variant)
-            print(f"{a_variant.POS},{classification.value}", file=csv)
+            class_a, class_b, outcome = classifier.classify(a_variant, b_variant)
+            row = ",".join(
+                map(str, [a_variant.POS, class_a.value, class_b.value, outcome.value])
+            )
+            print(row, file=csv)
             a_variant = next(a_vcf, DUMMY)
             a_exhausted = a_variant.POS == float("inf")
             b_variant = next(b_vcf, DUMMY)
             b_exhausted = b_variant.POS == float("inf")
             continue
 
-        if a_variant.POS > b_variant.POS:
-            classification = (
-                Outcome.Masked if b_variant.POS in mask else Outcome.AMissingPos
-            )
-            print(f"{b_variant.POS},{classification.value}", file=csv)
-            b_variant = next(b_vcf, DUMMY)
-            b_exhausted = b_variant.POS == float("inf")
-            continue
-
-        if a_variant.POS < b_variant.POS:
-            classification = (
-                Outcome.Masked if a_variant.POS in mask else Outcome.BMissingPos
-            )
-            print(f"{a_variant.POS},{classification.value}", file=csv)
+        pos = min(a_variant.POS, b_variant.POS)
+        class_a = (
+            Classification.from_variant(a_variant)
+            if pos == a_variant.POS
+            else Classification.Missing
+        )
+        class_b = (
+            Classification.from_variant(b_variant)
+            if pos == b_variant.POS
+            else Classification.Missing
+        )
+        classification = Outcome.Masked if pos in mask else Outcome.MissingPos
+        row = ",".join(
+            map(str, [pos, class_a.value, class_b.value, classification.value],)
+        )
+        print(row, file=csv)
+        if pos == a_variant.POS:
             a_variant = next(a_vcf, DUMMY)
             a_exhausted = a_variant.POS == float("inf")
-            continue
+        elif pos == b_variant.POS:
+            b_variant = next(b_vcf, DUMMY)
+            b_exhausted = b_variant.POS == float("inf")
+        else:
+            raise NotImplementedError(
+                f"Failed to compare the following two variants:\n{str(a_variant)}\n"
+                f"{str(b_variant)}"
+            )
 
 
 if __name__ == "__main__":
