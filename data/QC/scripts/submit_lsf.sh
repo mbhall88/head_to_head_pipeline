@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -eux
+
 JOB_NAME="snakemake_master_process."$(date --iso-8601='minutes')
 LOG_DIR=logs/
 
