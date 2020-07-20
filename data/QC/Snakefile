@@ -244,16 +244,12 @@ rule extract_decontaminated_illumina_reads:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["pyfastaq"]
-    params:
-        extras="--both_mates_pass",
     log:
         rule_log_dir / "extract_decontaminated_illumina_reads" / "{site}" / "{sample}.log",
     shell:
         """
-        fastaq filter {params.extras} --mate_in {input.r2} --mate_out {output.r2} \
-            --ids_file {input.read_ids} {input.r1} {output.r1} 2> {log}
+        (gunzip -c {input.r1} | paste - - - - | rg -f {input.read_ids} | tr "\t" "\n"  | gzip) > {output.r1} 2> {log}
+        (gunzip -c {input.r2} | paste - - - - | rg -f {input.read_ids} | tr "\t" "\n"  | gzip) > {output.r2} 2>> {log}
         """
 
 
@@ -272,13 +268,11 @@ rule extract_decontaminated_nanopore_reads:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["pyfastaq"]
     log:
         rule_log_dir / "extract_decontaminated_nanopore_reads" / "{site}" / "{sample}.log",
     shell:
         """
-        fastaq filter --ids_file {input.read_ids} {input.r1} {output.r1} 2> {log}
+        (gunzip -c {input.r1} | paste - - - - | rg -f {input.read_ids} | tr "\t" "\n"  | gzip) > {output.r1} 2> {log}
         """
 
 
