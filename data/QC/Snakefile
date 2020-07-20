@@ -144,6 +144,10 @@ rule map_illumina_to_decontam_db:
         mem_mb=lambda wildcards, attempt: attempt * int(12 * GB),
     params:
         map_extras="-M",
+    container:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
     log:
         rule_log_dir / "map_illumina_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
@@ -169,6 +173,10 @@ rule map_nanopore_to_decontam_db:
     params:
         map_extras="-aL2",
         preset=MM2_PRESET,
+    container:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
     log:
         rule_log_dir / "map_nanopore_to_decontam_db" / "{site}" / "{sample}.log",
     shell:
