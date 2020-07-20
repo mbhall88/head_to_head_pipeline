@@ -290,7 +290,7 @@ rule generate_krona_input:
         krona_input=plot_dir / "krona" / "{site}" / "{sample}.{tech}.krona.tsv",
     threads: 1
     resources:
-        mem_mb=int(0.4 * GB),
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
     container:
         containers["conda"]
     conda:
