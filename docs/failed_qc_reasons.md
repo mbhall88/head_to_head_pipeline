@@ -53,6 +53,19 @@ samples have failed QC.
 - [mada_132](#mada_132)
 - [mada_1-24](#mada_1-24)
 - [mada_147](#mada_147)
+- [18_0622317](#18_0622317)
+- [18_0622293](#18_0622293)
+- [18_0622212](#18_0622212)
+- [18_0622034](#18_0622034)
+- [18_620602](#18_620602)
+- [17_616166](#17_616166)
+- [18_0622441](#18_0622441)
+- [18_620650](#18_620650)
+- [18_0622429](#18_0622429)
+- [18_0621850](#18_0621850)
+- [18_0622302](#18_0622302)
+- [18_0621852](#18_0621852)
+- [18_0622217](#18_0622217)
 
 
 ## R23399
@@ -334,3 +347,103 @@ https://github.com/mbhall88/head_to_head_pipeline/issues/23
 
 Nanopore coverage 0.28 is below cutoff of 30x. See
 https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+## 18_0622317
+
+Nanopore coverage 22.29 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+## 18_0622293
+
+Nanopore coverage 22.04 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+## 18_0622212
+
+Nanopore coverage 8.97 is below cutoff of 30x. See
+<https://github.com/mbhall88/head_to_head_pipeline/issues/23>. In addition, the Illumina
+data for this sample, 16.28x, is below the threshold of 20x stated in
+<https://github.com/mbhall88/head_to_head_pipeline/issues/23#issuecomment-660900615>.
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+## 18_0622034
+
+Nanopore coverage 25.13 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+## 18_620602
+
+Nanopore coverage 22.42 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+## 17_616166
+
+Nanopore coverage 11.08 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+## 18_0622441
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+## 18_620650
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies with very little
+contamination.*
+
+## 18_0622429
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies with very little
+contamination.*
+
+## 18_0621850
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies with very little
+contamination.*
+
+## 18_0622302
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies with very little
+contamination.*
+
+## 18_0621852
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies with very little
+contamination.*
+
+## 18_0622217
+
+This sample's lineage assignment was considered `mixed`. The found lineages were:
+- 3
+- 4
+
+*Note: This sample has extremely high coverage for both technologies but shows about 5%
+contamination in both technologies.*
