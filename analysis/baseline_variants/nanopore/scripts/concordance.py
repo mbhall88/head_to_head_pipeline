@@ -1,8 +1,10 @@
 import logging
+from collections import Counter
 from enum import Enum
 from typing import TextIO, Set, Optional, NamedTuple, List, Tuple
 
 import click
+import pandas as pd
 from cyvcf2 import Variant, VCF
 
 
@@ -11,6 +13,7 @@ class DummyVariant(NamedTuple):
 
 
 DUMMY = DummyVariant(float("inf"))
+COLUMNS = ["pos", "a", "b", "outcome"]
 
 
 class Bed:
@@ -157,11 +160,21 @@ class Outcome(Enum):
         )
 
 
+RECALL_EXEMPTIONS = {Outcome.BothFailFilter, Outcome.AFailFilter, Outcome.Masked}
+
+
 class Classifier:
     def __init__(
-        self, mask: Optional[Bed] = None, apply_filter: bool = False,
+        self,
+        mask: Optional[Bed] = None,
+        apply_filter: bool = False,
+        recall_exemptions: Optional[Set[Outcome]] = None,
     ):
         self.apply_filter = apply_filter
+
+        if recall_exemptions is None:
+            recall_exemptions = RECALL_EXEMPTIONS
+        self.recall_exemptions = recall_exemptions
 
         if mask is None:
             mask = Bed()
@@ -191,6 +204,27 @@ class Classifier:
                 outcome = Outcome.BFailFilter
 
         return a_class, b_class, outcome
+
+    def _positions_where_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
+        exemptions = self.recall_exemptions
+        expr = "a == @Classification.Alt and outcome not in @exemptions"
+        return df.query(expr)
+
+    def recall(self, df: pd.DataFrame) -> float:
+        calls = self._positions_where_call_is_made(df)
+        if len(calls) == 0:
+            logging.debug("No valid ALT calls made by truth VCF")
+            # if there are no calls, then recall is perfect...
+            return 1.0
+
+        logging.debug(
+            f"Counts for outcomes at valid recall positions:\n{Counter(calls.outcome)}"
+        )
+
+        correct_calls = calls.query("outcome == @Outcome.TrueAlt")
+        logging.debug(f"Recall calculated as: {len(correct_calls)}/{len(calls)}")
+
+        return len(correct_calls) / len(calls)
 
 
 @click.command()
@@ -307,6 +341,12 @@ def main(
                 f"Failed to compare the following two variants:\n{str(a_variant)}\n"
                 f"{str(b_variant)}"
             )
+
+    logging.info(f"{len(data)} positions classified.")
+
+    df = pd.DataFrame(data, columns=COLUMNS)
+    recall = classifier.recall(df)
+    logging.info(f"Recall: {recall}")
 
 
 if __name__ == "__main__":

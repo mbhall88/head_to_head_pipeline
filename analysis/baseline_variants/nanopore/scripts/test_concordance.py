@@ -1,7 +1,8 @@
-import pytest
-from concordance import *
-
 from unittest.mock import patch
+
+import pandas as pd
+from concordance import *
+from pytest import raises, approx
 
 
 class TestClassification:
@@ -50,7 +51,7 @@ class TestClassify:
         mocked_avariant.POS = 1
         mocked_bvariant.POS = 2
 
-        with pytest.raises(IndexError):
+        with raises(IndexError):
             classifier.classify(mocked_avariant, mocked_bvariant)
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
@@ -292,3 +293,133 @@ class TestClassify:
         expected = Classification.Ref, Classification.Het, Outcome.Het
 
         assert actual == expected
+
+
+def create_df(data) -> pd.DataFrame:
+    return pd.DataFrame(data, columns=COLUMNS)
+
+
+class TestClassifyRecall:
+    def test_noAltInA_returnsOne(self):
+        data = [[1, Classification.Ref, Classification.Ref, Outcome.TrueRef]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltNotFoundInB_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Ref, Outcome.FalseRef]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltButMaskedNotFoundInB_returnsOne(self):
+        data = [[1, Classification.Alt, Classification.Ref, Outcome.Masked]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltFoundInB_returnsOne(self):
+        data = [[1, Classification.Alt, Classification.Alt, Outcome.TrueAlt]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltButDiffAltInB_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Alt, Outcome.DiffAlt]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltBothFailFilter_returnsOne(self):
+        data = [[1, Classification.Alt, Classification.Ref, Outcome.BothFailFilter]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltAFailFilter_returnsOne(self):
+        data = [[1, Classification.Alt, Classification.Ref, Outcome.AFailFilter]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltBFailFilter_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Alt, Outcome.BFailFilter]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltBMissingPos_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Missing, Outcome.MissingPos]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltBIsHet_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Het, Outcome.Het]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneAltBIsNull_returnsZero(self):
+        data = [[1, Classification.Alt, Classification.Null, Outcome.FalseNull]]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_twoAltBHasOne_returnsHalf(self):
+        data = [
+            [1, Classification.Alt, Classification.Null, Outcome.FalseNull],
+            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+            [3, Classification.Alt, Classification.Alt, Outcome.Masked],
+        ]
+        df = create_df(data)
+        classifier = Classifier()
+
+        actual = classifier.recall(df)
+        expected = 0.5
+
+        assert actual == approx(expected)
