@@ -85,6 +85,9 @@ class Classification(Enum):
     Het = "HET"
     Missing = "MISSING"
 
+    def __str__(self):
+        return self.value
+
     @staticmethod
     def from_variant(variant: Variant) -> "Classification":
         gt = Genotype.from_arr(variant.genotypes[0])
@@ -117,6 +120,9 @@ class Outcome(Enum):
     BFailFilter = "B_FAIL_FILTER"
     Het = "HET"
     MissingPos = "MISSING_POS"
+
+    def __str__(self):
+        return self.value
 
     @staticmethod
     def from_variants(a_variant: Variant, b_variant: Variant) -> "Outcome":
@@ -260,14 +266,14 @@ def main(
     b_vcf = VCF(query_vcf)
     b_variant = next(b_vcf, DUMMY)
     b_exhausted = b_variant.POS == float("inf")
+    data = []
 
     while (not a_exhausted) and (not b_exhausted):
         if a_variant.POS == b_variant.POS:
             class_a, class_b, outcome = classifier.classify(a_variant, b_variant)
-            row = ",".join(
-                map(str, [a_variant.POS, class_a.value, class_b.value, outcome.value])
-            )
-            print(row, file=csv)
+            row = [a_variant.POS, class_a, class_b, outcome]
+            data.append(row)
+            print(",".join(map(str, row)), file=csv)
             a_variant = next(a_vcf, DUMMY)
             a_exhausted = a_variant.POS == float("inf")
             b_variant = next(b_vcf, DUMMY)
@@ -286,10 +292,10 @@ def main(
             else Classification.Missing
         )
         classification = Outcome.Masked if pos in mask else Outcome.MissingPos
-        row = ",".join(
-            map(str, [pos, class_a.value, class_b.value, classification.value],)
-        )
-        print(row, file=csv)
+        row = [a_variant.POS, class_a, class_b, classification]
+        data.append(row)
+        print(",".join(map(str, row)), file=csv)
+
         if pos == a_variant.POS:
             a_variant = next(a_vcf, DUMMY)
             a_exhausted = a_variant.POS == float("inf")
