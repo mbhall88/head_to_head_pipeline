@@ -1,8 +1,8 @@
-from pytest import raises, approx
-import pandas as pd
-from .concordance import *
-
 from unittest.mock import patch
+
+import pandas as pd
+from concordance import *
+from pytest import raises, approx
 
 
 class TestClassification:
@@ -424,6 +424,7 @@ class TestCalculateRecall:
 
         assert actual == approx(expected)
 
+
 class TestCalculateConcordance:
     def test_noCallsInA_returnsOne(self):
         data = [[1, Classification.Null, Classification.Ref, Outcome.Null]]
@@ -432,5 +433,124 @@ class TestCalculateConcordance:
 
         actual = calculator.concordance(df)
         expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_allCorrectCalls_returnsOne(self):
+        data = [[1, Classification.Ref, Classification.Ref, Outcome.TrueRef]]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_allIncorrectCallsButMasked_returnsOne(self):
+        data = [[1, Classification.Ref, Classification.Alt, Outcome.Masked]]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneWrongOneRightOneFiltered_returnsHalf(self):
+        data = [
+            [1, Classification.Ref, Classification.Alt, Outcome.BothFailFilter],
+            [2, Classification.Ref, Classification.Alt, Outcome.FalseAlt],
+            [3, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.5
+
+        assert actual == approx(expected)
+
+    def test_oneCorrectButAFiltered_returnsZero(self):
+        data = [
+            [1, Classification.Ref, Classification.Alt, Outcome.FalseAlt],
+            [2, Classification.Alt, Classification.Alt, Outcome.AFailFilter],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.0
+
+    def test_allIncorrectOneBFiltered_returnsHalf(self):
+        data = [
+            [1, Classification.Ref, Classification.Ref, Outcome.TrueRef],
+            [2, Classification.Alt, Classification.Alt, Outcome.BFailFilter],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.5
+
+    def test_twoCallsOneBMissingPos_returnsHalf(self):
+        data = [
+            [1, Classification.Ref, Classification.Missing, Outcome.MissingPos],
+            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        ]
+        data = [[1, Classification.Alt, Classification.Missing, Outcome.MissingPos]]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneCallBIsHet_returnsZero(self):
+        data = [[1, Classification.Ref, Classification.Het, Outcome.Het]]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.0
+
+        assert actual == approx(expected)
+
+    def test_oneCallAIsHetOneCallIsCorrect_returnsOne(self):
+        data = [
+            [1, Classification.Het, Classification.Ref, Outcome.Het],
+            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 1.0
+
+        assert actual == approx(expected)
+
+    def test_oneCallBIsNullOneCallIsCorrect_returnsHalf(self):
+        data = [
+            [1, Classification.Ref, Classification.Null, Outcome.FalseNull],
+            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.5
+
+        assert actual == approx(expected)
+
+    def test_oneCallBIsDiffAltOneCallIsCorrect_returnsHalf(self):
+        data = [
+            [1, Classification.Alt, Classification.Alt, Outcome.DiffAlt],
+            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        ]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 0.5
 
         assert actual == approx(expected)

@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import Counter
 from enum import Enum
@@ -202,13 +203,19 @@ class Calculator:
             exemptions = {Outcome.BothFailFilter, Outcome.AFailFilter, Outcome.Masked}
         self.exemptions = exemptions
 
-    def _positions_where_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _positions_where_alt_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
         exemptions = self.exemptions
         expr = "a == @Classification.Alt and outcome not in @exemptions"
         return df.query(expr)
 
+    def _positions_where_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
+        exemptions = self.exemptions
+        inclusions = {Classification.Ref, Classification.Alt}
+        expr = "a in @inclusions and outcome not in @exemptions"
+        return df.query(expr)
+
     def recall(self, df: pd.DataFrame) -> float:
-        calls = self._positions_where_call_is_made(df)
+        calls = self._positions_where_alt_call_is_made(df)
         if len(calls) == 0:
             logging.debug("No valid ALT calls made by truth VCF")
             # if there are no calls, then recall is perfect...
@@ -224,7 +231,22 @@ class Calculator:
         return len(correct_calls) / len(calls)
 
     def concordance(self, df: pd.DataFrame) -> float:
-        pass
+        calls = self._positions_where_call_is_made(df)
+        if len(calls) == 0:
+            logging.debug("No valid calls made by truth VCF")
+            # if there are no calls, then concordance is perfect...
+            return 1.0
+
+        logging.debug(
+            f"Counts for outcomes at valid concordance positions:\n"
+            f"{Counter(calls.outcome)}"
+        )
+
+        correct_outcomes = {Outcome.TrueAlt, Outcome.TrueRef}
+        correct_calls = calls.query("outcome in @correct_outcomes")
+        logging.debug(f"Concordance calculated as: {len(correct_calls)}/{len(calls)}")
+
+        return len(correct_calls) / len(calls)
 
 
 @click.command()
@@ -259,6 +281,13 @@ class Calculator:
     help="Write the classifications for each position to a CSV file.",
 )
 @click.option(
+    "-j",
+    "--json",
+    "json_file",
+    type=click.File(mode="w", lazy=True),
+    help="Write the recall and concordance result to a JSON file.",
+)
+@click.option(
     "--apply-filter/--no-apply-filter",
     "-f/-F",
     default=True,
@@ -271,11 +300,11 @@ def main(
     query_vcf: str,
     bedfile: str,
     csv: TextIO,
+    json_file: Optional[TextIO],
     apply_filter: bool,
     verbose: bool,
 ):
-    """Calculate concordance between two VCF files. An assumption is made that both VCFs
-    have the exact same positions present."""
+    """Calculate recall and concordance between two VCF files."""
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
@@ -346,8 +375,22 @@ def main(
 
     df = pd.DataFrame(data, columns=COLUMNS)
     calculator = Calculator()
+
+    logging.info(f"Calculating recall...")
     recall = calculator.recall(df)
     logging.info(f"Recall: {recall}")
+
+    logging.info(f"Calculating concordance...")
+    concordance = calculator.concordance(df)
+    logging.info(f"Concordance: {concordance}")
+
+    if json_file is not None:
+        logging.info(f"Writing results to {json_file.name}")
+        json.dump({"recall": recall, "concordance": concordance}, json_file, indent=4)
+        json_file.close()
+
+    csv.close()
+    logging.info("Done!")
 
 
 if __name__ == "__main__":
