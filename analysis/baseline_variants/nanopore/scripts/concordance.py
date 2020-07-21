@@ -22,7 +22,7 @@ class Bed:
 
     def __init__(self, file: Optional[str] = None, zero_based: bool = True):
         self.zero_based = zero_based
-        self.positions: Set[int] = set()
+        self.positions: Set[int] = set([])
         if file is not None:
             with open(file) as instream:
                 for line in map(str.rstrip, instream):
@@ -160,21 +160,11 @@ class Outcome(Enum):
         )
 
 
-RECALL_EXEMPTIONS = {Outcome.BothFailFilter, Outcome.AFailFilter, Outcome.Masked}
-
-
 class Classifier:
     def __init__(
-        self,
-        mask: Optional[Bed] = None,
-        apply_filter: bool = False,
-        recall_exemptions: Optional[Set[Outcome]] = None,
+        self, mask: Optional[Bed] = None, apply_filter: bool = False,
     ):
         self.apply_filter = apply_filter
-
-        if recall_exemptions is None:
-            recall_exemptions = RECALL_EXEMPTIONS
-        self.recall_exemptions = recall_exemptions
 
         if mask is None:
             mask = Bed()
@@ -205,8 +195,15 @@ class Classifier:
 
         return a_class, b_class, outcome
 
+
+class Calculator:
+    def __init__(self, exemptions: Optional[Set[Outcome]] = None):
+        if exemptions is None:
+            exemptions = {Outcome.BothFailFilter, Outcome.AFailFilter, Outcome.Masked}
+        self.exemptions = exemptions
+
     def _positions_where_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
-        exemptions = self.recall_exemptions
+        exemptions = self.exemptions
         expr = "a == @Classification.Alt and outcome not in @exemptions"
         return df.query(expr)
 
@@ -225,6 +222,9 @@ class Classifier:
         logging.debug(f"Recall calculated as: {len(correct_calls)}/{len(calls)}")
 
         return len(correct_calls) / len(calls)
+
+    def concordance(self, df: pd.DataFrame) -> float:
+        pass
 
 
 @click.command()
@@ -345,7 +345,8 @@ def main(
     logging.info(f"{len(data)} positions classified.")
 
     df = pd.DataFrame(data, columns=COLUMNS)
-    recall = classifier.recall(df)
+    calculator = Calculator()
+    recall = calculator.recall(df)
     logging.info(f"Recall: {recall}")
 
 

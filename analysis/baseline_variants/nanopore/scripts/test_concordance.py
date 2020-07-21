@@ -1,8 +1,8 @@
-from unittest.mock import patch
-
-import pandas as pd
-from concordance import *
 from pytest import raises, approx
+import pandas as pd
+from .concordance import *
+
+from unittest.mock import patch
 
 
 class TestClassification:
@@ -299,13 +299,13 @@ def create_df(data) -> pd.DataFrame:
     return pd.DataFrame(data, columns=COLUMNS)
 
 
-class TestClassifyRecall:
+class TestCalculateRecall:
     def test_noAltInA_returnsOne(self):
         data = [[1, Classification.Ref, Classification.Ref, Outcome.TrueRef]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 1.0
 
         assert actual == approx(expected)
@@ -313,9 +313,9 @@ class TestClassifyRecall:
     def test_oneAltNotFoundInB_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Ref, Outcome.FalseRef]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -323,9 +323,9 @@ class TestClassifyRecall:
     def test_oneAltButMaskedNotFoundInB_returnsOne(self):
         data = [[1, Classification.Alt, Classification.Ref, Outcome.Masked]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 1.0
 
         assert actual == approx(expected)
@@ -333,9 +333,9 @@ class TestClassifyRecall:
     def test_oneAltFoundInB_returnsOne(self):
         data = [[1, Classification.Alt, Classification.Alt, Outcome.TrueAlt]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 1.0
 
         assert actual == approx(expected)
@@ -343,9 +343,9 @@ class TestClassifyRecall:
     def test_oneAltButDiffAltInB_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Alt, Outcome.DiffAlt]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -353,9 +353,9 @@ class TestClassifyRecall:
     def test_oneAltBothFailFilter_returnsOne(self):
         data = [[1, Classification.Alt, Classification.Ref, Outcome.BothFailFilter]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 1.0
 
         assert actual == approx(expected)
@@ -363,9 +363,9 @@ class TestClassifyRecall:
     def test_oneAltAFailFilter_returnsOne(self):
         data = [[1, Classification.Alt, Classification.Ref, Outcome.AFailFilter]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 1.0
 
         assert actual == approx(expected)
@@ -373,9 +373,9 @@ class TestClassifyRecall:
     def test_oneAltBFailFilter_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Alt, Outcome.BFailFilter]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -383,9 +383,9 @@ class TestClassifyRecall:
     def test_oneAltBMissingPos_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Missing, Outcome.MissingPos]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -393,9 +393,9 @@ class TestClassifyRecall:
     def test_oneAltBIsHet_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Het, Outcome.Het]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -403,9 +403,9 @@ class TestClassifyRecall:
     def test_oneAltBIsNull_returnsZero(self):
         data = [[1, Classification.Alt, Classification.Null, Outcome.FalseNull]]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.0
 
         assert actual == approx(expected)
@@ -417,9 +417,20 @@ class TestClassifyRecall:
             [3, Classification.Alt, Classification.Alt, Outcome.Masked],
         ]
         df = create_df(data)
-        classifier = Classifier()
+        calculator = Calculator()
 
-        actual = classifier.recall(df)
+        actual = calculator.recall(df)
         expected = 0.5
+
+        assert actual == approx(expected)
+
+class TestCalculateConcordance:
+    def test_noCallsInA_returnsOne(self):
+        data = [[1, Classification.Null, Classification.Ref, Outcome.Null]]
+        df = create_df(data)
+        calculator = Calculator()
+
+        actual = calculator.concordance(df)
+        expected = 1.0
 
         assert actual == approx(expected)
