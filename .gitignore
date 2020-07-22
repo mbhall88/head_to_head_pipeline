@@ -336,3 +336,9 @@ results/
 # ignore fasta indexes
 *.fai
 *.fxi
+
+# misc.
+data/QC/todo.txt
+analysis/baseline_variants/nanopore/notepad.md
+
+data/QC/report.html

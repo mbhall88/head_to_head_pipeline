@@ -198,55 +198,112 @@ class Classifier:
 
 
 class Calculator:
-    def __init__(self, exemptions: Optional[Set[Outcome]] = None):
-        if exemptions is None:
-            exemptions = {Outcome.BothFailFilter, Outcome.AFailFilter, Outcome.Masked}
-        self.exemptions = exemptions
+    def __init__(self):
+        self.callable_expr = (
+            "a in @callable_inclusions and outcome not in @callable_exemptions"
+        )
+        self.default_value_if_no_valid_calls = 1.0
 
-    def _positions_where_alt_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
-        exemptions = self.exemptions
-        expr = "a == @Classification.Alt and outcome not in @exemptions"
-        return df.query(expr)
+    @staticmethod
+    def _callable_exemptions(for_concordance: bool = False) -> Set[Outcome]:
+        base_exemptions = {
+            Outcome.AFailFilter,
+            Outcome.BothFailFilter,
+            Outcome.Masked,
+        }
+        if for_concordance:
+            base_exemptions.update(
+                {
+                    Outcome.BFailFilter,
+                    Outcome.FalseNull,
+                    Outcome.MissingPos,
+                    Outcome.Het,
+                }
+            )
 
-    def _positions_where_call_is_made(self, df: pd.DataFrame) -> pd.DataFrame:
-        exemptions = self.exemptions
-        inclusions = {Classification.Ref, Classification.Alt}
-        expr = "a in @inclusions and outcome not in @exemptions"
-        return df.query(expr)
+        return base_exemptions
 
-    def recall(self, df: pd.DataFrame) -> float:
-        calls = self._positions_where_alt_call_is_made(df)
-        if len(calls) == 0:
-            logging.debug("No valid ALT calls made by truth VCF")
-            # if there are no calls, then recall is perfect...
-            return 1.0
+    @staticmethod
+    def _callable_inclusions(genome_wide: bool = False) -> Set[Classification]:
+        callable_inclusions = {Classification.Alt}
+        if genome_wide:
+            callable_inclusions.add(Classification.Ref)
+        return callable_inclusions
 
-        logging.debug(
-            f"Counts for outcomes at valid recall positions:\n{Counter(calls.outcome)}"
+    def _valid_calls(
+        self, df: pd.DataFrame, genome_wide: bool = False, for_concordance: bool = False
+    ) -> pd.DataFrame:
+        callable_exemptions = self._callable_exemptions(for_concordance=for_concordance)
+        callable_inclusions = self._callable_inclusions(genome_wide=genome_wide)
+
+        return df.query(self.callable_expr)
+
+    def call_rate(self, df: pd.DataFrame, genome_wide: bool = False) -> float:
+        """There are two types of call rate that can be calculated:
+        1. what % of a's ALTs does b make a REF/ALT call - anything except NULL and
+        FILTER
+        2. (genome-wide) what % of a's REF or ALT positions does b make a REF/ALT call
+        - anything except NULL and FILTER
+        """
+        metric_name = "genome-wide call rate" if genome_wide else "call rate"
+        valid_calls = self._valid_calls(
+            df, genome_wide=genome_wide, for_concordance=False
         )
 
-        correct_calls = calls.query("outcome == @Outcome.TrueAlt")
-        logging.debug(f"Recall calculated as: {len(correct_calls)}/{len(calls)}")
-
-        return len(correct_calls) / len(calls)
-
-    def concordance(self, df: pd.DataFrame) -> float:
-        calls = self._positions_where_call_is_made(df)
-        if len(calls) == 0:
+        if len(valid_calls) == 0:
             logging.debug("No valid calls made by truth VCF")
-            # if there are no calls, then concordance is perfect...
-            return 1.0
+            # if there are no calls, then call rate is perfect...
+            return self.default_value_if_no_valid_calls
+
+        inclusions = {Outcome.TrueAlt, Outcome.DiffAlt, Outcome.Het, Outcome.FalseRef}
+        if genome_wide:
+            inclusions.update([Outcome.TrueRef, Outcome.FalseAlt])
+        calls_made = valid_calls.query("outcome in @inclusions")
 
         logging.debug(
-            f"Counts for outcomes at valid concordance positions:\n"
-            f"{Counter(calls.outcome)}"
+            f"Counts for outcomes at valid {metric_name} positions:\n"
+            f"{Counter(valid_calls.outcome)}"
         )
 
-        correct_outcomes = {Outcome.TrueAlt, Outcome.TrueRef}
-        correct_calls = calls.query("outcome in @correct_outcomes")
-        logging.debug(f"Concordance calculated as: {len(correct_calls)}/{len(calls)}")
+        logging.debug(
+            f"{metric_name.capitalize()}: {len(calls_made)}/" f"{len(valid_calls)}"
+        )
 
-        return len(correct_calls) / len(calls)
+        return len(calls_made) / len(valid_calls)
+
+    def concordance(self, df: pd.DataFrame, genome_wide: bool = False) -> float:
+        """There are two types of concordance that can be calculated:
+        1. what % of true ALTs does b's genotype agree with a's (excludes NULL,
+        FILTER, and HET)
+        2. (genome-wide) what % of a's REF or ALT positions does b's genotype agree
+        (excludes NULL, FILTER, and HET)
+        """
+        metric_name = "genome-wide concordance" if genome_wide else "concordance"
+        valid_calls = self._valid_calls(
+            df, genome_wide=genome_wide, for_concordance=True
+        )
+
+        if len(valid_calls) == 0:
+            logging.debug("No valid calls made by truth VCF")
+            # if there are no calls, then call rate is perfect...
+            return self.default_value_if_no_valid_calls
+
+        inclusions = {Outcome.TrueAlt}
+        if genome_wide:
+            inclusions.update([Outcome.TrueRef])
+        correct_calls_made = valid_calls.query("outcome in @inclusions")
+
+        logging.debug(
+            f"Counts for outcomes at valid {metric_name} positions:\n"
+            f"{Counter(valid_calls.outcome)}"
+        )
+
+        logging.debug(
+            f"{metric_name.capitalize()}: {len(correct_calls_made)}/"
+            f"{len(valid_calls)}"
+        )
+
+        return len(correct_calls_made) / len(valid_calls)
 
 
 @click.command()
@@ -285,7 +342,7 @@ class Calculator:
     "--json",
     "json_file",
     type=click.File(mode="w", lazy=True),
-    help="Write the recall and concordance result to a JSON file.",
+    help="Write the call rate and concordance results to a JSON file.",
 )
 @click.option(
     "--apply-filter/--no-apply-filter",
@@ -304,7 +361,16 @@ def main(
     apply_filter: bool,
     verbose: bool,
 ):
-    """Calculate recall and concordance between two VCF files."""
+    """Calculate call rate and concordance between two VCF files.
+    There are four metrics in total produced:
+
+    1. Call rate: what % of --truthvcf ALTs does --query-vcf make a call (correct or
+    not)?\n
+    2. Genome-wide call rate: As 1. but also considering --truth-vcf REF calls.\n
+    3. Concordance: what % of --truth-vcf ALTs does the --query-vcf genotype agree
+     with? On positions where --query-vcf makes a ALT call are considered here.\n
+    4. Genome-wide concordance: As 3. but also considering REF calls for both VCFs.
+    """
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
@@ -376,17 +442,34 @@ def main(
     df = pd.DataFrame(data, columns=COLUMNS)
     calculator = Calculator()
 
-    logging.info(f"Calculating recall...")
-    recall = calculator.recall(df)
-    logging.info(f"Recall: {recall}")
+    logging.info(f"Calculating call rate...")
+    call_rate = calculator.call_rate(df)
+    logging.info(f"Call rate: {call_rate}")
+
+    logging.info(f"Calculating genome-wide call rate...")
+    gw_call_rate = calculator.call_rate(df, genome_wide=True)
+    logging.info(f"Genome-wide call rate: {gw_call_rate}")
 
     logging.info(f"Calculating concordance...")
     concordance = calculator.concordance(df)
     logging.info(f"Concordance: {concordance}")
 
+    logging.info(f"Calculating genome-wide concordance...")
+    gw_concordance = calculator.concordance(df, genome_wide=True)
+    logging.info(f"Genome-wide concordance: {gw_concordance}")
+
     if json_file is not None:
         logging.info(f"Writing results to {json_file.name}")
-        json.dump({"recall": recall, "concordance": concordance}, json_file, indent=4)
+        json.dump(
+            {
+                "call_rate": call_rate,
+                "concordance": concordance,
+                "gw_call_rate": gw_call_rate,
+                "gw_concordance": gw_concordance,
+            },
+            json_file,
+            indent=4,
+        )
         json_file.close()
 
     csv.close()

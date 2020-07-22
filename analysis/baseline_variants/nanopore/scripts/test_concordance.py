@@ -2,7 +2,46 @@ from unittest.mock import patch
 
 import pandas as pd
 from concordance import *
-from pytest import raises, approx
+from pytest import raises, approx, fixture
+
+
+@fixture
+def dataset() -> pd.DataFrame:
+    data = [
+        [1, Classification.Ref, Classification.Ref, Outcome.TrueRef],
+        [31, Classification.Ref, Classification.Ref, Outcome.BFailFilter],
+        [2, Classification.Ref, Classification.Ref, Outcome.Masked],
+        [3, Classification.Ref, Classification.Alt, Outcome.FalseAlt],
+        [43, Classification.Ref, Classification.Alt, Outcome.BothFailFilter],
+        [4, Classification.Ref, Classification.Null, Outcome.FalseNull],
+        [5, Classification.Ref, Classification.Het, Outcome.Het],
+        [6, Classification.Ref, Classification.Missing, Outcome.MissingPos],
+        [7, Classification.Alt, Classification.Ref, Outcome.FalseRef],
+        [37, Classification.Alt, Classification.Ref, Outcome.Masked],
+        [8, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
+        [48, Classification.Alt, Classification.Alt, Outcome.AFailFilter],
+        [38, Classification.Alt, Classification.Alt, Outcome.BFailFilter],
+        [9, Classification.Alt, Classification.Alt, Outcome.DiffAlt],
+        [10, Classification.Alt, Classification.Null, Outcome.FalseNull],
+        [11, Classification.Alt, Classification.Het, Outcome.Het],
+        [12, Classification.Alt, Classification.Missing, Outcome.MissingPos],
+        [13, Classification.Null, Classification.Ref, Outcome.Null],
+        [14, Classification.Null, Classification.Alt, Outcome.Null],
+        [15, Classification.Null, Classification.Null, Outcome.Null],
+        [16, Classification.Null, Classification.Het, Outcome.Null],
+        [17, Classification.Null, Classification.Missing, Outcome.Null],
+        [18, Classification.Het, Classification.Ref, Outcome.Het],
+        [19, Classification.Het, Classification.Alt, Outcome.Het],
+        [20, Classification.Het, Classification.Null, Outcome.Het],
+        [21, Classification.Het, Classification.Het, Outcome.Het],
+        [22, Classification.Het, Classification.Missing, Outcome.MissingPos],
+        [23, Classification.Missing, Classification.Ref, Outcome.MissingPos],
+        [24, Classification.Missing, Classification.Alt, Outcome.MissingPos],
+        [25, Classification.Missing, Classification.Null, Outcome.MissingPos],
+        [26, Classification.Missing, Classification.Het, Outcome.MissingPos],
+        [27, Classification.Missing, Classification.Missing, Outcome.MissingPos],
+    ]
+    return pd.DataFrame(data, columns=COLUMNS)
 
 
 class TestClassification:
@@ -295,262 +334,77 @@ class TestClassify:
         assert actual == expected
 
 
-def create_df(data) -> pd.DataFrame:
-    return pd.DataFrame(data, columns=COLUMNS)
-
-
-class TestCalculateRecall:
-    def test_noAltInA_returnsOne(self):
-        data = [[1, Classification.Ref, Classification.Ref, Outcome.TrueRef]]
-        df = create_df(data)
+class TestCalculateCallRate:
+    def test_noAltInA_returnsOne(self, dataset: pd.DataFrame):
+        df = dataset.query("a != @Classification.Alt")
         calculator = Calculator()
 
-        actual = calculator.recall(df)
+        actual = calculator.call_rate(df, genome_wide=False)
         expected = 1.0
 
         assert actual == approx(expected)
 
-    def test_oneAltNotFoundInB_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Ref, Outcome.FalseRef]]
-        df = create_df(data)
+    def test_allPermutations(self, dataset: pd.DataFrame):
         calculator = Calculator()
 
-        actual = calculator.recall(df)
-        expected = 0.0
+        actual = calculator.call_rate(dataset, genome_wide=False)
+        expected = 4 / 7
 
         assert actual == approx(expected)
 
-    def test_oneAltButMaskedNotFoundInB_returnsOne(self):
-        data = [[1, Classification.Alt, Classification.Ref, Outcome.Masked]]
-        df = create_df(data)
+
+class TestCalculateGenomeWideCallRate:
+    def test_noRefOrAltInA_returnsOne(self, dataset: pd.DataFrame):
+        df = dataset.query("a not in [@Classification.Alt, @Classification.Ref]")
         calculator = Calculator()
 
-        actual = calculator.recall(df)
+        actual = calculator.call_rate(df, genome_wide=True)
         expected = 1.0
 
         assert actual == approx(expected)
 
-    def test_oneAltFoundInB_returnsOne(self):
-        data = [[1, Classification.Alt, Classification.Alt, Outcome.TrueAlt]]
-        df = create_df(data)
+    def test_allPermutations(self, dataset: pd.DataFrame):
         calculator = Calculator()
 
-        actual = calculator.recall(df)
-        expected = 1.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltButDiffAltInB_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Alt, Outcome.DiffAlt]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltBothFailFilter_returnsOne(self):
-        data = [[1, Classification.Alt, Classification.Ref, Outcome.BothFailFilter]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 1.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltAFailFilter_returnsOne(self):
-        data = [[1, Classification.Alt, Classification.Ref, Outcome.AFailFilter]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 1.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltBFailFilter_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Alt, Outcome.BFailFilter]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltBMissingPos_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Missing, Outcome.MissingPos]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltBIsHet_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Het, Outcome.Het]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneAltBIsNull_returnsZero(self):
-        data = [[1, Classification.Alt, Classification.Null, Outcome.FalseNull]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_twoAltBHasOne_returnsHalf(self):
-        data = [
-            [1, Classification.Alt, Classification.Null, Outcome.FalseNull],
-            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-            [3, Classification.Alt, Classification.Alt, Outcome.Masked],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.recall(df)
-        expected = 0.5
+        actual = calculator.call_rate(dataset, genome_wide=True)
+        expected = 7 / 13
 
         assert actual == approx(expected)
 
 
 class TestCalculateConcordance:
-    def test_noCallsInA_returnsOne(self):
-        data = [[1, Classification.Null, Classification.Ref, Outcome.Null]]
-        df = create_df(data)
+    def test_noAltInA_returnsOne(self, dataset: pd.DataFrame):
+        df = dataset.query("a != @Classification.Alt")
         calculator = Calculator()
 
-        actual = calculator.concordance(df)
+        actual = calculator.concordance(df, genome_wide=False)
         expected = 1.0
 
         assert actual == approx(expected)
 
-    def test_allCorrectCalls_returnsOne(self):
-        data = [[1, Classification.Ref, Classification.Ref, Outcome.TrueRef]]
-        df = create_df(data)
+    def test_allPermutations(self, dataset: pd.DataFrame):
         calculator = Calculator()
 
-        actual = calculator.concordance(df)
+        actual = calculator.concordance(dataset, genome_wide=False)
+        expected = 1 / 3
+
+        assert actual == approx(expected)
+
+
+class TestCalculateGenomeWideConcordance:
+    def test_noRefOrAltInA_returnsOne(self, dataset: pd.DataFrame):
+        df = dataset.query("a not in [@Classification.Alt, @Classification.Ref]")
+        calculator = Calculator()
+
+        actual = calculator.concordance(df, genome_wide=True)
         expected = 1.0
 
         assert actual == approx(expected)
 
-    def test_allIncorrectCallsButMasked_returnsOne(self):
-        data = [[1, Classification.Ref, Classification.Alt, Outcome.Masked]]
-        df = create_df(data)
+    def test_allPermutations(self, dataset: pd.DataFrame):
         calculator = Calculator()
 
-        actual = calculator.concordance(df)
-        expected = 1.0
-
-        assert actual == approx(expected)
-
-    def test_oneWrongOneRightOneFiltered_returnsHalf(self):
-        data = [
-            [1, Classification.Ref, Classification.Alt, Outcome.BothFailFilter],
-            [2, Classification.Ref, Classification.Alt, Outcome.FalseAlt],
-            [3, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.5
-
-        assert actual == approx(expected)
-
-    def test_oneCorrectButAFiltered_returnsZero(self):
-        data = [
-            [1, Classification.Ref, Classification.Alt, Outcome.FalseAlt],
-            [2, Classification.Alt, Classification.Alt, Outcome.AFailFilter],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.0
-
-    def test_allIncorrectOneBFiltered_returnsHalf(self):
-        data = [
-            [1, Classification.Ref, Classification.Ref, Outcome.TrueRef],
-            [2, Classification.Alt, Classification.Alt, Outcome.BFailFilter],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.5
-
-    def test_twoCallsOneBMissingPos_returnsHalf(self):
-        data = [
-            [1, Classification.Ref, Classification.Missing, Outcome.MissingPos],
-            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-        ]
-        data = [[1, Classification.Alt, Classification.Missing, Outcome.MissingPos]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneCallBIsHet_returnsZero(self):
-        data = [[1, Classification.Ref, Classification.Het, Outcome.Het]]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.0
-
-        assert actual == approx(expected)
-
-    def test_oneCallAIsHetOneCallIsCorrect_returnsOne(self):
-        data = [
-            [1, Classification.Het, Classification.Ref, Outcome.Het],
-            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 1.0
-
-        assert actual == approx(expected)
-
-    def test_oneCallBIsNullOneCallIsCorrect_returnsHalf(self):
-        data = [
-            [1, Classification.Ref, Classification.Null, Outcome.FalseNull],
-            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.5
-
-        assert actual == approx(expected)
-
-    def test_oneCallBIsDiffAltOneCallIsCorrect_returnsHalf(self):
-        data = [
-            [1, Classification.Alt, Classification.Alt, Outcome.DiffAlt],
-            [2, Classification.Alt, Classification.Alt, Outcome.TrueAlt],
-        ]
-        df = create_df(data)
-        calculator = Calculator()
-
-        actual = calculator.concordance(df)
-        expected = 0.5
+        actual = calculator.concordance(dataset, genome_wide=True)
+        expected = 2 / 5
 
         assert actual == approx(expected)
