@@ -1,0 +1,127 @@
+import os
+from pathlib import Path
+from typing import Dict, Union
+
+import pandas as pd
+from snakemake.utils import min_version
+
+min_version("5.14.0")
+
+GB = 1_024
+PathLike = Union[str, Path, os.PathLike]
+
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+
+
+samplesheet = pd.read_csv(config["samplesheet"])
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
+rule_log_dir = Path("logs/stderr")
+H37RV = config["h37rv"]
+data_dir = Path(config["data_dir"])
+# report_dir = Path("report")
+# plot_dir = report_dir / "plotting"
+# filtered_dir = Path("filtered")
+# compass_vcf_dir = Path(config["compass_vcf_dir"])
+nanopore_dir = Path("nanopore")
+
+# ======================================================
+# Global functions and variables
+# ======================================================
+output_files = set()
+samples = set()
+for idx, row in samplesheet.iterrows():
+    is_excluded = True if row["failed_qc"] == 1 else False
+    if is_excluded:
+        continue
+
+    site = row["site"]
+    sample = row["sample"]
+    samples.add(sample)
+    output_files.add(nanopore_dir / f"pileups/{site}/{sample}.pileup.bcf")
+
+# ======================================================
+# Rules
+# ======================================================
+localrules:
+    all,
+
+
+# report: report_dir / "workflow.rst"
+
+
+rule all:
+    input:
+        output_files,
+
+
+rule index_reference:
+    input:
+        H37RV["genome"],
+    output:
+        H37RV["genome"] + ".fai",
+    log:
+        rule_log_dir / "index_reference.log",
+    wrapper:
+        "0.63.0/bio/samtools/faidx"
+
+
+rule map_nanopore:
+    input:
+        target=H37RV["genome"],
+        query=data_dir / "{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz",
+    output:
+        sam=nanopore_dir / "mapped/{site}/{sample}.sorted.sam",
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    container:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
+    params:
+        minimap_extras=" ".join(["-a", "-L", "--sam-hit-only", "--secondary=no"]),
+        minimap_preset="map-ont",
+    log:
+        rule_log_dir / "map_nanopore/{site}/{sample}.log",
+    shell:
+        """
+        (minimap2 {params.minimap_extras} \
+            -x {params.minimap_preset} \
+            -t {threads} \
+            {input.target} {input.query} | \
+        samtools sort -@ {threads} -o {output.sam}) 2> {log}
+        """
+
+
+rule pileup_nanopore:
+    input:
+        index=rules.index_reference.output,
+        ref=rules.index_reference.input[0],
+        sam=rules.map_nanopore.output.sam,
+    output:
+        pileup=nanopore_dir / "pileups/{site}/{sample}.pileup.bcf",
+    threads: 2
+    resources:
+        mem_mb=lambda wildcards, attempt: {
+            1: int(64 * GB),
+            2: int(80 * GB),
+            3: int(100 * GB),
+        }[attempt],
+    container:
+        containers["bcftools"]
+    params:
+        options="--ignore-overlaps"
+    log:
+        rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
+    shell:
+        """
+        bcftools mpileup {params.options} -f {input.ref} \
+            --threads {threads} \
+            -o {output.pileup} {input.sam} 2> {log}
+        """
