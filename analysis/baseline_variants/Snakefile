@@ -24,7 +24,7 @@ scripts: Dict[str, PathLike] = config["scripts"]
 rule_log_dir = Path("logs/stderr")
 H37RV = config["h37rv"]
 data_dir = Path(config["data_dir"])
-# report_dir = Path("report")
+report_dir = Path("report")
 # plot_dir = report_dir / "plotting"
 # filtered_dir = Path("filtered")
 # compass_vcf_dir = Path(config["compass_vcf_dir"])
@@ -52,7 +52,7 @@ localrules:
     all,
 
 
-# report: report_dir / "workflow.rst"
+report: report_dir / "workflow.rst"
 
 
 rule all:
