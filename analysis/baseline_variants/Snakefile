@@ -116,7 +116,7 @@ rule pileup_nanopore:
     container:
         containers["bcftools"]
     params:
-        options="--ignore-overlaps"
+        options="--ignore-overlaps -O b"
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     shell:
