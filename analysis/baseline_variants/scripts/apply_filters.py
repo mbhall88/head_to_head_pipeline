@@ -340,7 +340,11 @@ def main(
     min_strand_bias: int,
     hist: bool,
 ):
-    """Apply the following filters to a VCF:
+    """Apply the following filters to a VCF:\n
+      - Minimum proportion of the expected (median) depth\n
+      - Maximum proportion of the expected (median) depth\n
+      - Minimum QUAL threshold\n
+      - Minimum Strand bias percentage
     """
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
