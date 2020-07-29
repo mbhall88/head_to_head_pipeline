@@ -29,6 +29,7 @@ report_dir = Path("report")
 # plot_dir = report_dir / "plotting"
 compass_vcf_dir = Path(config["compass_vcf_dir"])
 nanopore_dir = Path("nanopore")
+concordance_dir = Path("concordance")
 
 # ======================================================
 # Global functions and variables
@@ -43,7 +44,7 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     samples.add(sample)
-    output_files.add(nanopore_dir / f"filtered_snps/{site}/{sample}.snps.filtered.bcf")
+    output_files.add(concordance_dir / f"{site}/{sample}.concordance.json")
 
 
 # ======================================================
@@ -173,4 +174,35 @@ rule filter_nanopore_snps:
             -D {params.max_depth} \
             -s {params.min_strand_bias} \
             -q {params.min_qual} 2> {log}
+        """
+
+
+rule calculate_concordance:
+    input:
+        truth=compass_vcf_dir / "{sample}.compass.vcf.gz",
+        query=rules.filter_nanopore_snps.output.vcf,
+        mask=H37RV["mask"],
+    output:
+        csv=concordance_dir / "{site}/{sample}.concordance.csv",
+        json=concordance_dir / "{site}/{sample}.concordance.json",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    params:
+        options="--verbose --apply-filter",
+        script=scripts["concordance"],
+    log:
+        rule_log_dir / "calculate_concordance/{site}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["concordance"]
+    shell:
+        """
+        python {params.script} {params.options} \
+            -a {input.truth} \
+            -b {input.query} \
+            -m {input.mask} \
+            -c {output.csv} \
+            -j {output.json} 2> {log}
         """

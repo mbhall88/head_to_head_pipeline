@@ -11,8 +11,9 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
 envs:
-  aln_tools: "envs/aln_tools.yaml"
-  filter:    "envs/filter.yaml"
+  aln_tools:      "envs/aln_tools.yaml"
+  filter:         "envs/filter.yaml"
+  concordance:    "envs/concordance.yaml"
 scripts:
   filter:      "scripts/apply_filters.py"
   concordance: "scripts/concordance.py"
