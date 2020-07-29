@@ -104,7 +104,7 @@ rule pileup_nanopore:
     input:
         index=rules.index_reference.output,
         ref=rules.index_reference.input[0],
-        sam=rules.map_nanopore.output.sam,
+        alignments=rules.map_nanopore.output.sam,
     output:
         pileup=nanopore_dir / "pileups/{site}/{sample}.pileup.bcf",
     threads: 2
@@ -114,18 +114,14 @@ rule pileup_nanopore:
             2: int(80 * GB),
             3: int(100 * GB),
         }[attempt],
-    container:
-        containers["bcftools"]
     params:
         options="--ignore-overlaps -O b",
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
-    shell:
-        """
-        bcftools mpileup {params.options} -f {input.ref} \
-            --threads {threads} \
-            -o {output.pileup} {input.sam} 2> {log}
-        """
+    container:
+        containers["conda"]
+    wrapper:
+        "0.64.0/bio/bcftools/mpileup"
 
 
 rule call_snps_nanopore:
