@@ -184,7 +184,12 @@ rule calculate_concordance:
         mask=H37RV["mask"],
     output:
         csv=concordance_dir / "{site}/{sample}.concordance.csv",
-        json=concordance_dir / "{site}/{sample}.concordance.json",
+        json=report(
+            concordance_dir / "{site}/{sample}.concordance.json",
+            category="Concordance",
+            subcategory="Raw Data",
+            caption="report/calculate_concordance.rst",
+        ),
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
