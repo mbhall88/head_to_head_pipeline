@@ -43,7 +43,8 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     samples.add(sample)
-    output_files.add(nanopore_dir / f"pileups/{site}/{sample}.pileup.bcf")
+    output_files.add(nanopore_dir / f"snp_calls/{site}/{sample}.snps.bcf")
+
 
 # ======================================================
 # Rules
@@ -116,7 +117,7 @@ rule pileup_nanopore:
     container:
         containers["bcftools"]
     params:
-        options="--ignore-overlaps -O b"
+        options="--ignore-overlaps -O b",
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     shell:
@@ -125,3 +126,22 @@ rule pileup_nanopore:
             --threads {threads} \
             -o {output.pileup} {input.sam} 2> {log}
         """
+
+
+rule call_snps_nanopore:
+    input:
+        pileup=rules.pileup_nanopore.output.pileup,
+    output:
+        calls=nanopore_dir / "snp_calls/{site}/{sample}.snps.bcf",
+    threads: 2
+    resources:
+        mem_mb=lambda wildcards, attempt: int(1 * GB) * attempt,
+    params:
+        caller="-m",
+        options=" ".join(["--ploidy 1", "-O b", "--skip-variants indels"]),
+    log:
+        rule_log_dir / "call_snps_nanopore/{site}/{sample}.log",
+    container:
+        containers["conda"]
+    wrapper:
+        "0.64.0/bio/bcftools/call"
