@@ -24,10 +24,10 @@ scripts: Dict[str, PathLike] = config["scripts"]
 rule_log_dir = Path("logs/stderr")
 H37RV = config["h37rv"]
 data_dir = Path(config["data_dir"])
+filters = config["filters"]
 report_dir = Path("report")
 # plot_dir = report_dir / "plotting"
-# filtered_dir = Path("filtered")
-# compass_vcf_dir = Path(config["compass_vcf_dir"])
+compass_vcf_dir = Path(config["compass_vcf_dir"])
 nanopore_dir = Path("nanopore")
 
 # ======================================================
@@ -135,7 +135,7 @@ rule call_snps_nanopore:
         calls=nanopore_dir / "snp_calls/{site}/{sample}.snps.bcf",
     threads: 2
     resources:
-        mem_mb=lambda wildcards, attempt: int(1 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
     params:
         caller="-m",
         options=" ".join(["--ploidy 1", "-O b", "--skip-variants indels"]),
@@ -145,3 +145,36 @@ rule call_snps_nanopore:
         containers["conda"]
     wrapper:
         "0.64.0/bio/bcftools/call"
+
+
+rule filter_nanopore_snps:
+    input:
+        vcf=rules.call_snps_nanopore.output.calls,
+    output:
+        vcf=nanopore_dir / "filtered_snps/{site}/{sample}.snps.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    params:
+        min_depth=filters["min_depth"],
+        max_depth=filters["max_depth"],
+        min_qual=filters["min_qual"],
+        min_strand_bias=filters["min_strand_bias"],
+        options="--hist --verbose --overwrite",
+        script=scripts["filter"],
+    log:
+        rule_log_dir / "filter_nanopore_snps/{site}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["filter"]
+    shell:
+        """
+        python {params.script} {params.options} \
+            -i {input.vcf} \
+            -o {output.vcf} \
+            -d {params.min_depth} \
+            -D {params.max_depth} \
+            -s {params.min_strand_bias} \
+            -q {params.min_qual} 2> {log}
+        """

@@ -10,22 +10,16 @@ h37rv:
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
-  krona:       "docker://quay.io/biocontainers/krona:2.7--pl526_2"
-  pyfastaq:    "docker://quay.io/biocontainers/pyfastaq:3.17.0--py_2"
-  rasusa:      "docker://mbhall88/rasusa:0.3.0"
 envs:
-  decontam_db:          "envs/decontam_db.yaml"
-  aln_tools:            "envs/aln_tools.yaml"
-  assign_lineages:      "envs/assign_lineages.yaml"
-  generate_krona_input: "envs/generate_krona_input.yaml"
-  composition_report:   "envs/composition_report.yaml"
-  coverage_report:      "envs/coverage_report.yaml"
-  filter:               "envs/filter.yaml"
+  aln_tools: "envs/aln_tools.yaml"
+  filter:    "envs/filter.yaml"
 scripts:
-  download_decontam:    "scripts/download_tb_reference_files.pl"
-  generate_krona_input: "scripts/generate_krona_input.py"
-  composition_report:   "scripts/composition_report.py"
-  coverage_report:      "scripts/coverage_report.py"
-  filter:               "scripts/filter_contamination.py"
-  assign_lineages:      "scripts/assign_lineages.py"
+  filter:      "scripts/apply_filters.py"
+  concordance: "scripts/concordance.py"
 
+# filters for nanopore bcftools calls
+filters:
+  min_depth:       0
+  max_depth:       0
+  min_qual:        20
+  min_strand_bias: 0

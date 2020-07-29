@@ -1,0 +1,10 @@
+name: filter
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy=1.18.1
+  - click=7.1.2
+  - bioconda::cyvcf2=0.20.1
+  - histoprint=1.4.0
