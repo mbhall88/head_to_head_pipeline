@@ -35,8 +35,8 @@ concordance_dir = Path("concordance")
 # ======================================================
 # Global functions and variables
 # ======================================================
-SITES = set(samplesheet["site"])
-SAMPLES = set(samplesheet["sample"])
+SITES = samplesheet["site"]
+SAMPLES = samplesheet["sample"]
 output_files = set()
 output_files.add(concordance_dir / "alt_concordance.html")
 
@@ -211,6 +211,7 @@ rule plot_alt_concordance:
     input:
         jsons=expand(
             f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
+            zip,
             site=SITES,
             sample=SAMPLES,
         ),
