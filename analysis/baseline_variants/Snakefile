@@ -43,7 +43,7 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     samples.add(sample)
-    output_files.add(nanopore_dir / f"snp_calls/{site}/{sample}.snps.bcf")
+    output_files.add(nanopore_dir / f"filtered_snps/{site}/{sample}.snps.filtered.bcf")
 
 
 # ======================================================
