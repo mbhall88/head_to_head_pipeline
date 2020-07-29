@@ -11,12 +11,14 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
 envs:
-  aln_tools:      "envs/aln_tools.yaml"
-  filter:         "envs/filter.yaml"
-  concordance:    "envs/concordance.yaml"
+  aln_tools:          "envs/aln_tools.yaml"
+  filter:             "envs/filter.yaml"
+  concordance:        "envs/concordance.yaml"
+  alt_concordance:    "envs/alt_concordance.yaml"
 scripts:
-  filter:      "scripts/apply_filters.py"
-  concordance: "scripts/concordance.py"
+  filter:          "scripts/apply_filters.py"
+  concordance:     "scripts/concordance.py"
+  alt_concordance: "scripts/plot_alt_concordance.py"
 
 # filters for nanopore bcftools calls
 filters:

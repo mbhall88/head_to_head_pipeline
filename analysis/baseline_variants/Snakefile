@@ -17,7 +17,8 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 
 
-samplesheet = pd.read_csv(config["samplesheet"])
+# only load samples that passed QC
+samplesheet = pd.read_csv(config["samplesheet"]).query("failed_qc == 0")
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
@@ -34,17 +35,10 @@ concordance_dir = Path("concordance")
 # ======================================================
 # Global functions and variables
 # ======================================================
+SITES = set(samplesheet["site"])
+SAMPLES = set(samplesheet["samples"])
 output_files = set()
-samples = set()
-for idx, row in samplesheet.iterrows():
-    is_excluded = True if row["failed_qc"] == 1 else False
-    if is_excluded:
-        continue
-
-    site = row["site"]
-    sample = row["sample"]
-    samples.add(sample)
-    output_files.add(concordance_dir / f"{site}/{sample}.concordance.json")
+output_files.add(concordance_dir / "alt_concordance.html")
 
 
 # ======================================================
@@ -188,7 +182,7 @@ rule calculate_concordance:
             concordance_dir / "{site}/{sample}.concordance.json",
             category="Concordance",
             subcategory="Raw Data",
-            caption="report/calculate_concordance.rst",
+            caption=f"{report_dir}/calculate_concordance.rst",
         ),
     threads: 1
     resources:
@@ -211,3 +205,32 @@ rule calculate_concordance:
             -c {output.csv} \
             -j {output.json} 2> {log}
         """
+
+
+rule plot_alt_concordance:
+    input:
+        jsons=expand(
+            f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
+            site=SITES,
+            sample=SAMPLES,
+        ),
+    output:
+        plot=report(
+            concordance_dir / "alt_concordance.html",
+            caption=f"{report_dir}/alt_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    params:
+        title="Call rate vs. Concordance at ALT positions",
+        x_var="concordance",
+        y_var="call_rate",
+    container:
+        containers["conda"]
+    conda:
+        envs["alt_concordance"]
+    script:
+        scripts["alt_concordance"]
