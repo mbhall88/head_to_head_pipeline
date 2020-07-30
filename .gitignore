@@ -313,7 +313,7 @@ analysis/assembly/results_before_no_snp_polish/*/
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
 # website: http://jupyter.org/
-
+.jupyter/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
@@ -327,9 +327,9 @@ ipython_config.py
 # End of https://www.gitignore.io/api/jupyternotebooks
 *.ipynb
 
-# ignore all results by default
-results/
-
+# ==========
+# Project specific ignores
+# ==========
 # VCFs can be big
 *.[bv]cf*
 
@@ -337,10 +337,37 @@ results/
 *.fai
 *.fxi
 
-# misc.
+# DATA
+upload/
+data/birmingham/
+data/madagascar/
+data/south_africa/
+analysis/archive/
+analysis/basecall_training/data/
+
+# DOCS
+docs/archived_docs/
+## stdout/err log files
+*.o
+*.e
+
+# pipeline directories
+analysis/basecall_training/results/
+analysis/baseline_variants/concordance/
+analysis/baseline_variants/nanopore/
+analysis/baseline_variants/illumina/
+data/QC/filtered/
+data/QC/mapped/
+data/QC/decontam_db/
+data/QC/subsampled/
+data/QC/report/lineage_assignment/
+data/QC/report/plotting/
+data/H37Rv_PRG/prgs/
+data/H37Rv_PRG/trees/
+data/H37Rv_PRG/vcfs/
+
+# pipeline specific files
+data/QC/report.html
 data/QC/todo.txt
 analysis/baseline_variants/nanopore/notepad.md
-
-data/QC/report.html
-analysis/baseline_variants/concordance
-analysis/baseline_variants/nanopore
+data/H37Rv_PRG/resources/sample-list*
