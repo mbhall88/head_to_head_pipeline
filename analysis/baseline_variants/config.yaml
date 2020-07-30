@@ -4,20 +4,18 @@ data_dir:             "../../data/QC/subsampled"
 genome_size:          4411532
 h37rv:
   genome:     "resources/h37rv.fa"
-  annotation: "resources/h37rv.gbk"
-  features:   "resources/h37rv.gff3"
   mask:       "resources/compass-mask.bed"
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
 envs:
-  aln_tools:          "envs/aln_tools.yaml"
-  filter:             "envs/filter.yaml"
-  concordance:        "envs/concordance.yaml"
+  aln_tools:           "envs/aln_tools.yaml"
+  filter:              "envs/filter.yaml"
+  concordance:         "envs/concordance.yaml"
   plot_concordance:    "envs/plot_concordance.yaml"
 scripts:
-  filter:          "scripts/apply_filters.py"
-  concordance:     "scripts/concordance.py"
+  filter:           "scripts/apply_filters.py"
+  concordance:      "scripts/concordance.py"
   plot_concordance: "scripts/plot_concordance.py"
 
 # filters for nanopore bcftools calls

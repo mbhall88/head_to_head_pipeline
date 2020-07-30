@@ -9,3 +9,4 @@ See subdirectories for more specific information about different pipelines.
 -   [Basecall training](analysis/basecall_training)
 -   [H37Rv PRG construction](data/H37Rv_PRG)
 -   [Quality Control](data/QC)
+-   [Baseline variant analysis](analysis/baseline_variants)
