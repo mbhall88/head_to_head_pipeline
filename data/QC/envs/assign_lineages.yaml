@@ -1,0 +1,8 @@
+name: assign_lineages
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - click=7.1.2
+  - cyvcf2=0.20.0
