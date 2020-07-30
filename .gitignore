@@ -344,6 +344,7 @@ data/madagascar/
 data/south_africa/
 analysis/archive/
 analysis/basecall_training/data/
+analysis/assembly/resources/centrifuge_db/
 
 # DOCS
 docs/archived_docs/
@@ -352,6 +353,7 @@ docs/archived_docs/
 *.e
 
 # pipeline directories
+.nv/
 analysis/basecall_training/results/
 analysis/baseline_variants/concordance/
 analysis/baseline_variants/nanopore/
@@ -371,3 +373,6 @@ data/QC/report.html
 data/QC/todo.txt
 analysis/baseline_variants/nanopore/notepad.md
 data/H37Rv_PRG/resources/sample-list*
+data/QC/report/composition.html
+data/QC/report/coverage.html
+analysis/basecall_training/resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.checkpoint
