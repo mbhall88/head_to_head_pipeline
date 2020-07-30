@@ -1,7 +1,8 @@
-name: plot_alt_concordance
+name: plot_concordance
 channels:
   - conda-forge
   - defaults
 dependencies:
   - pandas=1.0.3
   - bokeh=2.1.1
+  - ripgrep=12.1.1

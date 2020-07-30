@@ -14,11 +14,11 @@ envs:
   aln_tools:          "envs/aln_tools.yaml"
   filter:             "envs/filter.yaml"
   concordance:        "envs/concordance.yaml"
-  alt_concordance:    "envs/alt_concordance.yaml"
+  plot_concordance:    "envs/plot_concordance.yaml"
 scripts:
   filter:          "scripts/apply_filters.py"
   concordance:     "scripts/concordance.py"
-  alt_concordance: "scripts/plot_alt_concordance.py"
+  plot_concordance: "scripts/plot_concordance.py"
 
 # filters for nanopore bcftools calls
 filters:

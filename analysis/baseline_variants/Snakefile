@@ -39,6 +39,11 @@ SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
 output_files = set()
 output_files.add(concordance_dir / "alt_concordance.html")
+FILTER_LOGS = set()
+for idx, row in samplesheet.iterrows():
+    site = row["site"]
+    sample = row["sample"]
+    FILTER_LOGS.add(rule_log_dir / f"filter_nanopore_snps/{site}/{sample}.log")
 
 
 # ======================================================
@@ -207,7 +212,7 @@ rule calculate_concordance:
         """
 
 
-rule plot_alt_concordance:
+rule plot_concordance:
     input:
         jsons=expand(
             f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
@@ -215,23 +220,53 @@ rule plot_alt_concordance:
             site=SITES,
             sample=SAMPLES,
         ),
+        filter_logs=FILTER_LOGS,
     output:
-        plot=report(
+        alt_plot=report(
             concordance_dir / "alt_concordance.html",
             caption=f"{report_dir}/alt_concordance.rst",
             category="Concordance",
             subcategory="Plots",
         ),
+        gw_plot=report(
+            concordance_dir / "gw_concordance.html",
+            caption=f"{report_dir}/gw_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_call_rate_plot=report(
+            concordance_dir / "depth_call_rate.html",
+            caption=f"{report_dir}/depth_call_rate.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_gw_call_rate_plot=report(
+            concordance_dir / "depth_gw_call_rate.html",
+            caption=f"{report_dir}/depth_gw_call_rate.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_concordance_plot=report(
+            concordance_dir / "depth_concordance.html",
+            caption=f"{report_dir}/depth_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_gw_concordance_plot=report(
+            concordance_dir / "depth_gw_concordance.html",
+            caption=f"{report_dir}/depth_gw_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
     params:
-        title="Call rate vs. Concordance at ALT positions",
-        x_var="concordance",
-        y_var="call_rate",
+        colour_by="site",
+        index="sample",
     container:
         containers["conda"]
     conda:
-        envs["alt_concordance"]
+        envs["plot_concordance"]
     script:
-        scripts["alt_concordance"]
+        scripts["plot_concordance"]
