@@ -260,7 +260,7 @@ rule plot_concordance:
         ),
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
     params:
         colour_by="site",
         index="sample",
