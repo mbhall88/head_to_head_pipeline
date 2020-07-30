@@ -16,7 +16,7 @@ WIDTH = 13 * PIXEL_INCHES
 JSON_FILES: List[Path] = [Path(p) for p in snakemake.input.jsons]
 LOG_FILES: List[Path] = [Path(p) for p in snakemake.input.filter_logs]
 COLOUR_BY: str = snakemake.params.colour_by
-INDEX: str = snakemake.params.sample
+INDEX: str = snakemake.params.index
 
 
 class RipgrepError(Exception):
