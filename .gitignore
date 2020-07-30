@@ -376,3 +376,4 @@ data/H37Rv_PRG/resources/sample-list*
 data/QC/report/composition.html
 data/QC/report/coverage.html
 analysis/basecall_training/resources/pretrained_models/guppy-gpu.v3-4-5.template_r9.4.1_450bps_hac_prom.checkpoint
+rsync_*.sh
