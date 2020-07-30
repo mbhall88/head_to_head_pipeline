@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple
 
 import pandas as pd
 from bokeh.models import ColumnDataSource, Legend
-from bokeh.palettes import Colorblind
+from bokeh.palettes import Set2
 from bokeh.plotting import figure, output_file, save
 
 TOOLS = "pan,wheel_zoom,box_zoom,reset,box_select,lasso_select,undo,redo,save,hover"
@@ -169,7 +169,7 @@ for file in LOG_FILES:
     concordance_df.at[sample, "depth"] = depth
 
 plotter = PlotFactory(
-    index=INDEX, colour_by=COLOUR_BY, palette=Colorblind, data=concordance_df
+    index=INDEX, colour_by=COLOUR_BY, palette=Set2, data=concordance_df
 )
 
 plotter.generate_plot(
