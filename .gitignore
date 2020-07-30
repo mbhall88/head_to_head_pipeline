@@ -342,3 +342,5 @@ data/QC/todo.txt
 analysis/baseline_variants/nanopore/notepad.md
 
 data/QC/report.html
+analysis/baseline_variants/concordance
+analysis/baseline_variants/nanopore
