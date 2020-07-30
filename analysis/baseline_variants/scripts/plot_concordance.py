@@ -34,7 +34,7 @@ class PlotFactory:
         height: int = HEIGHT,
         width: int = WIDTH,
         float_fmt: str = "0.0[000000]",
-        toolbar_location: str = "bottom",
+        toolbar_location: str = "below",
         legend_location: str = "right",
         point_size: int = 10,
         point_alpha: float = 0.4,
