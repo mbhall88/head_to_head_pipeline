@@ -264,6 +264,7 @@ rule plot_concordance:
     params:
         colour_by="site",
         index="sample",
+        log_scale=True,
     container:
         containers["conda"]
     conda:

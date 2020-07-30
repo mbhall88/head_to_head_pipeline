@@ -17,6 +17,7 @@ JSON_FILES: List[Path] = [Path(p) for p in snakemake.input.jsons]
 LOG_FILES: List[Path] = [Path(p) for p in snakemake.input.filter_logs]
 COLOUR_BY: str = snakemake.params.colour_by
 INDEX: str = snakemake.params.index
+LOG_SCALE: bool = snakemake.params.log_scale
 
 
 class RipgrepError(Exception):
@@ -40,6 +41,8 @@ class PlotFactory:
         point_alpha: float = 0.4,
         minor_grid_colour: str = "black",
         minor_grid_alpha: float = 0.1,
+        x_axis_type: str = "auto",
+        y_axis_type: str = "auto",
     ):
         # float precision for tooltips can be found at https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.NumeralTickFormatter.format
         self.float_fmt = float_fmt
@@ -57,6 +60,8 @@ class PlotFactory:
         self.point_alpha = point_alpha
         self.minor_grid_colour = minor_grid_colour
         self.minor_grid_alpha = minor_grid_alpha
+        self.x_axis_type = x_axis_type
+        self.y_axis_type = y_axis_type
 
     def _build_tooltips(
         self, x_var: str, y_var: str, xlabel: str, ylabel: str
@@ -85,6 +90,8 @@ class PlotFactory:
             active_scroll="wheel_zoom",
             title=title,
             toolbar_location=self.toolbar_location,
+            x_axis_type=self.x_axis_type,
+            y_axis_type=self.y_axis_type,
         )
 
     def _create_legend(self) -> Legend:
@@ -168,8 +175,15 @@ for file in LOG_FILES:
     depth = ripgrep_extract_depth(file)
     concordance_df.at[sample, "depth"] = depth
 
+xscale = "log" if LOG_SCALE else "auto"
+yscale = "log" if LOG_SCALE else "auto"
 plotter = PlotFactory(
-    index=INDEX, colour_by=COLOUR_BY, palette=Set2, data=concordance_df
+    index=INDEX,
+    colour_by=COLOUR_BY,
+    palette=Set2,
+    data=concordance_df,
+    x_axis_type=xscale,
+    y_axis_type=yscale,
 )
 
 plotter.generate_plot(
@@ -189,6 +203,10 @@ plotter.generate_plot(
     xlabel="Concordance",
     ylabel="Call rate",
 )
+
+if LOG_SCALE:
+    # don't want depth to be log-scaled
+    plotter.x_axis_type = "auto"
 
 plotter.generate_plot(
     outfile=snakemake.output.depth_call_rate_plot,
