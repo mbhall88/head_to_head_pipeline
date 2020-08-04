@@ -3,11 +3,10 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 import pandas as pd
-from bokeh.models import ColumnDataSource, Legend
-from bokeh.palettes import Set2
+from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure, output_file, save
 
 TOOLS = "pan,wheel_zoom,box_zoom,reset,box_select,lasso_select,undo,redo,save,hover"
@@ -18,7 +17,6 @@ json_dir = Path(sys.argv[1])
 JSON_FILES: List[Path] = list(json_dir.rglob("*.json"))
 outdir = Path(sys.argv[2])
 outdir.mkdir(exist_ok=True)
-COLOUR_BY: str = "site"
 INDEX: str = "sample"
 LOG_SCALE: bool = True
 
@@ -31,8 +29,6 @@ class PlotFactory:
     def __init__(
         self,
         index: str,
-        colour_by: str,
-        palette: Dict[int, List[str]],
         data: pd.DataFrame,
         tools: str = TOOLS,
         height: int = HEIGHT,
@@ -50,10 +46,7 @@ class PlotFactory:
         # float precision for tooltips can be found at https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.NumeralTickFormatter.format
         self.float_fmt = float_fmt
         self.index = index
-        self.colour_by = colour_by
         self.data = data
-        self.categories = set(self.data[self.colour_by])
-        self.palette = palette[len(self.categories)]
         self.tools = tools
         self.height = height
         self.width = width
@@ -71,14 +64,9 @@ class PlotFactory:
     ) -> List[Tuple[str, str]]:
         return [
             (self.index, f"@{self.index}"),
-            (self.colour_by, f"@{self.colour_by}"),
             (xlabel, f"@{x_var}{{({self.float_fmt})}}"),
             (ylabel, f"@{y_var}{{({self.float_fmt})}}"),
         ]
-
-    @property
-    def legend_var(self) -> str:
-        return self.colour_by
 
     def _create_figure(
         self, x_var: str, y_var, title: str, xlabel: str, ylabel: str
@@ -97,38 +85,24 @@ class PlotFactory:
             y_axis_type=self.y_axis_type,
         )
 
-    def _create_legend(self) -> Legend:
-        return Legend(
-            click_policy="hide",
-            title=self.colour_by.capitalize(),
-            background_fill_alpha=0.1,
-            title_text_font_style="bold",
-        )
-
     def generate_plot(
         self, outfile: str, x_var: str, y_var: str, title: str, xlabel: str, ylabel: str
     ):
         fig = self._create_figure(x_var, y_var, title, xlabel, ylabel)
-        legend = self._create_legend()
         fig.xaxis.axis_label = xlabel
         fig.yaxis.axis_label = ylabel
-        fig.add_layout(legend, self.legend_location)
 
         # inline effectively allows the plot to work offline
         output_file(outfile, title=title, mode="inline")
 
-        for i, cat in enumerate(self.categories):
-            cat_data = self.data[self.data[self.colour_by] == cat]
-            source = ColumnDataSource(cat_data)
-            fig.circle(
-                x=x_var,
-                y=y_var,
-                source=source,
-                color=self.palette[i],
-                legend_label=cat,
-                size=self.point_size,
-                alpha=self.point_alpha,
-            )
+        source = ColumnDataSource(self.data)
+        fig.circle(
+            x=x_var,
+            y=y_var,
+            source=source,
+            size=self.point_size,
+            alpha=self.point_alpha,
+        )
 
         fig.ygrid.minor_grid_line_color = self.minor_grid_colour
         fig.ygrid.minor_grid_line_alpha = self.minor_grid_alpha
@@ -170,7 +144,7 @@ def ripgrep_extract_depth(file: Path) -> float:
 
 
 concordance_df = load_concordance_data(JSON_FILES)
-concordance_df.rename(columns={"level_0": COLOUR_BY, "level_1": INDEX}, inplace=True)
+concordance_df.rename(columns={"level_0": INDEX}, inplace=True)
 concordance_df.set_index(INDEX, drop=True, inplace=True)
 
 
@@ -178,8 +152,6 @@ xscale = "log" if LOG_SCALE else "auto"
 yscale = "log" if LOG_SCALE else "auto"
 plotter = PlotFactory(
     index=INDEX,
-    colour_by=COLOUR_BY,
-    palette=Set2,
     data=concordance_df,
     x_axis_type=xscale,
     y_axis_type=yscale,
