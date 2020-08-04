@@ -124,7 +124,7 @@ def load_concordance_data(json_files: List[Path]) -> pd.DataFrame:
 
 
 concordance_df = load_concordance_data(JSON_FILES)
-concordance_df.rename(columns={"level_0": INDEX}, inplace=True)
+concordance_df.rename(columns={"index": INDEX}, inplace=True)
 concordance_df.set_index(INDEX, drop=True, inplace=True)
 
 
