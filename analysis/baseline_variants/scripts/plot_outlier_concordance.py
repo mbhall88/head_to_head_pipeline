@@ -1,5 +1,4 @@
 import json
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -115,32 +114,13 @@ class PlotFactory:
 def load_concordance_data(json_files: List[Path]) -> pd.DataFrame:
     data = defaultdict(dict)
     for path in json_files:
-        site = path.parts[-2]
         sample = path.name.split(".")[0]
         with path.open() as fp:
-            data[site, sample] = json.load(fp)
+            data[sample] = json.load(fp)
 
     df = pd.DataFrame(data).T
     df.reset_index(inplace=True)
     return df
-
-
-def ripgrep_extract_depth(file: Path) -> float:
-    pattern = r"Expected depth:\s(?P<depth>\d+?\.?\d+)$"
-    extra_params = ["--replace", "$depth", "--only-matching", "--no-line-number"]
-    process = subprocess.Popen(
-        ["rg", *extra_params, pattern, str(file)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-    )
-    exit_code = process.wait()
-    if exit_code != 0:
-        raise RipgrepError(
-            f"Failed to execute the rg command on the file {file} due to the "
-            f"following error:\n{process.stderr.read()}"
-        )
-    return float(process.stdout.read().strip())
 
 
 concordance_df = load_concordance_data(JSON_FILES)
@@ -151,10 +131,7 @@ concordance_df.set_index(INDEX, drop=True, inplace=True)
 xscale = "log" if LOG_SCALE else "auto"
 yscale = "log" if LOG_SCALE else "auto"
 plotter = PlotFactory(
-    index=INDEX,
-    data=concordance_df,
-    x_axis_type=xscale,
-    y_axis_type=yscale,
+    index=INDEX, data=concordance_df, x_axis_type=xscale, y_axis_type=yscale,
 )
 
 plotter.generate_plot(
@@ -174,4 +151,3 @@ plotter.generate_plot(
     xlabel="Concordance",
     ylabel="Call rate",
 )
-
