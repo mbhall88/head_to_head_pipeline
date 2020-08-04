@@ -17,7 +17,7 @@ WIDTH = 13 * PIXEL_INCHES
 json_dir = Path(sys.argv[1])
 JSON_FILES: List[Path] = list(json_dir.rglob("*.json"))
 outdir = Path(sys.argv[2])
-outdir.mkdir()
+outdir.mkdir(exist_ok=True)
 COLOUR_BY: str = "site"
 INDEX: str = "sample"
 LOG_SCALE: bool = True
