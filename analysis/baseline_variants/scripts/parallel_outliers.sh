@@ -9,7 +9,16 @@ threads="$4"
 for outlier in "mada_2-46" "R27006" "R13303" "mada_1-34" "mada_1-50"
 do
 echo "Running concordance for $outlier"
-b="${indir}/*/${outlier}.snps.filtered.bcf"
+if [[ $outlier == mada* ]];
+then
+    site="madagascar"
+elif [[ $outlier == R* ]];
+then
+    site="south_africa"
+else
+    site="birmingham"
+fi
+b="${indir}/${site}/${outlier}.snps.filtered.bcf"
 outlier_dir="${outdir}/$outlier"
 mkdir -p "$outlier_dir"
 fd -j "$threads" -HI \
