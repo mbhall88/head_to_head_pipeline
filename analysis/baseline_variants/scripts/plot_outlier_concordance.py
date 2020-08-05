@@ -17,11 +17,6 @@ JSON_FILES: List[Path] = list(json_dir.rglob("*.json"))
 outdir = Path(sys.argv[2])
 outdir.mkdir(exist_ok=True)
 INDEX: str = "sample"
-LOG_SCALE: bool = True
-
-
-class RipgrepError(Exception):
-    pass
 
 
 class PlotFactory:
@@ -128,11 +123,7 @@ concordance_df.rename(columns={"index": INDEX}, inplace=True)
 concordance_df.set_index(INDEX, drop=True, inplace=True)
 
 
-xscale = "log" if LOG_SCALE else "auto"
-yscale = "log" if LOG_SCALE else "auto"
-plotter = PlotFactory(
-    index=INDEX, data=concordance_df, x_axis_type=xscale, y_axis_type=yscale,
-)
+plotter = PlotFactory(index=INDEX, data=concordance_df)
 
 plotter.generate_plot(
     outfile=outdir / "alt_concordance.html",
