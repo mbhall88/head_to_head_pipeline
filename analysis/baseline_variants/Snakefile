@@ -69,6 +69,8 @@ rule index_reference:
         H37RV["genome"] + ".fai",
     log:
         rule_log_dir / "index_reference.log",
+    container:
+        containers["conda"]
     wrapper:
         "0.63.0/bio/samtools/faidx"
 
@@ -78,7 +80,7 @@ rule map_nanopore:
         target=H37RV["genome"],
         query=data_dir / "{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz",
     output:
-        sam=nanopore_dir / "mapped/{site}/{sample}.sorted.sam",
+        sam=temp(nanopore_dir / "mapped/{site}/{sample}.sorted.sam"),
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
