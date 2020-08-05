@@ -86,7 +86,7 @@ mada_1-11,madagascar,1,0,0,0
 mada_1-29,madagascar,1,1,0,1
 mada_1-41,madagascar,1,0,0,0
 mada_1-2,madagascar,1,1,0,0
-mada_1-34,madagascar,1,0,0,0
+mada_1-34,madagascar,0,0,1,0
 mada_153,madagascar,1,0,0,1
 mada_1-19,madagascar,1,0,0,0
 mada_1-10,madagascar,1,0,0,0
@@ -119,7 +119,7 @@ mada_152,madagascar,1,0,0,0
 mada_1-49,madagascar,1,0,0,1
 R26791,south_africa,1,0,0,0
 R28538,south_africa,1,0,0,1
-R13303,south_africa,1,0,0,0
+R13303,south_africa,0,0,1,0
 R20412,south_africa,1,0,0,1
 R23880,south_africa,0,0,1,1
 R21363,south_africa,1,0,0,0
@@ -162,12 +162,12 @@ R20896,south_africa,1,0,0,0
 R23887,south_africa,1,0,0,0
 R17830,south_africa,1,0,0,1
 R37765,south_africa,1,0,0,0
-R27006,south_africa,1,0,0,0
+R27006,south_africa,0,0,1,0
 R29669,south_africa,1,0,0,1
 R30215,south_africa,1,0,0,0
 R21893,south_africa,1,0,0,0
 R27725,south_africa,1,0,0,0
-R21408,south_africa,1,0,0,0
+R21408,south_africa,0,0,1,0
 R28012,south_africa,1,0,0,0
 R28703,south_africa,1,0,0,0
 R26984,south_africa,0,0,1,1

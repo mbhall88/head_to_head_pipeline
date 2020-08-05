@@ -40,6 +40,10 @@ This document is for noting the reason(s) for a sample's exclusion from the proj
 - [18_0622383](#18_0622383)
 - [18_0622439](#18_0622439)
 - [18_0622425](#18_0622425)
+- [mada_1-34](#mada_1-34)
+- [R27006](#r27006)
+- [R13303](#r13303)
+- [R21408](#r21408)
 
 
 ## mada_1-45
@@ -218,3 +222,27 @@ No nanopore data
 ## 18_0622425
 
 No nanopore data
+
+## mada_1-34
+
+After the first round of baseline variant calling it appears as though the nanopore data
+for this sample does not match the Illumina. More information can be found [here][40].
+
+## R27006
+
+After the first round of baseline variant calling it appears as though the nanopore data
+for this sample does not match the Illumina. More information can be found [here][40].
+
+## R13303
+
+After the first round of baseline variant calling it appears as though the nanopore data
+for this sample does not match the Illumina. More information can be found [here][40].
+
+## R21408
+
+After the first round of baseline variant calling it appears as though the nanopore data
+for this sample does not match the Illumina. More information can be found [here][40].
+
+
+
+[40]: https://github.com/mbhall88/head_to_head_pipeline/issues/40
