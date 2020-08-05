@@ -17,8 +17,9 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 
 
-# only load samples that passed QC
-samplesheet = pd.read_csv(config["samplesheet"]).query("failed_qc == 0")
+# only load samples that passed QC and are not excluded
+inclusion_expr = "failed_qc == 0 and excluded == 0"
+samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]

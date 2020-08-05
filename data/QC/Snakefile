@@ -17,7 +17,8 @@ PathLike = Union[str, Path, os.PathLike]
 configfile: "config.yaml"
 
 
-samplesheet = pd.read_csv(config["samplesheet"])
+inclusion_expr = "excluded == 0"
+samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
@@ -42,10 +43,6 @@ samples = set()
 filter_logfiles = set()
 subsample_logfiles = set()
 for idx, row in samplesheet.iterrows():
-    is_excluded = True if row["excluded"] == 1 else False
-    if is_excluded:
-        continue
-
     site = row["site"]
     sample = row["sample"]
     samples.add(sample)
