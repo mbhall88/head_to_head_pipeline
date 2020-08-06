@@ -5,5 +5,5 @@ channels:
   - defaults
 dependencies:
   - click=7.1.2
-  - bioconda::cyvcf2=0.20.3
+  - bioconda::cyvcf2=0.20.4
   - pandas=1.0.3
