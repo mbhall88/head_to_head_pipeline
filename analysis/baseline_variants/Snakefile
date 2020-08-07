@@ -50,7 +50,11 @@ for idx, row in samplesheet.iterrows():
 
     if row["pacbio"] == 1:
         compass_truth_summary = truth_eval_dir / f"{sample}/compass/summary_stats.json"
+        bcftools_truth_summary = (
+            truth_eval_dir / f"{sample}/bcftools/summary_stats.json"
+        )
         output_files.add(compass_truth_summary)
+        output_files.add(bcftools_truth_summary)
 
 
 # ======================================================
@@ -303,6 +307,44 @@ rule evaluate_compass_with_truth_assembly:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_compass_with_truth_assembly/{sample}.log",
+    container:
+        containers["varifier"]
+    shell:
+        """
+        varifier vcf_eval {params.options} \
+            --flank_length {params.flank_length} \
+            --ref_mask {input.ref_mask} \
+            --truth_mask {input.truth_mask} \
+            {input.truth_asm} \
+            {input.vcf_ref} \
+            {input.vcf_to_eval} \
+            {params.outdir} 2> {log}
+        """
+
+
+rule evaluate_bcftools_with_truth_assembly:
+    input:
+        truth_asm=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta",
+        vcf_ref=H37RV["genome"],
+        vcf_to_eval=(
+            nanopore_dir / "filtered_snps/madagascar/{sample}.snps.filtered.bcf"
+        ),
+        ref_mask=H37RV["mask"],
+        truth_mask=(
+            asm_dir
+            / "{sample}/flye/pacbio/assessment/{sample}.flye.accuracy.pacbio.bed"
+        ),
+    output:
+        summary=truth_eval_dir / "{sample}/bcftools/summary_stats.json",
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+    params:
+        options="--force",
+        flank_length=100,
+        outdir=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        rule_log_dir / "evaluate_bcftools_with_truth_assembly/{sample}.log",
     container:
         containers["varifier"]
     shell:
