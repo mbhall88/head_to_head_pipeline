@@ -1,5 +1,6 @@
 samplesheet:          "../../docs/samplesheet.csv"
 compass_vcf_dir:      "illumina/gvcfs"
+asm_dir:              "../assembly/results"
 data_dir:             "../../data/QC/subsampled"
 genome_size:          4411532
 h37rv:
@@ -8,6 +9,7 @@ h37rv:
 containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
+  varifier:    "docker://mbhall88/varifier:3cf8372"
 envs:
   aln_tools:           "envs/aln_tools.yaml"
   filter:              "envs/filter.yaml"
