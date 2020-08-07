@@ -629,7 +629,7 @@ rule assess_unpolished_per_base_accuracy:
 rule assess_polished_per_base_accuracy:
     input:
         bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
-        pileup=rules.map_illumina_reads_to_polished_assembly.output.pileup,
+        pileup=rules.illumina_pileup_polished_assembly.output.pileup,
     output:
         json=(
             outdir
