@@ -329,16 +329,6 @@ rule map_illumina_reads_to_assembly:
             / "mapping"
             / "{sample}.{assembler}.illumina.{technology}.bam.bai"
         ),
-        pileup=(
-            outdir
-            / "{sample}"
-            / "{assembler}"
-            / "{technology}"
-            / "mapping"
-            / "{sample}.{assembler}.illumina.{technology}.pileup"
-        ),
-    shadow:
-        "shallow"
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
@@ -349,7 +339,6 @@ rule map_illumina_reads_to_assembly:
     params:
         view_extras="-hu", # include header, uncompressed BAM
         filter_flags="-F {}".format(config["illumina_flag_filter"]),
-        extras="-aa",
     shell:
         """
         bwa index {input.assembly}
@@ -359,11 +348,35 @@ rule map_illumina_reads_to_assembly:
             samtools sort -@ {threads} -o {output.bam} -
 
         samtools index {output.bam}
+        """
 
+
+rule illumina_pileup_unpolished_assembly:
+    input:
+        bam=rules.map_illumina_reads_to_assembly.output.bam,
+        assembly=rules.map_illumina_reads_to_assembly.input.assembly,
+    output:
+        pileup=(
+            outdir
+            / "{sample}"
+            / "{assembler}"
+            / "{technology}"
+            / "mapping"
+            / "{sample}.{assembler}.illumina.{technology}.pileup"
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+    params:
+        extras="-aa",
+    container:
+        containers["samtools"]
+    shell:
+        """
         samtools mpileup {params.extras} \
             -o {output.pileup} \
             --fasta-ref {input.assembly} \
-            {output.bam}
+            {input.bam}
         """
 
 
@@ -485,16 +498,6 @@ rule map_illumina_reads_to_polished_assembly:
             / "mapping"
             / "{sample}.{assembler}.polished.illumina.{technology}.bam.bai"
         ),
-        pileup=(
-            outdir
-            / "{sample}"
-            / "{assembler}"
-            / "{technology}"
-            / "mapping"
-            / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
-        ),
-    shadow:
-        "shallow"
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
@@ -505,7 +508,6 @@ rule map_illumina_reads_to_polished_assembly:
     params:
         view_extras="-hu", # include header, uncompressed BAM
         filter_flags="-F {}".format(config["illumina_flag_filter"]),
-        extras="-aa",
     shell:
         """
         bwa index {input.assembly}
@@ -515,11 +517,35 @@ rule map_illumina_reads_to_polished_assembly:
             samtools sort -@ {threads} -o {output.bam} -
 
         samtools index {output.bam}
+        """
 
+
+rule illumina_pileup_polished_assembly:
+    input:
+        bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
+        assembly=rules.pilon.output.polished_assembly,
+    output:
+        pileup=(
+            outdir
+            / "{sample}"
+            / "{assembler}"
+            / "{technology}"
+            / "mapping"
+            / "{sample}.{assembler}.polished.illumina.{technology}.pileup"
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+    params:
+        extras="-aa",
+    container:
+        containers["samtools"]
+    shell:
+        """
         samtools mpileup {params.extras} \
             -o {output.pileup} \
             --fasta-ref {input.assembly} \
-            {output.bam}
+            {input.bam}
         """
 
 
@@ -559,7 +585,7 @@ rule samtools_stats:
 rule assess_unpolished_per_base_accuracy:
     input:
         bam=rules.map_illumina_reads_to_assembly.output.bam,
-        pileup=rules.map_illumina_reads_to_assembly.output.pileup,
+        pileup=rules.illumina_pileup_unpolished_assembly.output.pileup,
     output:
         json=(
             outdir
