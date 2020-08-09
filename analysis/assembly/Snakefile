@@ -21,6 +21,7 @@ H37RV = config["h37rv"]
 # ======================================================
 # Global functions and variables
 # ======================================================
+GB = 1_024
 outdir = Path(config["outdir"])
 data_dir = Path(config["data_dir"])
 mada_dir = data_dir / "madagascar"
@@ -260,6 +261,24 @@ rule remove_contamination:
         """
 
 
+rule index_assembly:
+    input:
+        rules.remove_contamination.output.assembly,
+    output:
+        outdir
+        /"{sample}"
+        /"{assembler}"
+        /"{technology}"
+        /"decontam.assembly.{assembler}.{technology}.fasta.fai",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    wrapper:
+        "0.63.0-7-g019c660/bio/samtools/faidx"
+
+
 ###########################################################
 # MAPPING
 ###########################################################
@@ -310,6 +329,7 @@ rule map_long_reads_to_assembly:
 rule map_illumina_reads_to_assembly:
     input:
         assembly=rules.remove_contamination.output.assembly,
+        asm_idx=rules.index_assembly.output[0],
         illumina1=rules.trim_illumina.output.forward_paired,
         illumina2=rules.trim_illumina.output.reverse_paired,
     output:
@@ -355,6 +375,7 @@ rule illumina_pileup_unpolished_assembly:
     input:
         bam=rules.map_illumina_reads_to_assembly.output.bam,
         assembly=rules.map_illumina_reads_to_assembly.input.assembly,
+        asm_idx=rules.index_assembly.output[0],
     output:
         pileup=(
             outdir
@@ -473,12 +494,31 @@ rule pilon:
         """
 
 
+rule index_polished_assembly:
+    input:
+        rules.pilon.output.polished_assembly,
+    output:
+        outdir
+        /"{sample}"
+        /"{assembler}"
+        /"{technology}"
+        /"polished_assembly.{assembler}.{technology}.fasta.fai",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    wrapper:
+        "0.63.0-7-g019c660/bio/samtools/faidx"
+
+
 ###########################################################
 # ASSESSMENT
 ###########################################################
 rule map_illumina_reads_to_polished_assembly:
     input:
         assembly=rules.pilon.output.polished_assembly,
+        asm_idx=rules.index_polished_assembly.output[0],
         illumina1=rules.trim_illumina.output.forward_paired,
         illumina2=rules.trim_illumina.output.reverse_paired,
     output:
@@ -524,6 +564,7 @@ rule illumina_pileup_polished_assembly:
     input:
         bam=rules.map_illumina_reads_to_polished_assembly.output.bam,
         assembly=rules.pilon.output.polished_assembly,
+        asm_idx=rules.index_polished_assembly.output[0],
     output:
         pileup=(
             outdir
