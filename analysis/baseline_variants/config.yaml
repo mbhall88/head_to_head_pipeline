@@ -16,10 +16,12 @@ envs:
   varifier:            "envs/varifier.yaml"
   concordance:         "envs/concordance.yaml"
   plot_concordance:    "envs/plot_concordance.yaml"
+  plot_truth_eval:     "envs/plot_truth_eval.yaml"
 scripts:
   filter:           "scripts/apply_filters.py"
   concordance:      "scripts/concordance.py"
   plot_concordance: "scripts/plot_concordance.py"
+  plot_truth_eval:  "scripts/plot_truth_eval.py"
 
 # filters for nanopore bcftools calls
 filters:

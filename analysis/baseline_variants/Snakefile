@@ -43,6 +43,7 @@ SAMPLES = samplesheet["sample"]
 output_files = set()
 output_files.add(concordance_dir / "alt_concordance.html")
 FILTER_LOGS = set()
+VARIFIER_JSONS = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
@@ -53,8 +54,10 @@ for idx, row in samplesheet.iterrows():
         bcftools_truth_summary = (
             truth_eval_dir / f"{sample}/bcftools/summary_stats.json"
         )
-        output_files.add(compass_truth_summary)
-        output_files.add(bcftools_truth_summary)
+        VARIFIER_JSONS.add(compass_truth_summary)
+        VARIFIER_JSONS.add(bcftools_truth_summary)
+
+output_files.add(truth_eval_dir / "truth_eval.recall.png")
 
 
 # ======================================================
@@ -311,6 +314,8 @@ rule evaluate_compass_with_truth_assembly:
         containers["conda"]
     conda:
         envs["varifier"]
+    shadow:
+        "shallow"
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
@@ -352,6 +357,8 @@ rule evaluate_bcftools_with_truth_assembly:
         containers["conda"]
     conda:
         envs["varifier"]
+    shadow:
+        "shallow"
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
@@ -364,3 +371,33 @@ rule evaluate_bcftools_with_truth_assembly:
             - \
             {params.outdir}) 2> {log}
         """
+
+
+rule plot_truth_concordance:
+    input:
+        json_files=VARIFIER_JSONS,
+    output:
+        recall_plot=report(
+            truth_eval_dir / "truth_eval.recall.png",
+            category="Truth Evaluation",
+            caption="truth_eval.rst",
+        ),
+        precision_plot=report(
+            truth_eval_dir / "truth_eval.precision.png",
+            category="Truth Evaluation",
+            caption="truth_eval.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB * 0.5),
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_truth_eval"]
+    params:
+        recall_key="Recall",
+        precision_key="Precision",
+        dpi=300,
+        figsize=(13, 8),
+    script:
+        scripts["plot_truth_eval"]
