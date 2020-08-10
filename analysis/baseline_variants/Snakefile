@@ -338,7 +338,7 @@ rule evaluate_bcftools_with_truth_assembly:
         summary=truth_eval_dir / "{sample}/bcftools/summary_stats.json",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     params:
         options="--force",
         flank_length=100,
