@@ -308,7 +308,9 @@ rule evaluate_compass_with_truth_assembly:
     log:
         rule_log_dir / "evaluate_compass_with_truth_assembly/{sample}.log",
     container:
-        containers["varifier"]
+        containers["conda"]
+    conda:
+        envs["varifier"]
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
