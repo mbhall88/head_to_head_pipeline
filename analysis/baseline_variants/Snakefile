@@ -346,15 +346,18 @@ rule evaluate_bcftools_with_truth_assembly:
     log:
         rule_log_dir / "evaluate_bcftools_with_truth_assembly/{sample}.log",
     container:
-        containers["varifier"]
+        containers["conda"]
+    conda:
+        envs["varifier"]
     shell:
         """
-        varifier vcf_eval {params.options} \
+        (bcftools view -O u {input.vcf_to_eval} \
+        | varifier vcf_eval {params.options} \
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
             --truth_mask {input.truth_mask} \
             {input.truth_asm} \
             {input.vcf_ref} \
-            {input.vcf_to_eval} \
-            {params.outdir} 2> {log}
+            - \
+            {params.outdir}) 2> {log}
         """

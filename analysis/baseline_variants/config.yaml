@@ -13,6 +13,7 @@ containers:
 envs:
   aln_tools:           "envs/aln_tools.yaml"
   filter:              "envs/filter.yaml"
+  varifier:            "envs/varifier.yaml"
   concordance:         "envs/concordance.yaml"
   plot_concordance:    "envs/plot_concordance.yaml"
 scripts:
