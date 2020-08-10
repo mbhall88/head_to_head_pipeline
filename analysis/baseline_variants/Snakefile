@@ -23,17 +23,17 @@ samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
-rule_log_dir = Path("logs/stderr")
+rule_log_dir = Path("logs/stderr").resolve()
 H37RV = config["h37rv"]
-data_dir = Path(config["data_dir"])
+data_dir = Path(config["data_dir"]).resolve()
 filters = config["filters"]
-report_dir = Path("report")
+report_dir = Path("report").resolve()
 # plot_dir = report_dir / "plotting"
-compass_vcf_dir = Path(config["compass_vcf_dir"])
-asm_dir = Path(config["asm_dir"])
-nanopore_dir = Path("nanopore")
-concordance_dir = Path("concordance")
-truth_eval_dir = Path("truth_eval")
+compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
+asm_dir = Path(config["asm_dir"]).resolve()
+nanopore_dir = Path("nanopore").resolve()
+concordance_dir = Path("concordance").resolve()
+truth_eval_dir = Path("truth_eval").resolve()
 
 # ======================================================
 # Global functions and variables
@@ -315,7 +315,7 @@ rule evaluate_compass_with_truth_assembly:
     conda:
         envs["varifier"]
     shadow:
-        "shallow"
+        "minimal"
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
@@ -358,7 +358,7 @@ rule evaluate_bcftools_with_truth_assembly:
     conda:
         envs["varifier"]
     shadow:
-        "shallow"
+        "minimal"
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
