@@ -300,7 +300,7 @@ rule evaluate_compass_with_truth_assembly:
         summary=truth_eval_dir / "{sample}/compass/summary_stats.json",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     params:
         options="--force",
         flank_length=100,
@@ -311,14 +311,15 @@ rule evaluate_compass_with_truth_assembly:
         containers["varifier"]
     shell:
         """
-        varifier vcf_eval {params.options} \
+        (bcftools view -O v {input.vcf_to_eval} \
+        | varifier vcf_eval {params.options} \
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
             --truth_mask {input.truth_mask} \
             {input.truth_asm} \
             {input.vcf_ref} \
-            {input.vcf_to_eval} \
-            {params.outdir} 2> {log}
+            - \
+            {params.outdir}) 2> {log}
         """
 
 
