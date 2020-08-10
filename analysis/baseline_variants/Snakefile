@@ -351,7 +351,7 @@ rule evaluate_bcftools_with_truth_assembly:
         envs["varifier"]
     shell:
         """
-        (bcftools view -O u {input.vcf_to_eval} \
+        (bcftools view -O v {input.vcf_to_eval} \
         | varifier vcf_eval {params.options} \
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
