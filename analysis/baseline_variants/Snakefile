@@ -300,7 +300,7 @@ rule evaluate_compass_with_truth_assembly:
         summary=truth_eval_dir / "{sample}/compass/summary_stats.json",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
     params:
         options="--force",
         flank_length=100,
@@ -341,7 +341,7 @@ rule evaluate_bcftools_with_truth_assembly:
         summary=truth_eval_dir / "{sample}/bcftools/summary_stats.json",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
     params:
         options="--force",
         flank_length=100,
