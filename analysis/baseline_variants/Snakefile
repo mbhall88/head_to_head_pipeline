@@ -31,6 +31,7 @@ report_dir = Path("report").resolve()
 # plot_dir = report_dir / "plotting"
 compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
 asm_dir = Path(config["asm_dir"]).resolve()
+assemblies: Dict[str, str] = config["assemblies"]
 nanopore_dir = Path("nanopore").resolve()
 concordance_dir = Path("concordance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
@@ -289,16 +290,23 @@ rule plot_concordance:
         scripts["plot_concordance"]
 
 
+def infer_assembly_path(wildcards):
+    asm = assemblies[wildcards.sample]
+    return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/decontam.assembly.{asm}.pacbio.fasta"
+
+
+def infer_assembly_mask_path(wildcards):
+    asm = assemblies[wildcards.sample]
+    return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/assessment/{wildcards.sample}.{asm}.accuracy.pacbio.bed"
+
+
 rule evaluate_compass_with_truth_assembly:
     input:
-        truth_asm=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta",
+        truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
         vcf_to_eval=compass_vcf_dir / "{sample}.compass.vcf.gz",
         ref_mask=H37RV["mask"],
-        truth_mask=(
-            asm_dir
-            / "{sample}/flye/pacbio/assessment/{sample}.flye.accuracy.pacbio.bed"
-        ),
+        truth_mask=infer_assembly_mask_path,
     output:
         summary=truth_eval_dir / "{sample}/compass/summary_stats.json",
     threads: 4
@@ -330,16 +338,13 @@ rule evaluate_compass_with_truth_assembly:
 
 rule evaluate_bcftools_with_truth_assembly:
     input:
-        truth_asm=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta",
+        truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
         vcf_to_eval=(
             nanopore_dir / "filtered_snps/madagascar/{sample}.snps.filtered.bcf"
         ),
         ref_mask=H37RV["mask"],
-        truth_mask=(
-            asm_dir
-            / "{sample}/flye/pacbio/assessment/{sample}.flye.accuracy.pacbio.bed"
-        ),
+        truth_mask=infer_assembly_mask_path,
     output:
         summary=truth_eval_dir / "{sample}/bcftools/summary_stats.json",
     threads: 4

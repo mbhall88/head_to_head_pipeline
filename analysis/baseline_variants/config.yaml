@@ -29,3 +29,13 @@ filters:
   max_depth:       0
   min_qual:        30
   min_strand_bias: 0
+
+assemblies:
+  mada_101:  "flye"
+  mada_102:  "spades"
+  mada_104:  "flye"
+  mada_130:  "flye"
+  mada_116:  "flye"
+  mada_1-44: "flye"
+  mada_132:  "flye"
+  mada_125:  "spades"
