@@ -32,7 +32,7 @@ filters:
 
 assemblies:
   mada_101:  "flye"
-  mada_102:  "spades"
+  mada_102:  "canu"
   mada_104:  "flye"
   mada_130:  "flye"
   mada_116:  "flye"
