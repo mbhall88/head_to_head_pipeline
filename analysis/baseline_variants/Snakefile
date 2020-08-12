@@ -58,7 +58,7 @@ for idx, row in samplesheet.iterrows():
         VARIFIER_JSONS.add(compass_truth_summary)
         VARIFIER_JSONS.add(bcftools_truth_summary)
 
-output_files.add(truth_eval_dir / "truth_eval.recall.png")
+output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
 
 
 # ======================================================
@@ -300,7 +300,7 @@ def infer_assembly_mask_path(wildcards):
     return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/assessment/{wildcards.sample}.{asm}.accuracy.pacbio.bed"
 
 
-rule evaluate_compass_with_truth_assembly:
+rule evaluate_compass_snps_with_truth_assembly:
     input:
         truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
@@ -336,7 +336,7 @@ rule evaluate_compass_with_truth_assembly:
         """
 
 
-rule evaluate_bcftools_with_truth_assembly:
+rule evaluate_bcftools_snps_with_truth_assembly:
     input:
         truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
@@ -374,19 +374,19 @@ rule evaluate_bcftools_with_truth_assembly:
         """
 
 
-rule plot_truth_concordance:
+rule plot_truth_snp_concordance:
     input:
         json_files=VARIFIER_JSONS,
     output:
         recall_plot=report(
-            truth_eval_dir / "truth_eval.recall.png",
+            truth_eval_dir / "truth_snp_eval.recall.png",
             category="Truth Evaluation",
-            caption="truth_eval.rst",
+            caption="truth_snp_eval.rst",
         ),
         precision_plot=report(
-            truth_eval_dir / "truth_eval.precision.png",
+            truth_eval_dir / "truth_snp_eval.precision.png",
             category="Truth Evaluation",
-            caption="truth_eval.rst",
+            caption="truth_snp_eval.rst",
         ),
     threads: 1
     resources:

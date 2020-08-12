@@ -27,8 +27,8 @@ scripts:
 filters:
   min_depth:       0
   max_depth:       0
-  min_qual:        30
-  min_strand_bias: 5
+  min_qual:        0
+  min_strand_bias: 0
 
 assemblies:
   mada_101:  "flye"
