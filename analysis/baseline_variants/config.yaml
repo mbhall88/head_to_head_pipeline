@@ -25,10 +25,10 @@ scripts:
 
 # filters for nanopore bcftools calls
 filters:
-  min_depth:       0
+  min_depth:       0.05
   max_depth:       0
   min_qual:        60
-  min_strand_bias: 0
+  min_strand_bias: 1
 
 assemblies:
   mada_101:  "flye"
