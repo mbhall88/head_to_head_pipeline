@@ -19,6 +19,16 @@ class Tags(Enum):
     StrandBias = "sb"
     StrandDepth = "DP4"
     Pass = "PASS"
+    BaseQualBias = "BQB"
+    LowBaseQualBias = "lbqb"
+    MapQualBias = "MQB"
+    LowMapQualBias = "lmqb"
+    ReadPosBias = "RPB"
+    LowReadPosBias = "lrpb"
+    SegregationBias = "SGB"
+    HighSegBias = "hsgb"
+    VariantDistanceBias = "VDB"
+    LowVarDistBias = "lvdb"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -30,6 +40,11 @@ class FilterStatus:
     high_depth: bool = False
     low_qual: bool = False
     strand_bias: bool = False
+    low_bqb: bool = False
+    low_mqb: bool = False
+    low_rpb: bool = False
+    high_sgb: bool = False
+    low_vdb: bool = False
     delim: str = ";"
 
     def __str__(self) -> str:
@@ -42,6 +57,16 @@ class FilterStatus:
             status.append(str(Tags.LowQual))
         if self.strand_bias:
             status.append(str(Tags.StrandBias))
+        if self.low_bqb:
+            status.append(str(Tags.LowBaseQualBias))
+        if self.low_mqb:
+            status.append(str(Tags.LowMapQualBias))
+        if self.low_rpb:
+            status.append(str(Tags.LowReadPosBias))
+        if self.high_sgb:
+            status.append(str(Tags.HighSegBias))
+        if self.low_vdb:
+            status.append(str(Tags.LowVarDistBias))
 
         return self.delim.join(status) if status else str(Tags.Pass)
 
@@ -136,6 +161,11 @@ class Filter:
         max_depth: float = 0,
         min_strand_bias: int = 0,
         min_qual: float = 0,
+        min_bqb: float = 0,
+        min_mqb: float = 0,
+        min_rpb: float = 0,
+        max_sgb: float = 0,
+        min_vdb: float = 0,
     ):
         self.expected_depth = expected_depth
         self.min_depth_frac = min_depth
@@ -144,6 +174,11 @@ class Filter:
         self.max_depth = self.expected_depth * self.max_depth_frac
         self.min_strand_bias = min_strand_bias / 100
         self.min_qual = min_qual
+        self.min_bqb = min_bqb
+        self.min_mqb = min_mqb
+        self.min_rpb = min_rpb
+        self.max_sgb = max_sgb
+        self.min_vdb = min_vdb
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
@@ -161,6 +196,26 @@ class Filter:
 
     def _is_low_qual(self, variant: Variant) -> bool:
         return variant.QUAL < self.min_qual
+
+    def _is_low_bqb(self, variant: Variant) -> bool:
+        bqb = variant.INFO.get(str(Tags.BaseQualBias))
+        return bqb is not None and bqb < self.min_bqb
+
+    def _is_low_mqb(self, variant: Variant) -> bool:
+        mqb = variant.INFO.get(str(Tags.MapQualBias))
+        return mqb is not None and mqb < self.min_mqb
+
+    def _is_low_rpb(self, variant: Variant) -> bool:
+        rpb = variant.INFO.get(str(Tags.ReadPosBias))
+        return rpb is not None and rpb < self.min_rpb
+
+    def _is_high_sgb(self, variant: Variant) -> bool:
+        sgb = variant.INFO.get(str(Tags.SegregationBias))
+        return sgb is not None and sgb > self.max_sgb
+
+    def _is_low_vdb(self, variant: Variant) -> bool:
+        vdb = variant.INFO.get(str(Tags.VariantDistanceBias))
+        return vdb is not None and vdb < self.min_vdb
 
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
@@ -193,6 +248,21 @@ class Filter:
                     f"POS {variant.POS}"
                 )
             status.strand_bias = ratio < self.min_strand_bias
+
+        if self.min_bqb:
+            status.low_bqb = self._is_low_bqb(variant)
+
+        if self.min_mqb:
+            status.low_mqb = self._is_low_mqb(variant)
+
+        if self.min_rpb:
+            status.low_rpb = self._is_low_rpb(variant)
+
+        if self.max_sgb != 0:
+            status.high_sgb = self._is_high_sgb(variant)
+
+        if self.min_vdb:
+            status.low_vdb = self._is_low_vdb(variant)
 
         return str(status)
 
@@ -240,6 +310,60 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for strand bias: {header}")
+
+        if self.min_bqb > 0:
+            header = {
+                "ID": str(Tags.LowBaseQualBias),
+                "Description": (
+                    f"Base Quality Bias ({Tags.BaseQualBias}) is less than "
+                    f"{self.min_bqb}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. base quality bias: {header}")
+
+        if self.min_mqb > 0:
+            header = {
+                "ID": str(Tags.LowMapQualBias),
+                "Description": (
+                    f"Mapping Quality Bias ({Tags.MapQualBias}) is less than "
+                    f"{self.min_mqb}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. mapping quality bias: {header}")
+        if self.min_rpb > 0:
+            header = {
+                "ID": str(Tags.LowReadPosBias),
+                "Description": (
+                    f"Read Position Bias ({Tags.ReadPosBias}) is less than "
+                    f"{self.min_rpb}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. read position bias: {header}")
+
+        if self.max_sgb != 0:
+            header = {
+                "ID": str(Tags.HighSegBias),
+                "Description": (
+                    f"Segregation-based metric ({Tags.SegregationBias}) is greater "
+                    f"than {self.max_sgb}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. segregation bias: {header}")
+
+        if self.min_vdb > 0:
+            header = {
+                "ID": str(Tags.LowVarDistBias),
+                "Description": (
+                    f"Variant distance bias ({Tags.VariantDistanceBias}) is less "
+                    f"than {self.min_vdb}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. variant distance bias: {header}")
 
 
 def get_depth(variant: Variant, default: int = 0) -> int:
@@ -315,6 +439,61 @@ def get_strand_depths(
     show_default=True,
 )
 @click.option(
+    "-b",
+    "--min-bqb",
+    help=(
+        f"Filter a variant if base quality bias ({Tags.BaseQualBias}) is less "
+        f"than FLOAT. This filter has ID: {Tags.LowBaseQualBias}. Set to 0 to "
+        f"disable"
+    ),
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "-m",
+    "--min-mqb",
+    help=(
+        f"Filter a variant if mapping quality bias ({Tags.MapQualBias}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowMapQualBias}. Set to 0 to "
+        f"disable"
+    ),
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "-r",
+    "--min-rpb",
+    help=(
+        f"Filter a variant if read position bias ({Tags.ReadPosBias}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowReadPosBias}. Set to 0 to "
+        f"disable"
+    ),
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "-G",
+    "--max-sgb",
+    help=(
+        f"Filter a variant if segregation bias ({Tags.SegregationBias}) is "
+        f"greater than FLOAT. This filter has ID: {Tags.HighSegBias}. Set to 0 to "
+        f"disable"
+    ),
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "-V",
+    "--min-vdb",
+    help=(
+        f"Filter a variant if variant distance bias ({Tags.VariantDistanceBias}) "
+        f"is less than FLOAT. This filter has ID: {Tags.LowVarDistBias}. Set to 0 "
+        f"to disable"
+    ),
+    default=0.0,
+    show_default=True,
+)
+@click.option(
     "--overwrite/--no-overwrite",
     "-f/-F",
     default=True,
@@ -338,6 +517,11 @@ def main(
     min_depth: float,
     max_depth: float,
     min_strand_bias: int,
+    min_bqb: float,
+    min_mqb: float,
+    min_rpb: float,
+    max_sgb: float,
+    min_vdb: float,
     hist: bool,
 ):
     """Apply the following filters to a VCF:\n
@@ -403,6 +587,11 @@ def main(
         min_depth=min_depth,
         max_depth=max_depth,
         min_strand_bias=min_strand_bias,
+        min_bqb=min_bqb,
+        min_mqb=min_mqb,
+        min_rpb=min_rpb,
+        max_sgb=max_sgb,
+        min_vdb=min_vdb,
     )
 
     vcf_reader = VCF(in_vcf)

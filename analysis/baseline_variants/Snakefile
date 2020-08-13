@@ -169,11 +169,22 @@ rule filter_nanopore_snps:
     resources:
         mem_mb=int(GB),
     params:
-        min_depth=filters["min_depth"],
-        max_depth=filters["max_depth"],
-        min_qual=filters["min_qual"],
-        min_strand_bias=filters["min_strand_bias"],
-        options="--hist --verbose --overwrite",
+        options=" ".join(
+            [
+                "--hist",
+                "--verbose",
+                "--overwrite",
+                f"-d {filters['min_depth']}",
+                f"-D {filters['max_depth']}",
+                f"-q {filters['min_qual']}",
+                f"-s {filters['min_strand_bias']}",
+                f"-b {filters['min_bqb']}",
+                f"-m {filters['min_mqb']}",
+                f"-r {filters['min_rpb']}",
+                f"-V {filters['min_vdb']}",
+                f"-G {filters['max_sgb']}",
+            ]
+        ),
         script=scripts["filter"],
     log:
         rule_log_dir / "filter_nanopore_snps/{site}/{sample}.log",
@@ -185,11 +196,7 @@ rule filter_nanopore_snps:
         """
         python {params.script} {params.options} \
             -i {input.vcf} \
-            -o {output.vcf} \
-            -d {params.min_depth} \
-            -D {params.max_depth} \
-            -s {params.min_strand_bias} \
-            -q {params.min_qual} 2> {log}
+            -o {output.vcf} 2> {log}
         """
 
 

@@ -446,3 +446,63 @@ class TestFilterFilterStatus:
         expected = str(FilterStatus())
 
         assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_lowBaseQualBiasAndVarHasLowBaseQualBias(self, mocked_variant):
+        min_bqb = 0.5
+        assessor = Filter(min_bqb=min_bqb)
+        bqb = 0.1
+        mocked_variant.INFO = {str(Tags.BaseQualBias): bqb}
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(low_bqb=True))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_lowMappingQualBiasAndVarHasLowMappingQualBias(self, mocked_variant):
+        min_mqb = 0.5
+        assessor = Filter(min_mqb=min_mqb)
+        mqb = 0.1
+        mocked_variant.INFO = {str(Tags.MapQualBias): mqb}
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(low_mqb=True))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_lowReadPosBiasAndVarHasLowReadPosBias(self, mocked_variant):
+        min_rpb = 0.5
+        assessor = Filter(min_rpb=min_rpb)
+        rpb = 0.1
+        mocked_variant.INFO = {str(Tags.ReadPosBias): rpb}
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(low_rpb=True))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_highSegBiasAndVarHasHighSegBias(self, mocked_variant):
+        max_sgb = -0.5
+        assessor = Filter(max_sgb=max_sgb)
+        sgb = -0.4
+        mocked_variant.INFO = {str(Tags.SegregationBias): sgb}
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(high_sgb=True))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_lowVarDistBiasAndVarHasLowVarDistBias(self, mocked_variant):
+        min_vdb = 0.5
+        assessor = Filter(min_vdb=min_vdb)
+        vdb = 0.1
+        mocked_variant.INFO = {str(Tags.VariantDistanceBias): vdb}
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(low_vdb=True))
+
+        assert actual == expected
