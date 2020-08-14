@@ -388,12 +388,12 @@ rule plot_truth_snp_concordance:
         recall_plot=report(
             truth_eval_dir / "truth_snp_eval.recall.png",
             category="Truth Evaluation",
-            caption="truth_snp_eval.rst",
+            caption=report_dir / "truth_snp_eval.rst",
         ),
         precision_plot=report(
             truth_eval_dir / "truth_snp_eval.precision.png",
             category="Truth Evaluation",
-            caption="truth_snp_eval.rst",
+            caption=report_dir / "truth_snp_eval.rst",
         ),
     threads: 1
     resources:
