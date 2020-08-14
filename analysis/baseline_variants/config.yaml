@@ -31,9 +31,9 @@ filters:
   min_strand_bias: 0
   min_bqb:         0
   min_mqb:         0
-  min_rpb:         0.05
-  max_sgb:         -0.50
-  min_vdb:         0.002
+  min_rpb:         0
+  max_sgb:         0
+  min_vdb:         0
 
 assemblies:
   mada_101:  "flye"
