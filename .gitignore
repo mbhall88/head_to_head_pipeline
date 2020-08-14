@@ -379,3 +379,4 @@ analysis/basecall_training/resources/pretrained_models/guppy-gpu.v3-4-5.template
 rsync_*.sh
 analysis/baseline_variants/investigating_concordance_outliers
 analysis/baseline_variants/outliers
+analysis/baseline_variants/truth_eval
