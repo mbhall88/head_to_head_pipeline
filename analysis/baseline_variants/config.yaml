@@ -27,13 +27,13 @@ scripts:
 filters:
   min_depth:       0
   max_depth:       0
-  min_qual:        40
+  min_qual:        0
   min_strand_bias: 0
   min_bqb:         0
   min_mqb:         0
-  min_rpb:         0
-  max_sgb:         0
-  min_vdb:         0
+  min_rpb:         0.05
+  max_sgb:         -0.5
+  min_vdb:         0.002
 
 assemblies:
   mada_101:  "flye"
