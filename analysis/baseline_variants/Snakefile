@@ -474,6 +474,7 @@ rule aggregate_consensus:
     input:
         fastas=expand(
             consensus_dir / "{{caller}}/{site}/{sample}.consensus.fa",
+            zip,
             site=SITES,
             sample=SAMPLES,
         ),
