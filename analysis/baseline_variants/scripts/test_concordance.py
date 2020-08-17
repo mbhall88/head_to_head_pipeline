@@ -98,9 +98,11 @@ class TestClassify:
     def test_positionInMask_returnsMasked(self, mocked_avariant, mocked_bvariant):
         mask = Bed()
         pos = 2
-        mask.positions = set([pos])
+        chrom = "chr1"
+        mask.positions = {chrom: {pos - 1}}
         classifier = Classifier(mask=mask)
         mocked_avariant.POS = pos
+        mocked_avariant.CHROM = chrom
         mocked_avariant.genotypes = [[-1]]
         mocked_bvariant.POS = pos
         mocked_bvariant.genotypes = [[0]]

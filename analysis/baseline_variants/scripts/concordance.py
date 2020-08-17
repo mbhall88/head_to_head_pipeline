@@ -1,12 +1,15 @@
 import json
 import logging
-from collections import Counter
+from collections import Counter, defaultdict
 from enum import Enum
-from typing import TextIO, Set, Optional, NamedTuple, List, Tuple
+from pathlib import Path
+from typing import TextIO, Set, Optional, NamedTuple, List, Tuple, Union, Dict
 
 import click
 import pandas as pd
 from cyvcf2 import Variant, VCF
+
+PathLike = Union[str, Path]
 
 
 class DummyVariant(NamedTuple):
@@ -21,21 +24,23 @@ class Bed:
     """Positions in this class are 1-based - in contrast to BED positions being 0-based.
     This is to align it with VCF positions which are 1-based."""
 
-    def __init__(self, file: Optional[str] = None, zero_based: bool = True):
+    def __init__(self, file: Optional[PathLike] = None, zero_based: bool = True):
+        self.file = Path(file) if file is not None else file
         self.zero_based = zero_based
-        self.positions: Set[int] = set([])
-        if file is not None:
-            with open(file) as instream:
+        self.positions: Dict[str, Set[int]] = defaultdict(set)
+        if self.file is not None:
+            with self.file.open() as instream:
                 for line in map(str.rstrip, instream):
                     # start is 0-based inclusive; end is 0-based non-inclusive
-                    start, end = [int(i) for i in line.split()[1:3]]
-                    if not self.zero_based:
-                        start += 1
-                        end += 1
-                    self.positions.update(range(start, end))
+                    chrom, start, end = line.split()[:3]
+                    start = int(start)
+                    end = int(end)
+                    self.positions[chrom].update(range(start, end))
 
-    def __contains__(self, item: int) -> bool:
-        return item in self.positions
+    def __contains__(self, variant: Variant) -> bool:
+        chrom = variant.CHROM
+        pos = variant.POS if not self.zero_based else variant.POS - 1
+        return chrom in self.positions and pos in self.positions[chrom]
 
 
 class Genotype(NamedTuple):
@@ -179,12 +184,11 @@ class Classifier:
                 f"Expected positions of variant to match but got a: {a_variant.POS} "
                 f"and b: {b_variant.POS}"
             )
-        pos = a_variant.POS
         a_class = Classification.from_variant(a_variant)
         b_class = Classification.from_variant(b_variant)
         outcome = Outcome.from_variants(a_variant, b_variant)
 
-        if pos in self.mask:
+        if a_variant in self.mask:
             outcome = Outcome.Masked
         elif self.apply_filter:
             if a_variant.FILTER and b_variant.FILTER:
@@ -397,7 +401,7 @@ def main(
     b_exhausted = b_variant.POS == float("inf")
     data = []
 
-    while (not a_exhausted) and (not b_exhausted):
+    while (not a_exhausted) or (not b_exhausted):
         if a_variant.POS == b_variant.POS:
             class_a, class_b, outcome = classifier.classify(a_variant, b_variant)
             row = [a_variant.POS, class_a, class_b, outcome]
@@ -420,8 +424,11 @@ def main(
             if pos == b_variant.POS
             else Classification.Missing
         )
-        classification = Outcome.Masked if pos in mask else Outcome.MissingPos
-        row = [a_variant.POS, class_a, class_b, classification]
+        if any(v in mask for v in [a_variant, b_variant]):
+            classification = Outcome.Masked
+        else:
+            classification = Outcome.MissingPos
+        row = [pos, class_a, class_b, classification]
         data.append(row)
         print(",".join(map(str, row)), file=csv)
 
