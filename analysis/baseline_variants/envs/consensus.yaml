@@ -1,0 +1,8 @@
+name: concordance
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - click=7.1.2
+  - bioconda::cyvcf2=0.20.4

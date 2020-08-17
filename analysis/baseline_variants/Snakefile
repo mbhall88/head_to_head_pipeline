@@ -34,6 +34,7 @@ asm_dir = Path(config["asm_dir"]).resolve()
 assemblies: Dict[str, str] = config["assemblies"]
 nanopore_dir = Path("nanopore").resolve()
 concordance_dir = Path("concordance").resolve()
+consensus_dir = Path("consensus").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 
 # ======================================================
@@ -49,6 +50,8 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     FILTER_LOGS.add(rule_log_dir / f"filter_nanopore_snps/{site}/{sample}.log")
+    output_files.add(consensus_dir / f"bcftools/{site}/{sample}.consensus.fa")
+    output_files.add(consensus_dir / f"compass/{site}/{sample}.consensus.fa")
 
     if row["pacbio"] == 1:
         compass_truth_summary = truth_eval_dir / f"{sample}/compass/summary_stats.json"
@@ -421,3 +424,46 @@ rule plot_truth_snp_concordance:
         figsize=(13, 8),
     script:
         scripts["plot_truth_eval"]
+
+
+def infer_consensus_input(caller: str, sample: str, site: str) -> str:
+    if caller == "compass":
+        path = compass_vcf_dir / f"{sample}.compass.vcf.gz"
+    elif caller == "bcftools":
+        path = nanopore_dir / f"filtered_snps/{site}/{sample}.snps.filtered.bcf"
+    else:
+        raise NotImplemented(f"Caller {caller} is not known...")
+    return str(path)
+
+
+rule generate_consensus:
+    input:
+        mask=H37RV["mask"],
+        ref_fasta=H37RV["genome"],
+        vcf=lambda wildcards: infer_consensus_input(
+            wildcards.caller, wildcards.sample, wildcards.site
+        ),
+    output:
+        fasta=consensus_dir / "{caller}/{site}/{sample}.consensus.fa",
+    threads: 1
+    resources:
+        mem_mb=int(GB * 0.5),
+    container:
+        containers["conda"]
+    conda:
+        envs["consensus"]
+    params:
+        options=" ".join(
+            ["--verbose", "--ignore all", "--sample-id {sample}", "--het-default none"]
+        ),
+        script=scripts["concordance"],
+    log:
+        rule_log_dir / "generate_consensus/{caller}/{site}/{sample}.log",
+    shell:
+        """
+        python {params.script} {params.options} \
+            -i {input.vcf} \
+            -f {input.ref_fasta} \
+            -m {input.mask} \
+            -o {output.fasta} 2> {log}
+        """
