@@ -381,3 +381,5 @@ analysis/baseline_variants/investigating_concordance_outliers
 analysis/baseline_variants/outliers
 analysis/baseline_variants/truth_eval
 analysis/baseline_variants/old_report.html
+analysis/baseline_variants/consensus
+analysis/baseline_variants/distance
