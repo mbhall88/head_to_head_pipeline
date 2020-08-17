@@ -496,7 +496,11 @@ rule snp_distance:
     input:
         fasta=rules.aggregate_consensus.output.fasta,
     output:
-        matrix=distance_dir / "{caller}.matrix.csv",
+        matrix=report(
+            distance_dir / "{caller}.matrix.csv",
+            category="Distance",
+            caption=report_dir / "distance.rst",
+        ),
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
