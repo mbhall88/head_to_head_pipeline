@@ -1,36 +1,42 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import TextIO, Optional, Set, Dict, List, NamedTuple
+from pathlib import Path
+from typing import TextIO, Optional, Set, Dict, List, NamedTuple, Union
 
 import click
 from cyvcf2 import Variant, VCF
 
 N = "N"
+PathLike = Union[str, Path]
+DEFAULT_HET_CHOICES = ["none", "ref", "alt"]
+
+
+class UnknownDefaultHet(Exception):
+    pass
 
 
 class Bed:
     """Positions in this class are 1-based - in contrast to BED positions being 0-based.
     This is to align it with VCF positions which are 1-based."""
 
-    def __init__(self, file: Optional[str] = None, zero_based: bool = True):
+    def __init__(self, file: Optional[PathLike] = None, zero_based: bool = True):
+        self.file = Path(file) if file is not None else file
         self.zero_based = zero_based
         self.positions: Dict[str, Set[int]] = defaultdict(set)
-        if file is not None:
-            with open(file) as instream:
+        if self.file is not None:
+            with self.file.open() as instream:
                 for line in map(str.rstrip, instream):
                     # start is 0-based inclusive; end is 0-based non-inclusive
                     chrom, start, end = line.split()[:3]
                     start = int(start)
                     end = int(end)
-                    if not self.zero_based:
-                        start += 1
-                        end += 1
                     self.positions[chrom].update(range(start, end))
 
     def __contains__(self, variant: Variant) -> bool:
         chrom = variant.CHROM
-        return chrom in self.positions.get(chrom, set())
+        pos = variant.POS if not self.zero_based else variant.POS - 1
+        return chrom in self.positions and pos in self.positions[chrom]
 
 
 class Genotype(NamedTuple):
@@ -116,6 +122,11 @@ class Classifier:
         self.ignore_filter = ignore_filter
         self.ignore_mask = ignore_mask
         self.ignore_null = ignore_null
+        if het_default not in DEFAULT_HET_CHOICES:
+            raise UnknownDefaultHet(
+                f"{het_default} is not in the known het default choices: "
+                f"{DEFAULT_HET_CHOICES}"
+            )
         self.het_default = het_default
 
         if mask is None:
@@ -123,11 +134,12 @@ class Classifier:
         self.mask = mask
 
     def classify(self, variant: Variant) -> str:
-        if variant in self.mask and self.ignore_mask:
+        if self.ignore_mask and variant in self.mask:
             return N
-        failed_filter = variant.FILTER is not None
-        if failed_filter and self.ignore_filter:
+
+        if self.ignore_filter and variant.FILTER is not None:
             return N
+
         classification = Classification.from_variant(variant)
         if classification is Classification.Null:
             return N if self.ignore_null else variant.REF
@@ -136,11 +148,17 @@ class Classifier:
                 return N
             else:
                 return_ref = self.het_default == "ref"
-                return (
-                    variant.REF
-                    if return_ref
-                    else variant.ALT[max(variant.genotypes[0]) - 1]
-                )
+                if return_ref:
+                    return variant.REF
+                ref_in_called_alleles = 0 in variant.genotypes[0]
+                if not ref_in_called_alleles:
+                    logging.warning(
+                        "Got a het with two different ALT calls. You have specified "
+                        "ALT as the default base for hets. Using ALT with highest "
+                        "index..."
+                    )
+                return variant.ALT[max(variant.genotypes[0]) - 1]
+
         if classification is Classification.Ref:
             return variant.REF
         if classification is Classification.Alt:
@@ -213,8 +231,8 @@ def load_reference(path: str) -> Dict[str, List[str]]:
         "Which heterozygous base should be used? If 'none', an 'N' will be used in the "
         "consensus sequence"
     ),
-    type=click.Choice(("ref", "alt", "none"), case_sensitive=False),
-    default="none",
+    type=click.Choice(DEFAULT_HET_CHOICES, case_sensitive=False),
+    default=DEFAULT_HET_CHOICES[0],
     show_default=True,
 )
 @click.option(
@@ -277,8 +295,7 @@ def main(
 
     if bedfile:
         logging.info("Loading mask...")
-        # make 1-based as this is the same as VCF
-        mask = Bed(bedfile, zero_based=False)
+        mask = Bed(bedfile)
         logging.info(f"Loaded {len(mask.positions)} positions to mask.")
     else:
         logging.info("No mask given...")
