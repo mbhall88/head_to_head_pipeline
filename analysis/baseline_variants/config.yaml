@@ -10,6 +10,7 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   varifier:    "docker://mbhall88/varifier:3cf8372"
+  snp-dists:   "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
 envs:
   aln_tools:           "envs/aln_tools.yaml"
   filter:              "envs/filter.yaml"

@@ -35,6 +35,7 @@ assemblies: Dict[str, str] = config["assemblies"]
 nanopore_dir = Path("nanopore").resolve()
 concordance_dir = Path("concordance").resolve()
 consensus_dir = Path("consensus").resolve()
+distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 
 # ======================================================
@@ -60,8 +61,8 @@ for idx, row in samplesheet.iterrows():
         VARIFIER_JSONS.add(bcftools_truth_summary)
 
 output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
-output_files.add(consensus_dir / "bcftools/bcftools.consensus.fa")
-output_files.add(consensus_dir / "compass/compass.consensus.fa")
+for caller in ["bcftools", "compass"]:
+    output_files.add(distance_dir / f"{caller}.matrix.csv")
 
 
 # ======================================================
@@ -488,4 +489,24 @@ rule aggregate_consensus:
     shell:
         """
         awk 1 {input.fastas} > {output.fasta} 2> {log}
+        """
+
+
+rule snp_distance:
+    input:
+        fasta=rules.aggregate_consensus.output.fasta,
+    output:
+        matrix=distance_dir / "{caller}.matrix.csv",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    container:
+        containers["snp-dists"]
+    log:
+        rule_log_dir / "snp_distance/{caller}.log",
+    params:
+        options="-c",
+    shell:
+        """
+        snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
         """
