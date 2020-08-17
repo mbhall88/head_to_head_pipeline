@@ -447,7 +447,7 @@ rule generate_consensus:
         fasta=consensus_dir / "{caller}/{site}/{sample}.consensus.fa",
     threads: 1
     resources:
-        mem_mb=int(GB * 0.5),
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
     container:
         containers["conda"]
     conda:
@@ -456,7 +456,7 @@ rule generate_consensus:
         options=" ".join(
             ["--verbose", "--ignore all", "--sample-id {sample}", "--het-default none"]
         ),
-        script=scripts["concordance"],
+        script=scripts["consensus"],
     log:
         rule_log_dir / "generate_consensus/{caller}/{site}/{sample}.log",
     shell:
