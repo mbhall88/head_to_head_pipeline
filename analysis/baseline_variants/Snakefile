@@ -50,8 +50,6 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     FILTER_LOGS.add(rule_log_dir / f"filter_nanopore_snps/{site}/{sample}.log")
-    output_files.add(consensus_dir / f"bcftools/{site}/{sample}.consensus.fa")
-    output_files.add(consensus_dir / f"compass/{site}/{sample}.consensus.fa")
 
     if row["pacbio"] == 1:
         compass_truth_summary = truth_eval_dir / f"{sample}/compass/summary_stats.json"
@@ -62,6 +60,8 @@ for idx, row in samplesheet.iterrows():
         VARIFIER_JSONS.add(bcftools_truth_summary)
 
 output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
+output_files.add(consensus_dir / "bcftools/bcftools.consensus.fa")
+output_files.add(consensus_dir / "compass/compass.consensus.fa")
 
 
 # ======================================================
@@ -69,6 +69,7 @@ output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
 # ======================================================
 localrules:
     all,
+    aggregate_consensus,
 
 
 report: report_dir / "workflow.rst"
@@ -466,4 +467,24 @@ rule generate_consensus:
             -f {input.ref_fasta} \
             -m {input.mask} \
             -o {output.fasta} 2> {log}
+        """
+
+
+rule aggregate_consensus:
+    input:
+        fastas=expand(
+            consensus_dir / "{{caller}}/{site}/{sample}.consensus.fa",
+            site=SITES,
+            sample=SAMPLES,
+        ),
+    output:
+        fasta=consensus_dir / "{caller}/{caller}.consensus.fa",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    log:
+        rule_log_dir / "aggregate_consensus/{caller}.log",
+    shell:
+        """
+        awk 1 {input.fastas} > {output.fasta} 2> {log}
         """
