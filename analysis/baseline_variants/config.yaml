@@ -19,12 +19,14 @@ envs:
   consensus:           "envs/consensus.yaml"
   plot_concordance:    "envs/plot_concordance.yaml"
   plot_truth_eval:     "envs/plot_truth_eval.yaml"
+  plot_distance_matrix: "envs/plot_distance_matrix.yaml"
 scripts:
-  filter:           "scripts/apply_filters.py"
-  concordance:      "scripts/concordance.py"
-  consensus:        "scripts/consensus.py"
-  plot_concordance: "scripts/plot_concordance.py"
-  plot_truth_eval:  "scripts/plot_truth_eval.py"
+  filter:               "scripts/apply_filters.py"
+  concordance:          "scripts/concordance.py"
+  consensus:            "scripts/consensus.py"
+  plot_concordance:     "scripts/plot_concordance.py"
+  plot_truth_eval:      "scripts/plot_truth_eval.py"
+  plot_distance_matrix: "scripts/plot_distance_matrix.py"
 
 # filters for nanopore bcftools calls
 filters:

@@ -62,7 +62,7 @@ for idx, row in samplesheet.iterrows():
 
 output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
 for caller in ["bcftools", "compass"]:
-    output_files.add(distance_dir / f"{caller}.matrix.csv")
+    output_files.add(distance_dir / f"{caller}.heatmap.html")
 
 
 # ======================================================
@@ -499,6 +499,7 @@ rule snp_distance:
         matrix=report(
             distance_dir / "{caller}.matrix.csv",
             category="Distance",
+            subcategory="Data",
             caption=report_dir / "distance.rst",
         ),
     threads: 1
@@ -513,4 +514,30 @@ rule snp_distance:
     shell:
         """
         snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
+        """
+
+
+rule plot_distance_matrix:
+    input:
+        matrix=rules.snp_distance.output.matrix,
+    output:
+        plot=report(
+            distance_dir / "{caller}.heatmap.html",
+            category="Distance",
+            subcategory="Plot",
+            caption=report_dir / "plot_distance_matrix.rst",
+        ),
+    params:
+        script=scripts["plot_distance_matrix"],
+        options=" ".join(["--delim ,", "--title '{caller} pairwise distance'",]),
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_distance_matrix"]
+    shell:
+        """
+        python {params.script} {params.options} -i {input.matrix} -o {output.plot}
         """
