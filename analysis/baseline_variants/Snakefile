@@ -62,6 +62,8 @@ for idx, row in samplesheet.iterrows():
 
 output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
 output_files.add(distance_dir / "dotplot.html")
+for caller in ["bcftools", "compass"]:
+    output_files.add(distance_dir / f"{caller}.heatmap.html")
 
 
 # ======================================================
