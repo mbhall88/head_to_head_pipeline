@@ -141,7 +141,7 @@ def main(
     # add line of best fit to the data
     fitted_xcoord = [min(x), max(x)]
     fitted_ycoord = [min(y_predicted), max(y_predicted)]
-    fitted_equation = f"y={gradient:.2f}x + {intercept:.2f} (r={r_value:.3f}  p={p_value:.1e})"
+    fitted_equation = f"y={gradient:.2f}x + {intercept:.2f} (r={r_value:.3f})"
     fig.line(
         x=fitted_xcoord,
         y=fitted_ycoord,
