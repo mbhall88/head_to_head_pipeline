@@ -2,6 +2,7 @@ from pathlib import Path
 
 import click
 import numpy as np
+from scipy import stats
 import pandas as pd
 from bokeh.io import output_file, save
 from bokeh.plotting import figure
@@ -134,15 +135,13 @@ def main(
     # determine best fit line
     x = df[xname]
     y = df[yname]
-    par = np.polyfit(x, y, 1, full=True)
-    gradient = par[0][0]
-    intercept = par[0][1]
+    gradient, intercept, r_value, p_value, std_err = stats.linregress(x, y)
     y_predicted = [gradient * i + intercept for i in x]
 
     # add line of best fit to the data
     fitted_xcoord = [min(x), max(x)]
     fitted_ycoord = [min(y_predicted), max(y_predicted)]
-    fitted_equation = f"y={gradient:.2f}x + {intercept:.2f}"
+    fitted_equation = f"y={gradient:.2f}x + {intercept:.2f} (r={r_value:.3f}  p={p_value:.3f})"
     fig.line(
         x=fitted_xcoord,
         y=fitted_ycoord,
@@ -155,7 +154,7 @@ def main(
     # add "expected" line if both caller have same distance for each pair
     expected_xcoord = [0, max(x)]
     expected_ycoord = expected_xcoord
-    expected_equation = "y=x"
+    expected_equation = "y=x (r=1.0)"
     fig.line(
         expected_xcoord,
         expected_ycoord,
