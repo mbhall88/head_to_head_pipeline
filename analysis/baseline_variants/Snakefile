@@ -61,8 +61,7 @@ for idx, row in samplesheet.iterrows():
         VARIFIER_JSONS.add(bcftools_truth_summary)
 
 output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
-for caller in ["bcftools", "compass"]:
-    output_files.add(distance_dir / f"{caller}.heatmap.html")
+output_files.add(distance_dir / "dotplot.html")
 
 
 # ======================================================
@@ -540,4 +539,41 @@ rule plot_distance_matrix:
     shell:
         """
         python {params.script} {params.options} -i {input.matrix} -o {output.plot}
+        """
+
+
+rule dotplot:
+    input:
+        x_matrix=distance_dir / "compass.matrix.csv",
+        y_matrix=distance_dir / "bcftools.matrix.csv",
+    output:
+        plot=report(
+            distance_dir / "dotplot.html",
+            caption=report_dir / "dotplot.rst",
+            category="Distance",
+            subcategory="Plot",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(2 * GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["dotplot"]
+    params:
+        script=scripts["dotplot"],
+        xname="compass",
+        yname="bcftools",
+        options=" ".join(
+            [
+                "--title 'Pairwise SNP distances for compass and bcftools calls'",
+                "--delim ,",
+            ]
+        ),
+    shell:
+        """
+        python {params.script} {params.options} \
+            -X {params.xname} -Y {params.yname} \
+            -x {input.x_matrix} -y {input.y_matrix} \
+            -o {output.plot}
         """
