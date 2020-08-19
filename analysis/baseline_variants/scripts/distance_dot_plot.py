@@ -117,7 +117,7 @@ def main(
         columns={"level_0": PAIR_IDX[0], "level_1": PAIR_IDX[1]}
     )
     if threshold:
-        df = df.query("@xname <= @threshold")
+        df = df.query(f"{xname} <= @threshold")
 
     dot_alpha = 0.25
     line_alpha = 0.75

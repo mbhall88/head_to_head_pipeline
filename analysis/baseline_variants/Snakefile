@@ -590,5 +590,5 @@ rule dotplot:
         python {params.script} {params.options} \
             -X {params.xname} -Y {params.yname} \
             -x {input.x_matrix} -y {input.y_matrix} \
-            -o {output.full_plot} -T {params.threshold}
+            -o {output.close_plot} -T {params.threshold}
         """
