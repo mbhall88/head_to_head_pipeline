@@ -25,7 +25,7 @@
 
 Variant calls for the Illumina data were done using the Public Health England pipeline
 [compass]. This step is not included in the pipeline as it was run by Fan from Oxford.
-See #17 and #36 for more information.
+See [#17][17] and [#36][36] for more information.
 
 ### Nanopore variant calls
 
@@ -47,16 +47,15 @@ found
 [here](https://github.com/mbhall88/head_to_head_pipeline/blob/cb61f1bd0b9db15d123c562f3135222ca9f9aba9/analysis/baseline_variants/Snakefile#L170-L207).
 The choice of filters was tightly linked to evaluation of the results from the
 [truth evaluation](#truth-evaluation). A detailed view of how the final filters were
-chosen can be seen in #39. The output from this step is a BCF file with the FILTER
+chosen can be seen in [#39][39]. The output from this step is a BCF file with the FILTER
 column filled in with either PASS or the filter(s) that variant failed.
 
 ### Concordance of Nanopore calls to Illumina
 
 How closely do the Nanopore variant calls mirror the Illumina calls from compass?
 
-Definition of concordance-related terms (taken from
-https://github.com/mbhall88/head_to_head_pipeline/issues/38#issuecomment-661780024) -
-*note "true" is considered compass for this section of the analysis*:
+Definition of concordance-related terms (taken from [#38][38-comment]) - *note "true" is
+considered compass for this section of the analysis*:
 
 **Call rate (for true ALTs)**
 
@@ -96,7 +95,7 @@ considered "truth" and so will provide the best feedback method for fine-tuning 
 Nanopore filters, and also for highlight the differences/similarities in variant calls
 from Illumina and Nanopore reads. The parameters used for this step can be found
 [here](https://github.com/mbhall88/head_to_head_pipeline/blob/cb61f1bd0b9db15d123c562f3135222ca9f9aba9/analysis/baseline_variants/Snakefile#L317-L430)
-with further information about this step in #42 and #39.
+with further information about this step in [#42][42] and [#39][39].
 
 ### Comparing SNP distances from Illumina and Nanopore
 
@@ -107,7 +106,7 @@ The first step here was to generate a consensus sequence for each VCF file using
 [`consensus.py`](./scripts/consensus.py).
 [This rule](https://github.com/mbhall88/head_to_head_pipeline/blob/cb61f1bd0b9db15d123c562f3135222ca9f9aba9/analysis/baseline_variants/Snakefile#L443-L473)
 outlines the parameters etc. used to run this section. Discussion of the choice of
-parameters can be found in #41.  
+parameters can be found in [#41][41].  
 When generating the consensus sequence, we effectively "mask" (replace reference base
 with 'N') any positions that is in the mask, fails filters, is heterozygous, missing in
 VCF, or is a null call.  
@@ -148,4 +147,10 @@ SNP distance no greater than 100.
 [varifier]: https://github.com/iqbal-lab-org/varifier
 [snp-dists]: https://github.com/tseemann/snp-dists
 [1]: https://samtools.github.io/bcftools/call-m.pdf
+[17]: https://github.com/mbhall88/head_to_head_pipeline/issues/17
+[36]: https://github.com/mbhall88/head_to_head_pipeline/issues/36
+[39]: https://github.com/mbhall88/head_to_head_pipeline/issues/39
+[41]: https://github.com/mbhall88/head_to_head_pipeline/issues/41
+[42]: https://github.com/mbhall88/head_to_head_pipeline/issues/42
+[38-comment]: https://github.com/mbhall88/head_to_head_pipeline/issues/38#issuecomment-661780024
 
