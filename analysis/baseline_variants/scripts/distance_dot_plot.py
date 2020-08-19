@@ -23,8 +23,8 @@ def load_matrix(fpath: str, delim: str) -> pd.DataFrame:
         for row in map(str.rstrip, instream):
             matrix.append(map(int, row.split(delim)[1:]))
     df = pd.DataFrame(matrix, index=names, columns=names)
-    # remove the lower triangle of the matrix as it is redundant
-    return df.where(np.triu(np.ones(df.shape)).astype(np.bool))
+    # remove the lower triangle of the matrix and the middle diagonal
+    return df.where(np.triu(np.ones(df.shape), k=1).astype(np.bool))
 
 
 @click.command()
@@ -80,6 +80,12 @@ def load_matrix(fpath: str, delim: str) -> pd.DataFrame:
 @click.option(
     "--height", help="Plot height in pixels", default=HEIGHT, show_default=True
 )
+@click.option(
+    "-T",
+    "--threshold",
+    help="Only plot pairs where SNP distance is no greater than this threshold.",
+    type=int,
+)
 def main(
     x_matrix: str,
     y_matrix: str,
@@ -90,6 +96,7 @@ def main(
     title: str,
     width: int,
     height: int,
+    threshold: int,
 ):
     if not xname:
         xname = Path(x_matrix).name.split(".")[0]
@@ -109,6 +116,8 @@ def main(
     df = df.reset_index().rename(
         columns={"level_0": PAIR_IDX[0], "level_1": PAIR_IDX[1]}
     )
+    if threshold:
+        df = df.query("@xname <= @threshold")
 
     dot_alpha = 0.25
     line_alpha = 0.75
