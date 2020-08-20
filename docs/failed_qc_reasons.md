@@ -50,7 +50,6 @@ samples have failed QC.
 - [mada_1-37](#mada_1-37)
 - [mada_1-31](#mada_1-31)
 - [mada_1-35](#mada_1-35)
-- [mada_132](#mada_132)
 - [mada_1-24](#mada_1-24)
 - [mada_147](#mada_147)
 - [18_0622317](#18_0622317)
@@ -331,11 +330,6 @@ https://github.com/mbhall88/head_to_head_pipeline/issues/23
 ## mada_1-35
 
 Nanopore coverage 9.42 is below cutoff of 30x. See
-https://github.com/mbhall88/head_to_head_pipeline/issues/23
-
-## mada_132
-
-Nanopore coverage 29.44 is below cutoff of 30x. See
 https://github.com/mbhall88/head_to_head_pipeline/issues/23
 
 ## mada_1-24
