@@ -468,7 +468,7 @@ rule index_prg:
         containers["pandora"]
     shell:
         """
-        pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} 2> {log}
+        pandora index -k {params_K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
         """
 
 
