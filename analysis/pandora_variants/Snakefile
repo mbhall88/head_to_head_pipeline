@@ -1,0 +1,112 @@
+import os
+from pathlib import Path
+from typing import Dict, Union, List
+
+import pandas as pd
+from snakemake.utils import min_version
+
+min_version("5.14.0")
+
+GB = 1_024
+PathLike = Union[str, Path, os.PathLike]
+
+
+# ======================================================
+# Config files
+# ======================================================
+configfile: "config.yaml"
+
+
+# only load samples that passed QC and are not excluded
+inclusion_expr = "failed_qc == 0 and excluded == 0"
+samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
+rule_log_dir = Path("logs/stderr").resolve()
+H37RV = config["h37rv"]
+data_dir = Path(config["data_dir"]).resolve()
+build_prg_dir = Path(config["build_prg_dir"])
+qc_dir = Path(config["qc_dir"])
+filters = config["filters"]
+report_dir = Path("report").resolve()
+compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
+asm_dir = Path(config["asm_dir"]).resolve()
+assemblies: Dict[str, str] = config["assemblies"]
+nanopore_dir = Path("nanopore").resolve()
+concordance_dir = Path("concordance").resolve()
+consensus_dir = Path("consensus").resolve()
+distance_dir = Path("distance").resolve()
+truth_eval_dir = Path("truth_eval").resolve()
+discover_dir = nanopore_dir / "discover"
+
+# ======================================================
+# Global functions and variables
+# ======================================================
+K = config["pandora_k"]
+W = config["pandora_w"]
+SITES = samplesheet["site"]
+SAMPLES = samplesheet["sample"]
+prg_names: List[str] = config["prg_names"]
+
+output_files = set()
+for idx, row in samplesheet.iterrows():
+    site = row["site"]
+    sample = row["sample"]
+
+    for prg_name in prg_names:
+        output_files.add(discover_dir / f"{prg_name}/{site}/{sample}/denovo_paths")
+
+
+# ======================================================
+# Sub Workflows
+# ======================================================
+subworkflow build_prg:
+    workdir: build_prg_dir
+    snakefile: build_prg_dir / "Snakefile"
+    configfile: build_prg_dir / "config.yaml"
+
+
+subworkflow qc:
+    workdir: qc_dir
+    snakefile: qc_dir / "Snakefile"
+    configfile: qc_dir / "config.yaml"
+
+
+# ======================================================
+# Rules
+# ======================================================
+localrules:
+    all,
+
+
+rule all:
+    input:
+        output_files,
+
+
+rule discover_denovo_variants:
+    input:
+        prg=build_prg("prgs/{prg_name}/{prg_name}.prg"),
+        prg_index=build_prg(f"prgs/{{prg_name}}/{{prg_name}}.prg.k{K}.w{W}.idx"),
+        reads=qc("subsampled/{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz"),
+        vcf_refs=build_prg("prgs/reference_loc/loci_reference.fa"),
+    output:
+        denovo_dir=directory(discover_dir / "{prg_name}/{site}/{sample}/denovo_paths"),
+        consensus=discover_dir / "{prg_name}/{site}/{sample}/pandora.consensus.fq.gz",
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    container:
+        containers["pandora"]
+    log:
+        rule_log_dir / "discover_denovo_variants/{prg_name}/{site}/{sample}.log",
+    params:
+        outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
+        max_covg=1_000, # i.e. disable subsampling
+        options=f"--discover -k {K} -w {K} --genome_size {config['genome_size']}",
+    shell:
+        """
+        pandora map {params.options} -t {threads} -o {params.outdir} -p {input.prg} \
+            -r {input.reads} --vcf_refs {input.vcf_refs} > {log} 2>&1
+        """

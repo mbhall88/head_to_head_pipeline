@@ -10,3 +10,4 @@ See subdirectories for more specific information about different pipelines.
 -   [H37Rv PRG construction](data/H37Rv_PRG)
 -   [Quality Control](data/QC)
 -   [Baseline variant analysis](analysis/baseline_variants)
+-   [Pandora variant analysis](analysis/pandora_variants)
