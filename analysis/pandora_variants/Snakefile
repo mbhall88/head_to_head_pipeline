@@ -90,7 +90,7 @@ rule discover_denovo_variants:
         prg=build_prg("prgs/{prg_name}/{prg_name}.prg"),
         prg_index=build_prg(f"prgs/{{prg_name}}/{{prg_name}}.prg.k{K}.w{W}.idx"),
         reads=qc("subsampled/{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz"),
-        vcf_refs=build_prg("prgs/reference_loc/loci_reference.fa"),
+        vcf_refs=build_prg("prgs/reference_loci/loci_reference.fa"),
     output:
         denovo_dir=directory(discover_dir / "{prg_name}/{site}/{sample}/denovo_paths"),
         consensus=discover_dir / "{prg_name}/{site}/{sample}/pandora.consensus.fq.gz",
