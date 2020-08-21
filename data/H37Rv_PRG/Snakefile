@@ -37,6 +37,7 @@ for lineage, prg_name in product(lineages, prg_names.keys()):
         prg_dir
         / f"{prg_name}/{prg_name}.prg.k{config['pandora_k']}.w{config['pandora_w']}.idx"
     )
+output_files.add(prg_dir / "reference_loci/loci_reference.fa")
 
 
 # ======================================================
@@ -45,6 +46,7 @@ for lineage, prg_name in product(lineages, prg_names.keys()):
 localrules:
     all,
     combine_local_prgs,
+    create_vcf_ref,
 
 
 rule all:
@@ -468,3 +470,15 @@ rule index_prg:
         """
         pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} 2> {log}
         """
+
+
+rule create_vcf_ref:
+    input:
+        loci_info=rules.split_h37rv.output.info,
+    output:
+        vcf_ref=prg_dir / "reference_loci/loci_reference.fa",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    script:
+        scripts["create_vcf_ref.py"]
