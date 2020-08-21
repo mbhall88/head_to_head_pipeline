@@ -481,4 +481,4 @@ rule create_vcf_ref:
     resources:
         mem_mb=int(0.5 * GB),
     script:
-        scripts["create_vcf_ref.py"]
+        scripts["create_vcf_ref"]
