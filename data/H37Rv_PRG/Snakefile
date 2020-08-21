@@ -33,7 +33,10 @@ rule_log_dir = Path("logs/stderr")
 # ======================================================
 output_files = set()
 for lineage, prg_name in product(lineages, prg_names.keys()):
-    output_files.add(prg_dir / f"{prg_name}" / f"{prg_name}.prg")
+    output_files.add(
+        prg_dir
+        / f"{prg_name}/{prg_name}.prg.k{config['pandora_k']}.w{config['pandora_w']}.idx"
+    )
 
 
 # ======================================================
@@ -119,7 +122,9 @@ rule create_samples_files:
         mem_mb=int(0.2 * GB),
     run:
         samples = []
-        with open(output.samples_file, "w") as outstream, open(input.assignments) as instream:
+        with open(output.samples_file, "w") as outstream, open(
+            input.assignments
+        ) as instream:
             for row in map(str.rstrip, instream):
                 fields = row.split(",")
                 sample = fields[0]
@@ -438,4 +443,28 @@ rule combine_local_prgs:
             --extension {params.extension} \
             --exec-batch awk 1 \; \
             {params.pattern} {input.local_prg_dir} > {output.prg} 2> {log}
+        """
+
+
+rule index_prg:
+    input:
+        prg=rules.combine_local_prgs.output.prg,
+    output:
+        index=(
+            prg_dir
+            / f"{{prg_name}}/{{prg_name}}.prg.k{config['pandora_k']}.w{config['pandora_w']}.idx"
+        ),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    params:
+        K=config["pandora_k"],
+        W=config["pandora_w"],
+    log:
+        rule_log_dir / "index_prg/{prg_name}.log",
+    container:
+        containers["pandora"]
+    shell:
+        """
+        pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} 2> {log}
         """
