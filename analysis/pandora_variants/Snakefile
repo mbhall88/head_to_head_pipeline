@@ -104,7 +104,7 @@ rule discover_denovo_variants:
     params:
         outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
         max_covg=1_000, # i.e. disable subsampling
-        options=f"--discover -k {K} -w {K} --genome_size {config['genome_size']}",
+        options=f"--discover -k {K} -w {W} --genome_size {config['genome_size']}",
     shell:
         """
         pandora map {params.options} -t {threads} -o {params.outdir} -p {input.prg} \
