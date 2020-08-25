@@ -101,6 +101,8 @@ rule discover_denovo_variants:
         containers["pandora"]
     log:
         rule_log_dir / "discover_denovo_variants/{prg_name}/{site}/{sample}.log",
+    shadow:
+        "full"
     params:
         outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
         max_covg=1_000, # i.e. disable subsampling
