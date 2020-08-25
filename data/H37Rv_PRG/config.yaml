@@ -8,7 +8,7 @@ containers:
   conda:       "docker://continuumio/miniconda3:4.7.12"
   bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   make_prg:    "library://mbhall88/default/make_prg:0bb4a27"
-  pandora:     "docker://rmcolq/pandora@sha256:946b17577241dbcb16b77fae6aeed0c41faee0e8fc935502f0c7af59e9ef4a6e"
+  pandora:     "docker://mbhall88/pandora:klib"
 envs:
   gff_split:       "envs/gff_split.yaml"
   assign_lineages: "envs/assign_lineages.yaml"

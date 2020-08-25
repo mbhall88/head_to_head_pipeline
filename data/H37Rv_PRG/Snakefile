@@ -456,6 +456,7 @@ rule index_prg:
             prg_dir
             / f"{{prg_name}}/{{prg_name}}.prg.k{config['pandora_k']}.w{config['pandora_w']}.idx"
         ),
+        kmer_prgs=directory(prg_dir / "{prg_name}/kmer_prgs"),
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
@@ -468,7 +469,7 @@ rule index_prg:
         containers["pandora"]
     shell:
         """
-        pandora index -k {params_K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
+        pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
         """
 
 
