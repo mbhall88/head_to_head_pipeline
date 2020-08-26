@@ -120,3 +120,28 @@ rule discover_denovo_variants:
         pandora map {params.options} -t {threads} -o {params.outdir} -p {input.prg} \
             -r {input.reads} --vcf_refs {input.vcf_refs} > {log} 2>&1
         """
+
+
+# todo: rule to add de novo paths to original MSA - try --add in mafft https://mafft.cbrc.jp/alignment/software/addsequences.html
+rule update_msas_for_single_sample:
+    input:
+        denovo_paths=rules.discover_denovo_variants.output.denovo_dir,
+        msa_dir=build_prg("prgs/{prg_name}/multiple_sequence_alignments"),
+    output:
+        updated_msas=directory(discover_dir / "{prg_name}/{site}/{sample}/updated_msas"),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt
+    container:
+        containers["conda"]
+    conda:
+        envs["msa"]
+    log:
+        rule_log_dir / "update_msas_for_single_sample/{prg_name}/{site}/{sample}.log"
+    params:
+        script=scripts["update_msas_for_single_sample"],
+        options=""
+    shell:
+        """
+        python {params.script} {params.options}
+        """
