@@ -101,11 +101,12 @@ rule discover_denovo_variants:
         containers["pandora"]
     log:
         rule_log_dir / "discover_denovo_variants/{prg_name}/{site}/{sample}.log",
-    shadow:
-        "full"
     params:
         outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
         max_covg=1_000, # i.e. disable subsampling
+        prg=lambda wildcards, input: Path(input.prg).resolve(),
+        reads=lambda wildcards, input: Path(input.reads).resolve(),
+        vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
         options=" ".join(
             [
                 "--discover",
@@ -117,8 +118,11 @@ rule discover_denovo_variants:
         ),
     shell:
         """
-        pandora map {params.options} -t {threads} -o {params.outdir} -p {input.prg} \
-            -r {input.reads} --vcf_refs {input.vcf_refs} > {log} 2>&1
+        LOG=$(realpath {log})
+        cd {params.outdir} || exit 1
+        rm -rf ./*
+        pandora map {params.options} -t {threads} -o "$PWD" -p {params.prg} \
+            -r {params.reads} --vcf_refs {params.vcf_refs} > "$LOG" 2>&1
         """
 
 
