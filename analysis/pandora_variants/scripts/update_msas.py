@@ -1,13 +1,12 @@
+import fileinput
 import logging
 import shutil
-import uuid
 import subprocess
-from subprocess import PIPE
-import fileinput
+import uuid
 from collections import defaultdict
-from pathlib import Path
 from multiprocessing import Pool
-from typing import TextIO, Tuple, List, Dict
+from pathlib import Path
+from typing import Tuple, List, Dict
 
 import click
 
@@ -21,14 +20,14 @@ class MafftError(Exception):
 
 
 def concatenate(infiles: List[Path], outfile: Path):
-    cmd = "awk 1" + " ".join(map(str, infiles)) + f" > {outfile}"
-    process = subprocess.Popen(cmd, shell=True, stderr=PIPE, encoding="utf-8")
-    exit_code = process.wait()
-    if exit_code != 0:
-        name = infiles[0].name.split(".")[0]
-        raise ConcatenationError(
-            f"Failed to concatenate new sequences for {name}\n{process.stderr.read()}"
-        )
+    with outfile.open("w") as outstream, fileinput.input(files=infiles) as instream:
+        for line in map(str.rstrip, instream):
+            if line.startswith(">"):
+                old_header = line[1:]
+                new_header = f">{uuid.uuid4()} {old_header}"
+                print(new_header, file=outstream)
+            else:
+                print(line, file=outstream)
 
 
 def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path):
@@ -40,15 +39,28 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
 
     new_msa = outdir / msa.name
     args = " ".join(
-        ["mafft", "--add", str(new_sequence_file), str(msa), ">", str(new_msa)]
+        [
+            "mafft",
+            "--thread",
+            "1",
+            "--add",
+            str(new_sequence_file),
+            str(msa),
+            ">",
+            str(new_msa),
+        ]
     )
-    process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="utf-8",)
+    process = subprocess.Popen(
+        args, stderr=subprocess.PIPE, encoding="utf-8", shell=True
+    )
     exit_code = process.wait()
     if exit_code != 0:
         raise MafftError(
-            f"Failed to execute the mafft for {name} due to the following error:\n{process.stderr.read()}"
+            f"Failed to execute the mafft for {name} due to the following error:\n"
+            f"{process.stderr.read()}"
         )
     logging.debug(f"Finished updating MSA for {name}")
+    new_sequence_file.unlink(missing_ok=True)
 
 
 @click.command()
@@ -77,7 +89,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         "Valid extensions for MSAs and new sequences. Compressed (.gz) extensions are "
         "implicitly included. Use option multiple times for more than one extension."
     ),
-    default=(".fa", ".fasta"),
+    default=[".fa", ".fasta"],
     show_default=True,
     multiple=True,
     metavar="EXT",
@@ -159,7 +171,10 @@ def main(
         logging.info(f"{processes} processed requested. Using all available...")
         processes = None
     with Pool(processes=processes) as pool:
+        logging.info(f"Updating {len(jobs)} MSAs...")
         pool.starmap(update_with_new_sequences, jobs)
+
+    logging.info("All MSAs updated!")
 
 
 if __name__ == "__main__":
