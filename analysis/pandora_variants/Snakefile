@@ -96,7 +96,7 @@ rule discover_denovo_variants:
         consensus=discover_dir / "{prg_name}/{site}/{sample}/pandora.consensus.fq.gz",
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
     container:
         containers["pandora"]
     log:
