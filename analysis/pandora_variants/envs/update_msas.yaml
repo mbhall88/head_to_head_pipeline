@@ -1,0 +1,8 @@
+name: update_msa
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::mafft=7.471
+  - click=7.1.2
