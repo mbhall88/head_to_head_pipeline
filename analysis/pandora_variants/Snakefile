@@ -55,7 +55,7 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(discover_dir / f"{prg_name}/{site}/{sample}/denovo_paths")
+        output_files.add(discover_dir / f"{prg_name}/{site}/{sample}/updated_msas")
 
 
 # ======================================================
@@ -140,11 +140,11 @@ rule update_msas_for_single_sample:
     container:
         containers["conda"]
     conda:
-        envs["msa"] #todo
+        envs["update_msas"]
     log:
         rule_log_dir / "update_msas_for_single_sample/{prg_name}/{site}/{sample}.log",
     params:
-        script=scripts["update_msas_for_single_sample"],
+        script=scripts["update_msas"],
         options="",
     shell:
         """
