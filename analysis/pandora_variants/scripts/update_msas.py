@@ -1,5 +1,6 @@
 import fileinput
 import logging
+import shlex
 import shutil
 import subprocess
 import uuid
@@ -37,17 +38,22 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     new_sequence_file = outdir / f"tmp.new_sequences.{name}.fa"
     concatenate(new_sequences, new_sequence_file)
 
-    new_msa = outdir / msa.name
+    # make paths shell-safe
+    new_msa = shlex.quote(str(outdir / msa.name))
+    existing_msa = shlex.quote(str(msa))
+    new_sequence_file = shlex.quote(str(new_sequence_file))
+
     args = " ".join(
         [
             "mafft",
+            "--auto",
             "--thread",
             "1",
             "--add",
-            str(new_sequence_file),
-            str(msa),
+            new_sequence_file,
+            existing_msa,
             ">",
-            str(new_msa),
+            new_msa,
         ]
     )
     process = subprocess.Popen(
