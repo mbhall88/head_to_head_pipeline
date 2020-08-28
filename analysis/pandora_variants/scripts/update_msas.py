@@ -41,7 +41,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     # make paths shell-safe
     new_msa = shlex.quote(str(outdir / msa.name))
     existing_msa = shlex.quote(str(msa))
-    new_sequence_file = shlex.quote(str(new_sequence_file))
+    new_sequence_shstr = shlex.quote(str(new_sequence_file))
 
     args = " ".join(
         [
@@ -50,7 +50,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
             "--thread",
             "1",
             "--add",
-            new_sequence_file,
+            new_sequence_shstr,
             existing_msa,
             ">",
             new_msa,
