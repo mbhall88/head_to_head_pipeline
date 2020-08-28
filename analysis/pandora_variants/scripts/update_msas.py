@@ -3,7 +3,6 @@ import logging
 import shlex
 import shutil
 import subprocess
-import time
 import uuid
 from collections import defaultdict
 from multiprocessing import Pool
@@ -24,7 +23,10 @@ class MafftError(Exception):
 def extract_name_from_path(path: Path) -> str:
     if path.suffix == ".gz":
         path = path.with_suffix("")
-    return path.with_suffix("").name
+    path = path.with_suffix("")
+    if path.suffix.endswith("denovo_discovery"):
+        path = path.with_suffix("")
+    return path.name
 
 
 def concatenate(infiles: List[Path], outfile: Path):
