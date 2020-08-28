@@ -1,23 +1,26 @@
-samplesheet:          "../../docs/samplesheet.csv"
-build_prg_dir:        "../../data/H37Rv_PRG"
-qc_dir:               "../../data/QC"
-compass_vcf_dir:      "illumina/gvcfs"
-asm_dir:              "../assembly/results"
-data_dir:             "../../data/QC/subsampled"
-genome_size:          4411532
+samplesheet:     "../../docs/samplesheet.csv"
+build_prg_dir:   "../../data/H37Rv_PRG"
+qc_dir:          "../../data/QC"
+compass_vcf_dir: "illumina/gvcfs"
+asm_dir:         "../assembly/results"
+data_dir:        "../../data/QC/subsampled"
+genome_size:     4411532
 h37rv:
-  genome:     "resources/h37rv.fa"
-  mask:       "resources/compass-mask.bed"
+  genome: "resources/h37rv.fa"
+  mask:   "resources/compass-mask.bed"
 containers:
-  conda:       "docker://continuumio/miniconda3:4.7.12"
-  pandora:     "docker://quay.io/mbhall88/pandora:47b8e8c"
-  bcftools:    "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
-  varifier:    "docker://mbhall88/varifier:3cf8372"
-  snp-dists:   "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
+  conda:     "docker://continuumio/miniconda3:4.7.12"
+  pandora:   "docker://quay.io/mbhall88/pandora:47b8e8c"
+  bcftools:  "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
+  varifier:  "docker://mbhall88/varifier:3cf8372"
+  snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
+  make_prg:  "library://mbhall88/default/make_prg:0bb4a27"
 envs:
   update_msas: "envs/update_msas.yaml"
+  fd:          "envs/fd.yaml"
 scripts:
   update_msas: "scripts/update_msas.py"
+  make_prg:    "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
 
 # filters for nanopore bcftools calls
 filters:
@@ -41,8 +44,10 @@ assemblies:
   mada_132:  "flye"
   mada_125:  "flye"
 
-pandora_k:            15  # kmer size for pandora
-pandora_w:            14  # window size for pandora
+pandora_k:       15  # kmer size for pandora
+pandora_w:       14  # window size for pandora
 prg_names:
   - sparse
   - dense
+nesting_level:   5  # for make_prg
+match_length:    7  # for make_prg

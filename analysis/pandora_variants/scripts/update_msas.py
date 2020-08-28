@@ -171,7 +171,7 @@ def main(
             if any(ext in extensions for ext in file.suffixes):
                 name = extract_name_from_path(file)
                 denovo_lookup[name].append(file)
-    logging.info(f"Found {len(denovo_lookup)} discovered sequence files.")
+    logging.info(f"{len(denovo_lookup)} MSAs have discovered sequence files.")
 
     no_update_msas = msa_lookup.keys() - denovo_lookup.keys()
     to_update_msas = msa_lookup.keys() - no_update_msas

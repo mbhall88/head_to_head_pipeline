@@ -55,7 +55,9 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(discover_dir / f"{prg_name}/{site}/{sample}/updated_msas")
+        output_files.add(
+            discover_dir / f"{prg_name}/{site}/{sample}/{prg_name}.{sample}.prg"
+        )
 
 
 # ======================================================
@@ -150,4 +152,66 @@ rule update_msas_for_single_sample:
         """
         python {params.script} {params.options} -o {output.updated_msas} \
             -j {threads} -M {input.msa_dir} {input.denovo_paths} 2> {log}
+        """
+
+
+rule make_single_sample_local_prgs:
+    input:
+        msa_dir=rules.update_msas_for_single_sample.output.updated_msas,
+    output:
+        local_prg_dir=directory(
+            discover_dir / "{prg_name}/{site}/{sample}/local_prgs"
+        ),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+    singularity:
+        containers["make_prg"]
+    params:
+        extras="--no-ignore --hidden --show-errors",
+        extension="fa",
+        pattern=".",
+        script=scripts["make_prg"],
+        nesting_lvl=config["nesting_level"],
+        match_len=config["match_length"],
+    log:
+        rule_log_dir / "make_single_sample_local_prgs/{prg_name}/{site}/{sample}.log",
+    shell:
+        """
+        fd {params.extras} \
+            --extension {params.extension} \
+            --threads {threads} \
+            --exec sh {params.script} '{{}}' \
+                {output.local_prg_dir}/'{{/.}}' \
+                {params.nesting_lvl} \
+                {params.match_len} \
+                {log} \; \
+            {params.pattern} {input.msa_dir} 2>> {log}
+        """
+
+
+rule combine_single_sample_local_prgs:
+    input:
+        local_prg_dir=rules.make_single_sample_local_prgs.output.local_prg_dir,
+    output:
+        prg=discover_dir / "{prg_name}/{site}/{sample}/{prg_name}.{sample}.prg",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        extras="--no-ignore --hidden",
+        extension="prg",
+        pattern=".",
+    container:
+        containers["conda"]
+    conda:
+        envs["fd"]
+    log:
+        rule_log_dir / "combine_single_sample_local_prgs/{prg_name}/{site}/{sample}.log",
+    shell:
+        """
+        fd {params.extras} \
+            --extension {params.extension} \
+            --exec-batch awk 1 \; \
+            {params.pattern} {input.local_prg_dir} > {output.prg} 2> {log}
         """
