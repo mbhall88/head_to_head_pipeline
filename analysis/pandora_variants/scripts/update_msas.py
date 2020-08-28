@@ -99,7 +99,8 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     "--extensions",
     help=(
         "Valid extensions for MSAs and new sequences. Use option multiple times for "
-        "more than one extension."
+        "more than one extension. Note, there is no need to specify '.gz' if the files "
+        "are compressed."
     ),
     default=[".fa", ".fasta"],
     show_default=True,
@@ -145,7 +146,7 @@ def main(
     logging.info("Searching for MSAs...")
     msa_lookup: Dict[str, Path] = dict()
     for file in Path(msa_dir).rglob("*"):
-        if file.suffix in extensions:
+        if any(ext in extensions for ext in file.suffixes):
             name = extract_name_from_path(file)
             msa_lookup[name] = file
     logging.info(f"Found {len(msa_lookup)} MSA files.")
@@ -154,7 +155,7 @@ def main(
     denovo_lookup: Dict[str, List[Path]] = defaultdict(list)
     for directory in indirs:
         for file in Path(directory).rglob("*"):
-            if file.suffix in extensions:
+            if any(ext in extensions for ext in file.suffixes):
                 name = extract_name_from_path(file)
                 denovo_lookup[name].append(file)
     logging.info(f"Found {len(denovo_lookup)} discovered sequence files.")
