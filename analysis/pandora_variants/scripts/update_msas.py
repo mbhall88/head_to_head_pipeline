@@ -51,10 +51,9 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     new_sequence_shstr = shlex.quote(str(new_sequence_file))
 
     # have run into issues on noah with scratch being full
-    mafft_tmpdir = outdir / "mafft_tmp"
+    mafft_tmpdir = outdir / str(uuid.uuid4())
     if mafft_tmpdir.exists():
         shutil.rmtree(mafft_tmpdir)
-        time.sleep(1)  # to avoid race conditions with the below if filesystem is slow
     mafft_tmpdir.mkdir()
 
     args = " ".join(
@@ -78,6 +77,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         env={"TMPDIR": str(mafft_tmpdir)},
     )
     exit_code = process.wait()
+    shutil.rmtree(mafft_tmpdir)
     if exit_code != 0:
         raise MafftError(
             f"Failed to execute mafft for {name} due to the following error:\n"
@@ -85,7 +85,6 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         )
     logging.debug(f"Finished updating MSA for {name}")
     new_sequence_file.unlink(missing_ok=True)
-    shutil.rmtree(mafft_tmpdir)
 
 
 @click.command()
