@@ -56,7 +56,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     exit_code = process.wait()
     if exit_code != 0:
         raise MafftError(
-            f"Failed to execute the mafft for {name} due to the following error:\n"
+            f"Failed to execute mafft for {name} due to the following error:\n"
             f"{process.stderr.read()}"
         )
     logging.debug(f"Finished updating MSA for {name}")
