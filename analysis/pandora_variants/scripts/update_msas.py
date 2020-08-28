@@ -1,5 +1,6 @@
 import fileinput
 import logging
+import os
 import shlex
 import shutil
 import subprocess
@@ -57,6 +58,8 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     if mafft_tmpdir.exists():
         shutil.rmtree(mafft_tmpdir)
     mafft_tmpdir.mkdir()
+    env = os.environ
+    env["TMPDIR"] = str(mafft_tmpdir)
 
     args = " ".join(
         [
@@ -72,11 +75,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         ]
     )
     process = subprocess.Popen(
-        args,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-        shell=True,
-        env={"TMPDIR": str(mafft_tmpdir)},
+        args, stderr=subprocess.PIPE, encoding="utf-8", shell=True, env=env,
     )
     exit_code = process.wait()
     shutil.rmtree(mafft_tmpdir)
