@@ -3,6 +3,7 @@ import logging
 import shlex
 import shutil
 import subprocess
+import time
 import uuid
 from collections import defaultdict
 from multiprocessing import Pool
@@ -49,6 +50,13 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     existing_msa = shlex.quote(str(msa))
     new_sequence_shstr = shlex.quote(str(new_sequence_file))
 
+    # have run into issues on noah with scratch being full
+    mafft_tmpdir = outdir / "mafft_tmp"
+    if mafft_tmpdir.exists():
+        shutil.rmtree(mafft_tmpdir)
+        time.sleep(1)  # to avoid race conditions with the below if filesystem is slow
+    mafft_tmpdir.mkdir()
+
     args = " ".join(
         [
             "mafft",
@@ -63,7 +71,11 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         ]
     )
     process = subprocess.Popen(
-        args, stderr=subprocess.PIPE, encoding="utf-8", shell=True
+        args,
+        stderr=subprocess.PIPE,
+        encoding="utf-8",
+        shell=True,
+        env={"TMPDIR": str(mafft_tmpdir)},
     )
     exit_code = process.wait()
     if exit_code != 0:
@@ -73,6 +85,7 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
         )
     logging.debug(f"Finished updating MSA for {name}")
     new_sequence_file.unlink(missing_ok=True)
+    shutil.rmtree(mafft_tmpdir)
 
 
 @click.command()
