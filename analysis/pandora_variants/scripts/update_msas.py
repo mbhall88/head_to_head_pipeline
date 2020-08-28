@@ -20,6 +20,12 @@ class MafftError(Exception):
     pass
 
 
+def extract_name_from_path(path: Path) -> str:
+    if path.suffix == ".gz":
+        path = path.with_suffix("")
+    return path.with_suffix("").name
+
+
 def concatenate(infiles: List[Path], outfile: Path):
     with outfile.open("w") as outstream, fileinput.input(files=infiles) as instream:
         for line in map(str.rstrip, instream):
@@ -32,7 +38,7 @@ def concatenate(infiles: List[Path], outfile: Path):
 
 
 def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path):
-    name = msa.name.split(".")[0]
+    name = extract_name_from_path(msa)
     logging.debug(f"Updating MSA for {name}...")
 
     new_sequence_file = outdir / f"tmp.new_sequences.{name}.fa"
@@ -92,8 +98,8 @@ def update_with_new_sequences(msa: Path, new_sequences: List[Path], outdir: Path
     "-e",
     "--extensions",
     help=(
-        "Valid extensions for MSAs and new sequences. Compressed (.gz) extensions are "
-        "implicitly included. Use option multiple times for more than one extension."
+        "Valid extensions for MSAs and new sequences. Use option multiple times for "
+        "more than one extension."
     ),
     default=[".fa", ".fasta"],
     show_default=True,
@@ -139,8 +145,8 @@ def main(
     logging.info("Searching for MSAs...")
     msa_lookup: Dict[str, Path] = dict()
     for file in Path(msa_dir).rglob("*"):
-        if any(ext in file.suffixes for ext in extensions):
-            name = file.name.split(".")[0]
+        if file.suffix in extensions:
+            name = extract_name_from_path(file)
             msa_lookup[name] = file
     logging.info(f"Found {len(msa_lookup)} MSA files.")
 
@@ -148,8 +154,8 @@ def main(
     denovo_lookup: Dict[str, List[Path]] = defaultdict(list)
     for directory in indirs:
         for file in Path(directory).rglob("*"):
-            if any(ext in file.suffixes for ext in extensions):
-                name = file.name.split(".")[0]
+            if file.suffix in extensions:
+                name = extract_name_from_path(file)
                 denovo_lookup[name].append(file)
     logging.info(f"Found {len(denovo_lookup)} discovered sequence files.")
 
