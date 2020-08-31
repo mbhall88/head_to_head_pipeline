@@ -56,7 +56,8 @@ for idx, row in samplesheet.iterrows():
 
     for prg_name in prg_names:
         output_files.add(
-            discover_dir / f"{prg_name}/{site}/{sample}/{prg_name}.{sample}.prg"
+            discover_dir
+            / f"{prg_name}/{site}/{sample}/{prg_name}.{sample}.prg.k{K}.w{W}.idx"
         )
 
 
@@ -215,4 +216,29 @@ rule combine_single_sample_local_prgs:
             --extension {params.extension} \
             --exec-batch awk 1 \; \
             {params.pattern} {input.local_prg_dir} > {output.prg} 2> {log}
+        """
+
+
+rule index_single_sample_updated_prg:
+    input:
+        prg=rules.combine_single_sample_local_prgs.output.prg,
+    output:
+        index=(
+            discover_dir
+            / f"{{prg_name}}/{{site}}/{{sample}}/{{prg_name}}.{{sample}}.prg.k{K}.w{W}.idx"
+        ),
+        kmer_prgs=directory(discover_dir / "{prg_name}/{site}/{sample}/kmer_prgs"),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    params:
+        K=K,
+        W=W,
+    log:
+        rule_log_dir / "index_single_sample_updated_prg/{prg_name}/{site}/{sample}.log",
+    container:
+        containers["pandora"]
+    shell:
+        """
+        pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
         """
