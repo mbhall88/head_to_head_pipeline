@@ -178,6 +178,7 @@ rule make_single_sample_local_prgs:
         rule_log_dir / "make_single_sample_local_prgs/{prg_name}/{site}/{sample}.log",
     shell:
         """
+        mkdir -p {output.local_prg_dir} 2> {log}
         fd {params.extras} \
             --extension {params.extension} \
             --threads {threads} \
