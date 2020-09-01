@@ -39,12 +39,14 @@ consensus_dir = Path("consensus").resolve()
 distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 discover_dir = nanopore_dir / "discover"
+genotype_dir = nanopore_dir / "genotype"
 
 # ======================================================
 # Global functions and variables
 # ======================================================
-K = config["pandora_k"]
-W = config["pandora_w"]
+K: int = config["pandora_k"]
+W: int = config["pandora_w"]
+GT_MODE: str = config["gt_mode"]
 SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
 prg_names: List[str] = config["prg_names"]
@@ -56,8 +58,7 @@ for idx, row in samplesheet.iterrows():
 
     for prg_name in prg_names:
         output_files.add(
-            discover_dir
-            / f"{prg_name}/{site}/{sample}/{prg_name}.{sample}.prg.k{K}.w{W}.idx"
+            genotype_dir / f"{prg_name}/{site}/{sample}/pandora_genotyped_{GT_MODE}.vcf"
         )
 
 
@@ -241,4 +242,51 @@ rule index_single_sample_updated_prg:
     shell:
         """
         pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
+        """
+
+
+# rule discover_denovo_variants:
+rule single_sample_genotype:
+    input:
+        prg=rules.combine_single_sample_local_prgs.output.prg,
+        prg_index=rules.index_single_sample_updated_prg.output.index,
+        reads=rules.discover_denovo_variants.input.reads,
+        vcf_refs=rules.discover_denovo_variants.input.vcf_refs,
+    output:
+        vcf=(
+            genotype_dir
+            / f"{{prg_name}}/{{site}}/{{sample}}/pandora_genotyped_{GT_MODE}.vcf"
+        ),
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+    container:
+        containers["pandora"]
+    log:
+        rule_log_dir / "single_sample_genotype/{prg_name}/{site}/{sample}.log",
+    params:
+        outdir=lambda wildcards, output: Path(output.vcf).parent,
+        max_covg=1_000, # i.e. disable subsampling
+        prg=lambda wildcards, input: Path(input.prg).resolve(),
+        reads=lambda wildcards, input: Path(input.reads).resolve(),
+        vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
+        options=" ".join(
+            [
+                f"--genotype {GT_MODE}",
+                f"-k {K}",
+                f"-w {W}",
+                f"--genome_size {config['genome_size']}",
+                "--log_level info",
+                "--output_kg",
+                "--output_vcf",
+                "--output_covgs",
+            ]
+        ),
+    shell:
+        """
+        LOG=$(realpath {log})
+        cd {params.outdir} || exit 1
+        rm -rf ./*
+        pandora map {params.options} -t {threads} -o "$PWD" -p {params.prg} \
+            -r {params.reads} --vcf_refs {params.vcf_refs} > "$LOG" 2>&1
         """

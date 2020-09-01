@@ -51,3 +51,4 @@ prg_names:
   - dense
 nesting_level:   5  # for make_prg
 match_length:    7  # for make_prg
+gt_mode:         "global"  # pandora map genotype mode
