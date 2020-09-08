@@ -16,7 +16,9 @@ class Record(NamedTuple):
     def to_fasta(self) -> str:
         return f">{self.name} {self.comment}\n{self.seq}"
 
-    def apply_variant(self, variant: Variant, relative_start: int) -> List["Record"]:
+    def apply_variant(
+        self, variant: Variant, relative_start: int, max_indel_len: int = None
+    ) -> List["Record"]:
         records = []
         # variant start point on the loci sequence. 0-based; inclusive
         var_rel_start = variant.POS - relative_start
@@ -41,6 +43,13 @@ class Record(NamedTuple):
                 f"the loci reference.\n{self.seq[var_rel_start:var_rel_end]} != {variant.REF}"
             )
         for alt_num, alt in enumerate(variant.ALT):
+            indel_len = abs(len(alt) - len(variant.REF))
+            if max_indel_len and indel_len > max_indel_len:
+                logging.debug(
+                    f"Skipping ALT {alt_num} for POS {variant.POS} as it is longer than"
+                    f" the maximum allowed indel length {max_indel_len}"
+                )
+                continue
             mutated_seq = self.seq[:var_rel_start] + alt + self.seq[var_rel_end:]
             mutant_name = str(uuid.uuid4())
             mutant_comment = f"POS={variant.POS}|ALT={alt_num}|ALT_POS_IN_SEQ=[{var_rel_start},{var_rel_start + len(alt)})"
@@ -109,6 +118,9 @@ def write_record(record: Record, stream: TextIO):
     required=True,
 )
 @click.option(
+    "-L", "--max-indel-len", help="Maximum length of an indel to include",
+)
+@click.option(
     "-o",
     "--outdir",
     type=click.Path(dir_okay=True, file_okay=False, writable=True),
@@ -126,13 +138,13 @@ def main(
     outdir: str,
     verbose: bool,
     chrom: str,
+    max_indel_len: int,
     loci_dir: str,
 ):
-    """Associate information about loci to the relevant VCF records based on position.
+    """Apply all ALT variants in a VCF to their corresponding loci reference sequences.
 
-    This script will add three new INFO fields to the VCF. The INFO fields are
-    loci_name, start, and end. See the VCF header entries for these fields for more
-    information."""
+    Creates multiple mutants of the reference loci sequence.
+    """
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
@@ -163,7 +175,9 @@ def main(
             count = 0
             for variant in vcf(f"{chrom}:{start}-{end}"):
                 count += 1
-                alt_records = loci_record.apply_variant(variant, relative_start=start)
+                alt_records = loci_record.apply_variant(
+                    variant, relative_start=start, max_indel_len=max_indel_len
+                )
 
             for rec in alt_records:
                 write_record(rec, outstream)

@@ -347,7 +347,7 @@ rule apply_variants_to_loci:
     params:
         script=scripts["apply_variants"],
         loci_dir=lambda wildcards, input: str(Path(input.loci_info).parent),
-        extras="--verbose",
+        extras="--verbose --max-indel-len 20",
     log:
         rule_log_dir / "apply_variants_to_loci/{prg_name}.log",
     shell:
