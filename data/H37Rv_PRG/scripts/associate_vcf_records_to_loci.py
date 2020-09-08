@@ -62,7 +62,7 @@ def write_new_info_fields(vcf: VCF):
 @click.option(
     "--loci-info",
     help=(
-        "File containing loci info. Assumed format is VCF with columns: filename, type,"
+        "File containing loci info. Assumed format is CSV with columns: filename, type,"
         " start, end, name, contig."
     ),
     type=click.File(),
