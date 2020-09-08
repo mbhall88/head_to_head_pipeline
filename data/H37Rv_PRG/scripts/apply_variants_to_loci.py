@@ -118,7 +118,7 @@ def write_record(record: Record, stream: TextIO):
     required=True,
 )
 @click.option(
-    "-L", "--max-indel-len", help="Maximum length of an indel to include",
+    "-L", "--max-indel-len", help="Maximum length of an indel to include", type=int
 )
 @click.option(
     "-o",
