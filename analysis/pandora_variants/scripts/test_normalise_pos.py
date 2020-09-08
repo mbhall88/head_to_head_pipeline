@@ -23,7 +23,7 @@ def create_ref(header: str, seq: str) -> Path:
 
 def loci_info() -> Path:
     header = "filename,type,start,end,name,contig"
-    row = "filename,type,10,13,loci1,contig"
+    row = "filename,type,3,5,loci1,contig"
     tmpfile = Path("tmp.loci_info.csv")
     tmpfile.write_text(f"{header}\n{row}\n")
     return tmpfile
@@ -72,10 +72,10 @@ def test_pos_outside_expected_length():
 def test_original_genome_seq_doesnt_match_at_only_pos():
     locifile = loci_info()
     chrom = "loci1"
-    pos = 3
+    pos = 2
     ref = "T"
     vcffile = create_vcf(chrom=chrom, pos=pos, ref=ref)
-    seq = "AAA"
+    seq = "xxxAAAx"
     ref_header = "contig"
     reffile = create_ref(header=ref_header, seq=seq)
     params = ["-i", str(vcffile), "-l", str(locifile), "-r", str(reffile)]
@@ -101,9 +101,9 @@ def test_original_genome_seq_doesnt_match_at_second_pos():
     pos = 2
     ref = "AT"
     vcffile = create_vcf(chrom=chrom, pos=pos, ref=ref)
-    seq = "AAA"
+    seq = "xxxAAAx"
     ref_header = "contig"
-    reffile = create_ref(header=ref_header, seq="AAA")
+    reffile = create_ref(header=ref_header, seq=seq)
     params = ["-i", str(vcffile), "-l", str(locifile), "-r", str(reffile)]
     runner = CliRunner()
     result = runner.invoke(main, params)
@@ -113,6 +113,7 @@ def test_original_genome_seq_doesnt_match_at_second_pos():
     reffile.unlink()
 
     assert result.exit_code != 0
+    print(result.output)
     expected_exception = ReferenceError(
         f"VCF REF {ref} does not match the expected reference "
         f"sequence AA at loci {chrom} position {pos}"
@@ -127,9 +128,9 @@ def test_loci_contig_not_in_original_genome():
     pos = 2
     ref = "AT"
     vcffile = create_vcf(chrom=chrom, pos=pos, ref=ref)
-    seq = "AAA"
+    seq = "xxxAAAx"
     ref_header = "foo"
-    reffile = create_ref(header=ref_header, seq="AAA")
+    reffile = create_ref(header=ref_header, seq=seq)
     params = ["-i", str(vcffile), "-l", str(locifile), "-r", str(reffile)]
     runner = CliRunner()
     result = runner.invoke(main, params)
@@ -150,9 +151,9 @@ def test_all_fields_error_free():
     loci_pos = 2
     ref = "AA"
     vcffile = create_vcf(chrom=chrom, pos=loci_pos, ref=ref)
-    seq = "AAA"
+    seq = "xxxAAAx"
     ref_header = "contig"
-    reffile = create_ref(header=ref_header, seq="AAA")
+    reffile = create_ref(header=ref_header, seq=seq)
     params = ["-i", str(vcffile), "-l", str(locifile), "-r", str(reffile)]
     runner = CliRunner()
     result = runner.invoke(main, params)
@@ -160,12 +161,12 @@ def test_all_fields_error_free():
     locifile.unlink()
     vcffile.unlink()
     reffile.unlink()
-
+    
     assert result.exit_code == 0
 
     actual = result.output
     expected_chrom = "contig"
-    expected_pos = 12
+    expected_pos = 5
     expected_loci = chrom
     expected_loci_pos = loci_pos
     expected_ref = ref

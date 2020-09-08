@@ -86,7 +86,10 @@ def load_reference(path: str) -> Dict[str, List[str]]:
 @click.option(
     "-l",
     "--loci-info",
-    help="CSV file linking loci to the original genome.",
+    help=(
+        "CSV file linking loci to the original genome. The start and end columns are "
+        "BOTH assumed to be 0-based inclusive"
+    ),
     type=click.Path(exists=True, dir_okay=False),
     required=True,
 )
@@ -100,20 +103,9 @@ def load_reference(path: str) -> Dict[str, List[str]]:
     ),
     type=click.Path(exists=True, dir_okay=False),
 )
-@click.option(
-    "-1",
-    "--one-based",
-    help="The coordinates in the loci info are one-based",
-    is_flag=True,
-)
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
 def main(
-    in_vcf: str,
-    out_vcf: TextIO,
-    loci_info: str,
-    verbose: bool,
-    ref: str,
-    one_based: bool,
+    in_vcf: str, out_vcf: TextIO, loci_info: str, verbose: bool, ref: str,
 ):
     """Normalise the positions in a pandora VCF. As pandora VCF positions are with
     respect to the local PRG, they cannot be easily compared to VCFs from other tools
@@ -136,11 +128,8 @@ def main(
 
     logging.info("Loading loci information...")
     loci_df = pd.read_csv(loci_info, index_col="name")
-    if not one_based:
-        loci_df["start"] += 1
-        # end position doesn't need to be realigned as it is considered inclusive in VCF
 
-    logging.info(f"Loaded information for {len(loci_info)} loci")
+    logging.info(f"Loaded information for {len(loci_df)} loci")
 
     vcf_reader = VCF(in_vcf)
     add_info_headers(vcf_reader)
@@ -165,10 +154,9 @@ def main(
             if loci.contig not in ref_index:
                 raise IndexError(f"Contig {loci.contig} not in the reference genome")
 
-            ref_start = variant.POS - 1
-            ref_stop = ref_start + len(variant.REF)
-            ref_slice = slice(ref_start, ref_stop)
-            ref_seq = "".join(ref_index[loci.contig][ref_slice])
+            ref_start = loci.start + (variant.POS - 1)  # 0-based inclusive
+            ref_stop = ref_start + len(variant.REF)  # 0-based non-inclusive
+            ref_seq = "".join(ref_index[loci.contig][ref_start:ref_stop])
             if ref_seq != variant.REF:
                 raise ReferenceError(
                     f"VCF REF {variant.REF} does not match the expected reference "
@@ -177,7 +165,7 @@ def main(
 
         variant.INFO[LOCI_ID] = variant.CHROM
         variant.INFO[LOCI_POS_ID] = variant.POS
-        normalised_pos = loci.start + (variant.POS - 1)
+        normalised_pos = loci.start + variant.POS
         variant.set_pos(normalised_pos - 1)  # this function takes 0-based
         var_fields = str(variant).rstrip().split("\t")
         var_fields[0] = loci.contig

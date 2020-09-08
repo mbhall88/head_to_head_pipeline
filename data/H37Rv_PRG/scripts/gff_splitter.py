@@ -264,6 +264,7 @@ def main(
     example, the default --types is 'gene'. In this case, the coordinates for each gene
     are cut out of the FASTA file, as well as the bits inbetween - intergenic regions
     (IGRs).
+    In the output, start is 0-based inclusive and end is 0-based non-inclusive.
     """
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
