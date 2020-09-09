@@ -13,9 +13,9 @@ fi
 MEMORY=4000
 THREADS=4
 PROFILE="lsf"
-SINGULARITY_BINDS="/hps/nobackup/research/zi,/nfs/research1/zi"
 SINGULARITY_WORKDIR="/scratch"
-SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS --pwd $(pwd)"
+SINGULARITY_BINDS="/hps/nobackup/research/zi,/nfs/research1/zi,$SINGULARITY_WORKDIR"
+SINGULARITY_ARGS="--contain --workdir $SINGULARITY_WORKDIR --bind $SINGULARITY_BINDS --pwd $(pwd) -S $SINGULARITY_WORKDIR"
 
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -M "$MEMORY" \
