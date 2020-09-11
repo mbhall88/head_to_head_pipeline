@@ -56,9 +56,7 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(
-            genotype_dir / f"{prg_name}/{site}/{sample}/pandora_genotyped_{GT_MODE}.vcf"
-        )
+        output_files.add(genotype_dir / f"{prg_name}/{site}/{sample}.normalised.bcf")
 
 
 # ======================================================
