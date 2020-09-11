@@ -10,17 +10,19 @@ h37rv:
   mask:   "resources/compass-mask.bed"
 containers:
   conda:     "docker://continuumio/miniconda3:4.7.12"
-  pandora:   "docker://quay.io/mbhall88/pandora:47b8e8c"
+  pandora:   "docker://quay.io/mbhall88/pandora:eee83f0"
   bcftools:  "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   varifier:  "docker://mbhall88/varifier:3cf8372"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
   make_prg:  "library://mbhall88/default/make_prg:0bb4a27"
 envs:
-  update_msas: "envs/update_msas.yaml"
-  fd:          "envs/fd.yaml"
+  update_msas:   "envs/update_msas.yaml"
+  fd:            "envs/fd.yaml"
+  normalise_pos: "envs/normalise_pos.yaml"
 scripts:
-  update_msas: "scripts/update_msas.py"
-  make_prg:    "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
+  update_msas:   "scripts/update_msas.py"
+  make_prg:      "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
+  normalise_pos: "scripts/normalise_pos.py"
 
 # filters for nanopore bcftools calls
 filters:

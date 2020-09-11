@@ -161,7 +161,7 @@ def test_all_fields_error_free():
     locifile.unlink()
     vcffile.unlink()
     reffile.unlink()
-    
+
     assert result.exit_code == 0
 
     actual = result.output

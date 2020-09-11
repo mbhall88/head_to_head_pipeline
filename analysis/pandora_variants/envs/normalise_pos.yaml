@@ -1,0 +1,10 @@
+name: update_msa
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::cyvcf2=0.20.4
+  - pandas=1.0.1
+  - click=7.1.2
+  - bioconda::bcftools=1.10

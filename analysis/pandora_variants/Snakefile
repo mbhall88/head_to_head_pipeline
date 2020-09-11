@@ -40,7 +40,6 @@ distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 discover_dir = nanopore_dir / "discover"
 genotype_dir = nanopore_dir / "genotype"
-
 # ======================================================
 # Global functions and variables
 # ======================================================
@@ -245,7 +244,6 @@ rule index_single_sample_updated_prg:
         """
 
 
-# rule discover_denovo_variants:
 rule single_sample_genotype:
     input:
         prg=rules.combine_single_sample_local_prgs.output.prg,
@@ -289,4 +287,30 @@ rule single_sample_genotype:
         rm -rf ./*
         pandora map {params.options} -t {threads} -o "$PWD" -p {params.prg} \
             -r {params.reads} --vcf_refs {params.vcf_refs} > "$LOG" 2>&1
+        """
+
+
+rule normalise_single_sample_vcf:
+    input:
+        vcf=rules.single_sample_genotype.output.vcf,
+        loci_info=build_prg("prgs/reference_loci/loci-info.csv"),
+        ref=H37RV["genome"],
+    output:
+        vcf=genotype_dir / "{prg_name}/{site}/{sample}.normalised.bcf",
+    log:
+        rule_log_dir / "normalise_single_sample_vcf_positions/{prg_name}/{site}/{sample}.log",
+    params:
+        options="-v",
+        script=scripts["normalise_pos"],
+        norm_opts="-c e -O b",
+    container:
+        containers["conda"]
+    conda:
+        envs["normalise_pos"]
+    shell:
+        """
+        (sed 's/Number=A/Number=R/' {input.vcf} \
+        | python {params.script} -l {input.loci_info} -r {input.ref} {params.options} \
+        | bcftools sort \
+        | bcftools norm {params.norm_opts} -f {input.ref} -o {output.vcf}) 2> {log}
         """
