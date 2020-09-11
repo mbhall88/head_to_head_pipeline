@@ -56,7 +56,7 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(genotype_dir / f"{prg_name}/{site}/{sample}.normalised.bcf")
+        output_files.add(genotype_dir / f"{prg_name}/{site}/{sample}/{sample}.normalised.bcf")
 
 
 # ======================================================
@@ -294,9 +294,12 @@ rule normalise_single_sample_vcf:
         loci_info=build_prg("prgs/reference_loci/loci-info.csv"),
         ref=H37RV["genome"],
     output:
-        vcf=genotype_dir / "{prg_name}/{site}/{sample}.normalised.bcf",
+        vcf=genotype_dir / "{prg_name}/{site}/{sample}/{sample}.normalised.bcf",
     log:
         rule_log_dir / "normalise_single_sample_vcf_positions/{prg_name}/{site}/{sample}.log",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
     params:
         options="-v",
         script=scripts["normalise_pos"],
