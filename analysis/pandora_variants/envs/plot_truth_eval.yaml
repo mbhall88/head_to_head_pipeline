@@ -1,0 +1,7 @@
+name: plot_truth_eval
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - seaborn=0.10.1
+  - pandas=1.0.5

@@ -40,6 +40,8 @@ distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 discover_dir = nanopore_dir / "discover"
 genotype_dir = nanopore_dir / "genotype"
+filter_dir = nanopore_dir / "filtered"
+baseline_variant_dir = Path(config["baseline_variant_dir"]).resolve()
 # ======================================================
 # Global functions and variables
 # ======================================================
@@ -48,6 +50,7 @@ W: int = config["pandora_w"]
 GT_MODE: str = config["gt_mode"]
 SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
+VARIFIER_JSONS = set()
 prg_names: List[str] = config["prg_names"]
 
 output_files = set()
@@ -57,6 +60,17 @@ for idx, row in samplesheet.iterrows():
 
     for prg_name in prg_names:
         output_files.add(genotype_dir / f"{prg_name}/{site}/{sample}.normalised.bcf")
+
+        if row["pacbio"] == 1:
+            pandora_truth_summary = (
+                truth_eval_dir / f"{prg_name}/{sample}/summary_stats.json"
+            )
+            # compass_truth_summary = baseline_variant_dir / f"truth_eval/{sample}/compass/summary_stats.json"
+            VARIFIER_JSONS.add(pandora_truth_summary)
+# VARIFIER_JSONS.add(compass_truth_summary)
+
+output_files.add(truth_eval_dir / "truth_all_eval.recall.png")
+output_files.add(truth_eval_dir / "truth_all_eval.precision.png")
 
 
 # ======================================================
@@ -312,3 +326,125 @@ rule normalise_single_sample_vcf:
         | bcftools sort \
         | bcftools norm {params.norm_opts} -f {input.ref} -o {output.vcf}) 2> {log}
         """
+
+
+# rule filter_single_sample_vcf:
+#     input:
+#         vcf=rules.normalise_single_sample_vcf.output.vcf,
+#     output:
+#         vcf=filter_dir / "{prg_name}/{site}/{sample}.filtered.bcf",
+#     threads: 1
+#     resources:
+#         mem_mb=int(GB),
+#     params:
+#         options=" ".join(
+#             [
+#                 "--verbose",
+#                 "--overwrite",
+#                 f"-d {filters['min_depth']}",
+#                 f"-D {filters['max_depth']}",
+#                 f"-q {filters['min_qual']}",
+#                 f"-s {filters['min_strand_bias']}",
+#                 f"-b {filters['min_bqb']}",
+#                 f"-m {filters['min_mqb']}",
+#                 f"-r {filters['min_rpb']}",
+#                 f"-V {filters['min_vdb']}",
+#                 f"-G {filters['max_sgb']}",
+#             ]
+#         ),
+#         script=scripts["filter"],
+#     log:
+#         rule_log_dir / "filter_single_sample_vcf/{prg_name}/{site}/{sample}.log",
+#     container:
+#         containers["conda"]
+#     conda:
+#         envs["filter"]
+#     shell:
+#         """
+#         python {params.script} {params.options} \
+#             -i {input.vcf} \
+#             -o {output.vcf} 2> {log}
+#         """
+
+
+def infer_assembly_path(wildcards):
+    asm = assemblies[wildcards.sample]
+    return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/decontam.assembly.{asm}.pacbio.fasta"
+
+
+def infer_assembly_mask_path(wildcards):
+    asm = assemblies[wildcards.sample]
+    return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/assessment/{wildcards.sample}.{asm}.accuracy.pacbio.bed"
+
+
+rule evaluate_all_variants_single_sample:
+    input:
+        truth_asm=infer_assembly_path,
+        vcf_ref=H37RV["genome"],
+        vcf_to_eval=genotype_dir / "{prg_name}/madagascar/{sample}.normalised.bcf",
+        ref_mask=H37RV["mask"],
+        truth_mask=infer_assembly_mask_path,
+    output:
+        summary=report(
+            truth_eval_dir / "{prg_name}/{sample}/summary_stats.json",
+            category="Truth Evaluation",
+            subcategory="Raw data",
+            caption=report_dir / "varifier.rst",
+        ),
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(10 * GB) * attempt,
+    params:
+        options="--force",
+        flank_length=100,
+        outdir=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        rule_log_dir / "evaluate_all_variants_single_sample/{prg_name}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["varifier"]
+    shell:
+        """
+        (bcftools view -O v {input.vcf_to_eval} \
+        | varifier vcf_eval {params.options} \
+            --flank_length {params.flank_length} \
+            --ref_mask {input.ref_mask} \
+            --truth_mask {input.truth_mask} \
+            {input.truth_asm} \
+            {input.vcf_ref} \
+            - \
+            {params.outdir}) 2> {log}
+        """
+
+
+rule plot_evaluation_all_variants_single_sample:
+    input:
+        json_files=VARIFIER_JSONS,
+    output:
+        recall_plot=report(
+            truth_eval_dir / "truth_all_eval.recall.png",
+            category="Truth Evaluation",
+            subcategory="Recall",
+            caption=report_dir / "truth_all_eval.rst",
+        ),
+        precision_plot=report(
+            truth_eval_dir / "truth_all_eval.precision.png",
+            category="Truth Evaluation",
+            subcategory="Precision",
+            caption=report_dir / "truth_all_eval.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB * 0.5),
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_truth_eval"]
+    params:
+        recall_key="Recall",
+        precision_key="Precision",
+        dpi=300,
+        figsize=(13, 8),
+    script:
+        scripts["plot_truth_eval"]
