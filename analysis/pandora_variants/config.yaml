@@ -6,8 +6,8 @@ asm_dir:         "../assembly/results"
 data_dir:        "../../data/QC/subsampled"
 genome_size:     4411532
 h37rv:
-  genome: "resources/h37rv.fa"
-  mask:   "resources/compass-mask.bed"
+  genome: "../../data/H37Rv_PRG/resources/h37rv.fa"
+  mask:   "../../data/H37Rv_PRG/resources/compass-mask.bed"
 containers:
   conda:     "docker://continuumio/miniconda3:4.7.12"
   pandora:   "docker://quay.io/mbhall88/pandora:eee83f0"
