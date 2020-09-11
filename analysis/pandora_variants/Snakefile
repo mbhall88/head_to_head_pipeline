@@ -384,7 +384,7 @@ rule evaluate_all_variants_single_sample:
     input:
         truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
-        vcf_to_eval=genotype_dir / "{prg_name}/madagascar/{sample}.normalised.bcf",
+        vcf_to_eval=genotype_dir / "{prg_name}/madagascar/{sample}/{sample}.normalised.bcf",
         ref_mask=H37RV["mask"],
         truth_mask=infer_assembly_mask_path,
     output:

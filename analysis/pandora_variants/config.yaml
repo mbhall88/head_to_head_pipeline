@@ -21,6 +21,7 @@ envs:
   fd:              "envs/fd.yaml"
   normalise_pos:   "envs/normalise_pos.yaml"
   plot_truth_eval: "envs/plot_truth_eval.yaml"
+  varifier:        "envs/varifier.yaml"
 scripts:
   update_msas:     "scripts/update_msas.py"
   make_prg:        "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
