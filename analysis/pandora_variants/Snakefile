@@ -346,7 +346,6 @@ rule filter_single_sample_vcf:
                 "--overwrite",
                 f"-d {filters['min_covg']}",
                 f"-D {filters['max_covg']}",
-                f"-q {filters['min_qual']}",
                 f"-s {filters['min_strand_bias']}",
                 f"-g {filters['min_gt_conf']}",
                 f"-G {filters['max_gaps']}",

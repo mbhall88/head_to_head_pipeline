@@ -384,3 +384,4 @@ analysis/baseline_variants/old_report.html
 analysis/baseline_variants/consensus
 analysis/baseline_variants/distance
 analysis/pandora_variants/nanopore
+analysis/pandora_variants/truth_eval
