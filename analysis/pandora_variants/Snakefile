@@ -59,7 +59,7 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(genotype_dir / f"{prg_name}/{site}/{sample}/{sample}.normalised.bcf")
+        output_files.add(filter_dir / f"{prg_name}/{site}/{sample}.filtered.bcf")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -331,43 +331,40 @@ rule normalise_single_sample_vcf:
         """
 
 
-# rule filter_single_sample_vcf:
-#     input:
-#         vcf=rules.normalise_single_sample_vcf.output.vcf,
-#     output:
-#         vcf=filter_dir / "{prg_name}/{site}/{sample}.filtered.bcf",
-#     threads: 1
-#     resources:
-#         mem_mb=int(GB),
-#     params:
-#         options=" ".join(
-#             [
-#                 "--verbose",
-#                 "--overwrite",
-#                 f"-d {filters['min_depth']}",
-#                 f"-D {filters['max_depth']}",
-#                 f"-q {filters['min_qual']}",
-#                 f"-s {filters['min_strand_bias']}",
-#                 f"-b {filters['min_bqb']}",
-#                 f"-m {filters['min_mqb']}",
-#                 f"-r {filters['min_rpb']}",
-#                 f"-V {filters['min_vdb']}",
-#                 f"-G {filters['max_sgb']}",
-#             ]
-#         ),
-#         script=scripts["filter"],
-#     log:
-#         rule_log_dir / "filter_single_sample_vcf/{prg_name}/{site}/{sample}.log",
-#     container:
-#         containers["conda"]
-#     conda:
-#         envs["filter"]
-#     shell:
-#         """
-#         python {params.script} {params.options} \
-#             -i {input.vcf} \
-#             -o {output.vcf} 2> {log}
-#         """
+rule filter_single_sample_vcf:
+    input:
+        vcf=rules.normalise_single_sample_vcf.output.vcf,
+    output:
+        vcf=filter_dir / "{prg_name}/{site}/{sample}.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        options=" ".join(
+            [
+                "--verbose",
+                "--overwrite",
+                f"-d {filters['min_covg']}",
+                f"-D {filters['max_covg']}",
+                f"-q {filters['min_qual']}",
+                f"-s {filters['min_strand_bias']}",
+                f"-g {filters['min_gt_conf']}",
+                f"-G {filters['max_gaps']}",
+            ]
+        ),
+        script=scripts["filter"],
+    log:
+        rule_log_dir / "filter_single_sample_vcf/{prg_name}/{site}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["filter"]
+    shell:
+        """
+        python {params.script} {params.options} \
+            -i {input.vcf} \
+            -o {output.vcf} 2> {log}
+        """
 
 
 def infer_assembly_path(wildcards):
@@ -384,7 +381,7 @@ rule evaluate_all_variants_single_sample:
     input:
         truth_asm=infer_assembly_path,
         vcf_ref=H37RV["genome"],
-        vcf_to_eval=genotype_dir / "{prg_name}/madagascar/{sample}.normalised.bcf",
+        vcf_to_eval=filter_dir / "{prg_name}/madagascar/{sample}.filtered.bcf",
         ref_mask=H37RV["mask"],
         truth_mask=infer_assembly_mask_path,
     output:
@@ -445,8 +442,8 @@ rule plot_evaluation_all_variants_single_sample:
     conda:
         envs["plot_truth_eval"]
     params:
-        recall_key="Recall",
-        precision_key="Precision",
+        recall_key="Recall_edit_dist",
+        precision_key="Precision_edit_dist",
         dpi=300,
         figsize=(13, 8),
     script:

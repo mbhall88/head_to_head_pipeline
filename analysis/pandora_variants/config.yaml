@@ -21,23 +21,21 @@ envs:
   fd:              "envs/fd.yaml"
   normalise_pos:   "envs/normalise_pos.yaml"
   plot_truth_eval: "envs/plot_truth_eval.yaml"
+  filter:          "envs/filter.yaml"
 scripts:
   update_msas:     "scripts/update_msas.py"
   make_prg:        "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
   normalise_pos:   "scripts/normalise_pos.py"
   plot_truth_eval: "scripts/plot_truth_eval.py"
+  filter:          "scripts/apply_filters.py"
 
-# filters for nanopore bcftools calls
+# filters for pandora calls
 filters:
-  min_depth:       0
-  max_depth:       0
-  min_qual:        60
+  min_covg:        0
+  max_covg:        0
+  min_gt_conf:     0
   min_strand_bias: 0
-  min_bqb:         0
-  min_mqb:         0
-  min_rpb:         0.05
-  max_sgb:         -0.5
-  min_vdb:         0.002
+  max_gaps:        0
 
 assemblies:
   mada_101:  "flye"
