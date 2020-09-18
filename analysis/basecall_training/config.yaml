@@ -17,7 +17,7 @@ model_training_params: # hard-coding defaults as of 10/04/2020 https://github.co
   base_learning_rate: 0.002
 
 fast5:
-  indir:      "/hps/nobackup/research/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files
+  indir:      "/nfs/research1/zi/projects/tech_wars/data/madagascar/nanopore/raw_data/"  # directory containing all of the original fast5 files
   outdir:     "data/fast5s/"  # directory where fast5 reads used for training will be placed
   batch_size: 4000  # number of fast5 per multi-fast5
   trim: # Number of samples to trim off start and end of fast5 training files
