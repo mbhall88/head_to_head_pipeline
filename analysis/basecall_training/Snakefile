@@ -11,10 +11,13 @@ min_version("5.14.0")
 GB = 1_024
 PathLike = Union[str, Path, os.PathLike]
 
+
 # ======================================================
 # Config files
 # ======================================================
 configfile: "config.yaml"
+
+
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
@@ -43,16 +46,26 @@ evaluation_fast5_dir = fast5["outdir"] / "evaluation"
 output_files = set()
 
 for sample, model in product(samples, models):
-    output_files.add(evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv")
+    output_files.add(
+        evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv"
+    )
 output_files.add(report_dir / "read-identity.png")
+
 
 # ======================================================
 # Rules
 # ======================================================
-localrules: all, extract_read_ids, subset_read_ids, convert_model_json_to_checkpoint
+localrules:
+    all,
+    extract_read_ids,
+    subset_read_ids,
+    convert_model_json_to_checkpoint,
+
 
 rule all:
-    input: output_files
+    input:
+        output_files,
+
 
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#bam-of-mapped-basecalls
 rule map_basecalls:
@@ -60,24 +73,27 @@ rule map_basecalls:
         reads=ont_dir / "{sample}" / "{sample}.nanopore.fastq.gz",
         assembly=lambda wildcards: assemblies[wildcards.sample],
     output:
-        bam=outdir / "{sample}" / "mapping" / "{sample}.basecalls_mapped_to_asm.bam"
-    shadow: "shallow"
+        bam=outdir / "{sample}" / "mapping" / "{sample}.basecalls_mapped_to_asm.bam",
+    shadow:
+        "shallow"
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: (4 * GB) * attempt
-    singularity: containers["conda"]
-    conda: envs["aln_tools"]
+        mem_mb=lambda wildcards, attempt: (4 * GB) * attempt,
+    singularity:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
     params:
         preset="map-ont",
-        minimap_extras=" ".join([
-            "--secondary=no",  # don't output secondary alignments
-            "-a",  # output SAM
-            "-L",  # Write CIGAR with >65535 operators at the CG tag
-            "--sam-hit-only",  # don't output unmapped reads
-        ]),
-        samtools_extras=" ".join([
-            "-b",  # output BAM
-        ]),
+        minimap_extras=" ".join(
+            [
+                "--secondary=no",  # don't output secondary alignments
+                "-a",  # output SAM
+                "-L",  # Write CIGAR with >65535 operators at the CG tag
+                "--sam-hit-only",  # don't output unmapped reads
+            ]
+        ),
+        samtools_extras=" ".join(["-b",])  # output BAM,
     shell:
         """
         minimap2 -x {params.preset} \
@@ -88,25 +104,28 @@ rule map_basecalls:
         samtools view {params.samtools_extras} -T {input.assembly} -o {output.bam}
         """
 
+
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#extract-per-read-references
 rule extract_per_read_references:
     input:
         assembly=lambda wildcards: assemblies[wildcards.sample],
-        bam=rules.map_basecalls.output.bam
+        bam=rules.map_basecalls.output.bam,
     output:
-        read_references=outdir / "{sample}" / "{sample}.read_references.fasta"
+        read_references=outdir / "{sample}" / "{sample}.read_references.fasta",
     params:
         min_covg=config["min_covg"],
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt
-    singularity: containers["taiyaki"]
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
+    singularity:
+        containers["taiyaki"]
     shell:
         """
         get_refs_from_sam.py --min_coverage {params.min_covg} \
             {input.assembly} \
             {input.bam} > {output.read_references}
         """
+
 
 rule aggregate_read_references:
     input:
@@ -118,7 +137,7 @@ rule aggregate_read_references:
         read_references=outdir / "read_references.fasta",
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
     shell:
         """
         awk 1 {input.read_references} > {output.read_references}
@@ -132,11 +151,11 @@ rule extract_read_ids:
         read_ids=outdir / "read_ids.txt",
     threads: 1
     resources:
-        mem_mb=int(0.3 * GB)
+        mem_mb=int(0.3 * GB),
     params:
         pattern="'^>(?P<id>[\w-]+)\s*$'",
         replace_with="'$id'",
-        extras="-uuu --no-line-number",  # disable smart filtering with -uuu
+        extras="-uuu --no-line-number", # disable smart filtering with -uuu
     shell:
         """
         rg --only-matching {params.pattern} --replace {params.replace_with} {params.extras} {input.read_references} > {output.read_ids}
@@ -145,16 +164,16 @@ rule extract_read_ids:
 
 rule subset_read_ids:
     input:
-        read_ids=rules.extract_read_ids.output.read_ids
+        read_ids=rules.extract_read_ids.output.read_ids,
     output:
         training_read_ids=outdir / "read_ids.training.txt",
-        evaluation_read_ids=outdir / "read_ids.evaluation.txt"
+        evaluation_read_ids=outdir / "read_ids.evaluation.txt",
     threads: 1
     resources:
-        mem_mb=int(0.3 * GB)
+        mem_mb=int(0.3 * GB),
     params:
-        seed = config["seed"],
-        training_size = config["training_size"]
+        seed=config["seed"],
+        training_size=config["training_size"],
     run:
         import random
         from pathlib import Path
@@ -165,7 +184,11 @@ rule subset_read_ids:
 
         random.seed(params.seed)
         k = int(len(read_ids) * params.training_size)
-        print("Using {} reads for training, leaving {} for evaluation.".format(k, len(read_ids) - k))
+        print(
+            "Using {} reads for training, leaving {} for evaluation.".format(
+                k, len(read_ids) - k
+            )
+        )
         training_ids = set(random.sample(read_ids, k=k))
         # write training ids to file
         Path(output.training_read_ids).write_text("\n".join(training_ids))
@@ -175,7 +198,6 @@ rule subset_read_ids:
         )
 
 
-
 rule extract_fast5s_for_training:
     input:
         read_ids=rules.subset_read_ids.output.training_read_ids,
@@ -183,14 +205,15 @@ rule extract_fast5s_for_training:
         filename_mapping=training_fast5_dir / "filename_mapping.txt",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
-    singularity: containers["fast5"]
+        mem_mb=lambda wildcards, attempt: attempt * (16 * GB),
+    singularity:
+        containers["fast5"]
     params:
         indir=fast5["indir"],
         save_path=lambda wildcards, output: Path(output.filename_mapping).parent,
         batch_size=fast5["batch_size"],
         prefix="training",
-        extras="--recursive"
+        extras="--recursive",
     shell:
         """
         fast5_subset --input {params.indir} \
@@ -215,14 +238,15 @@ rule extract_fast5s_for_evaluation:
         filename_mapping=evaluation_fast5_dir / "filename_mapping.txt",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * (16 * GB)
-    singularity: containers["fast5"]
+        mem_mb=lambda wildcards, attempt: attempt * (16 * GB),
+    singularity:
+        containers["fast5"]
     params:
         indir=fast5["indir"],
         save_path=lambda wildcards, output: Path(output.filename_mapping).parent,
         batch_size=fast5["batch_size"],
         prefix="evaluation",
-        extras="--recursive"
+        extras="--recursive",
     shell:
         """
         fast5_subset --input {params.indir} \
@@ -248,8 +272,9 @@ rule create_per_read_scaling_params:
         read_params=training_dir / "read_params.tsv",
     threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: (6 * GB) * attempt
-    singularity: containers["taiyaki"]
+        mem_mb=lambda wildcards, attempt: (6 * GB) * attempt,
+    singularity:
+        containers["taiyaki"]
     params:
         reads_dir=lambda wildcards, input: Path(input.file_summary).parent,
         trim_start=fast5["trim"]["start"],
@@ -273,8 +298,9 @@ rule convert_model_json_to_checkpoint:
         checkpoint=Path(config["model"]).with_suffix(".checkpoint"),
     threads: 1
     resources:
-        mem_mb=int(0.2 * GB)
-    singularity: containers["taiyaki"]
+        mem_mb=int(0.2 * GB),
+    singularity:
+        containers["taiyaki"]
     shell:
         """
         json_to_checkpoint.py --output {output.checkpoint} {input.json}
@@ -296,7 +322,8 @@ rule create_mapped_read_file:
     params:
         extras="--recursive",
         reads_dir=lambda wildcards, input: Path(input.file_summary).parent,
-    singularity: containers["taiyaki"]
+    singularity:
+        containers["taiyaki"]
     shell:
         """
         prepare_mapped_reads.py --jobs {threads} \
@@ -314,28 +341,30 @@ def calculate_starting_learning_rate() -> int:
     base_lrate = model_training_params["base_learning_rate"]
     return base_lrate * scale_by
 
+
 # https://github.com/nanoporetech/taiyaki/blob/master/docs/walkthrough.rst#train-a-model
 # https://github.com/nanoporetech/taiyaki#guppy-compatibility
 rule train_model:
     input:
-        mapped_reads=rules.create_mapped_read_file.output.hdf5
+        mapped_reads=rules.create_mapped_read_file.output.hdf5,
     output:
-        checkpoint=training_dir / "model" / "model_final.checkpoint"
+        checkpoint=training_dir / "model" / "model_final.checkpoint",
     threads: 2
     resources:
-        mem_mb=int(60 * GB)
+        mem_mb=int(60 * GB),
     params:
         model=model_training_params["model"],
-        chunk_len_min = model_training_params["chunk_len_min"],
-        chunk_len_max = model_training_params["chunk_len_max"],
-        size = model_training_params["size"],
-        stride = model_training_params["stride"],
-        winlen = model_training_params["winlen"],
+        chunk_len_min=model_training_params["chunk_len_min"],
+        chunk_len_max=model_training_params["chunk_len_max"],
+        size=model_training_params["size"],
+        stride=model_training_params["stride"],
+        winlen=model_training_params["winlen"],
         outdir=lambda wildcards, output: Path(output.checkpoint).parent,
         num_gpus=model_training_params["num_gpus"],
         starting_learning_rate=calculate_starting_learning_rate(),
-        extras="--overwrite"  # because snakemake creates this directory first taiyaki thinks a model already exists
-    singularity: containers["taiyaki"]
+        extras="--overwrite", # because snakemake creates this directory first taiyaki thinks a model already exists
+    singularity:
+        containers["taiyaki"]
     shell:
         """
         OPENBLAS_NUM_THREADS=1
@@ -362,35 +391,33 @@ rule export_to_guppy:
     input:
         checkpoint=rules.train_model.output.checkpoint,
     output:
-        model=training_dir / "model" / "model.json"
-    singularity: containers["taiyaki"]
+        model=training_dir / "model" / "model.json",
+    singularity:
+        containers["taiyaki"]
     shell:
         """
         dump_json.py {input.checkpoint} > {output.model}
         """
+
 
 rule basecall_evaluation_data:
     input:
         mapping=rules.extract_fast5s_for_evaluation.output.filename_mapping,
         model=rules.export_to_guppy.output.model,
     output:
-        summary=evaluation_dir / "basecall" / "sequencing_summary.txt"
+        summary=evaluation_dir / "basecall" / "sequencing_summary.txt",
     threads: 2
     resources:
-        mem_mb=int(8 * GB)
-    singularity: containers["guppy-gpu"]
+        mem_mb=int(8 * GB),
+    singularity:
+        containers["guppy-gpu"]
     params:
         num_callers=8,
         fast5_dir=lambda wildcards, input: Path(input.mapping).parent,
         save_path=lambda wildcards, output: Path(output.summary).parent,
         device="cuda:all:100%",
         config=config["model_config"],
-        extras=" ".join(
-            [
-                "--recursive",
-                "--compress_fastq"
-            ]
-        )
+        extras=" ".join(["--recursive", "--compress_fastq"]),
     shell:
         """
         guppy_basecaller \
@@ -403,16 +430,19 @@ rule basecall_evaluation_data:
             --model_file {input.model}
         """
 
+
 rule map_id_to_sample_eval:
     """Create a file mapping read IDs to the sample that read originally came from"""
     input:
         read_ids=rules.subset_read_ids.output.evaluation_read_ids,
-        fastqs=expand(f"{ont_dir}/{{sample}}/{{sample}}.nanopore.fastq.gz", sample=samples)
+        fastqs=expand(
+            f"{ont_dir}/{{sample}}/{{sample}}.nanopore.fastq.gz", sample=samples
+        ),
     output:
         id_map=evaluation_dir / "id_to_sample_map.csv",
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: int(GB * 16) * attempt
+        mem_mb=lambda wildcards, attempt: int(GB * 16) * attempt,
     params:
         pattern="'.*\/(?<sample>mada_[0-9\-]+)\/.*:(?<id>[\w\d\-]+)$'",
         output_format="'$id,$sample'",
@@ -440,14 +470,15 @@ def infer_fastq_for_model(wildcards) -> List[str]:
     else:
         raise ValueError(f"Got unexpected model. Wildcards: {wildcards}")
 
+
 rule create_eval_fastqs:
     input:
         fastqs=infer_fastq_for_model,
-        id_map=rules.map_id_to_sample_eval.output.id_map
+        id_map=rules.map_id_to_sample_eval.output.id_map,
     output:
-        fastq=evaluation_dir / "{model}" / "{sample}.{model}.fq.gz"
+        fastq=evaluation_dir / "{model}" / "{sample}.{model}.fq.gz",
     resources:
-        mem_mb=int(4 * GB)
+        mem_mb=int(4 * GB),
     run:
         from pyfastaq import sequences
         import gzip
@@ -476,20 +507,24 @@ rule map_basecalls_to_reference:
         query=rules.create_eval_fastqs.output.fastq,
         target=lambda wildcards: assemblies[wildcards.sample],
     output:
-        paf=evaluation_dir / "{model}" / "{sample}.{model}.paf"
+        paf=evaluation_dir / "{model}" / "{sample}.{model}.paf",
     threads: 8
     resources:
-        mem_mb=int(10 * GB)
-    singularity: containers["conda"]
-    conda: envs["aln_tools"]
+        mem_mb=int(10 * GB),
+    singularity:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
     params:
         preset="map-ont",
-        extras=" ".join([
-            "--secondary=no",  # don't output secondary alignments
-            "-2",  # use two threads for IO
-            "-L",  # Write CIGAR with >65535 operators at the CG tag
-            "-c",  # generate CIGAR
-        ]),
+        extras=" ".join(
+            [
+                "--secondary=no",  # don't output secondary alignments
+                "-2",  # use two threads for IO
+                "-L",  # Write CIGAR with >65535 operators at the CG tag
+                "-c",  # generate CIGAR
+            ]
+        ),
     shell:
         """
         minimap2 -x {params.preset} \
@@ -506,19 +541,21 @@ rule calculate_read_blast_identity:
     identity from the PAF files. Look into whether I need to add some kind of coverage
     threshold on this to make sure we aren't assessing small alignments."""
     input:
-        paf=rules.map_basecalls_to_reference.output.paf
+        paf=rules.map_basecalls_to_reference.output.paf,
     output:
-        csv=evaluation_dir / "{model}" / "{sample}.{model}.read_identity.csv"
+        csv=evaluation_dir / "{model}" / "{sample}.{model}.read_identity.csv",
     threads: 1
     resources:
-        mem_mb=int(0.5 * GB)
+        mem_mb=int(0.5 * GB),
     params:
         script=scripts["read_identity"],
         delim=",",
-        min_cov=0.5,  # only assess reads where more than half the read align
-        extras="--primary-only"
-    singularity: containers["conda"]
-    conda: envs["paf"]
+        min_cov=0.5, # only assess reads where more than half the read align
+        extras="--primary-only",
+    singularity:
+        containers["conda"]
+    conda:
+        envs["paf"]
     shell:
         """
         python {params.script} -i {input.paf} \
@@ -528,36 +565,44 @@ rule calculate_read_blast_identity:
             {params.extras}
         """
 
+
 rule rebaler:
     input:
         reads=rules.create_eval_fastqs.output.fastq,
         reference=lambda wildcards: assemblies[wildcards.sample],
     output:
-        assembly=evaluation_dir / "{model}" / "rebaler" / "{sample}.{model}.rebaler.fa"
-    shadow: "shallow"
+        assembly=(
+            evaluation_dir / "{model}" / "rebaler" / "{sample}.{model}.rebaler.fa"
+        ),
+    shadow:
+        "shallow"
     threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt
-    singularity: containers["rebaler"]
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    singularity:
+        containers["rebaler"]
     shell:
         """
         rebaler --threads {threads} {input.reference} {input.reads} > {output.assembly}
         """
 
+
 rule chop_assemblies:
     input:
-        assembly=rules.rebaler.output.assembly
+        assembly=rules.rebaler.output.assembly,
     output:
-        chunks=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.fa"
+        chunks=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.fa",
     threads: 1
     resources:
-        mem_mb=int(0.5 * GB)
+        mem_mb=int(0.5 * GB),
     params:
         script=scripts["chop_assembly"],
         min_tail_len=1_000,
         chunk_size=10_000,
-    singularity: containers["conda"]
-    conda: envs["chop"]
+    singularity:
+        containers["conda"]
+    conda:
+        envs["chop"]
     shell:
         """
         python {params.script} -i {input.assembly} \
@@ -565,6 +610,8 @@ rule chop_assemblies:
             --chunk-size {params.chunk_size} \
             --min-tail-size {params.min_tail_len}
         """
+
+
 #
 rule map_asm_pieces_to_reference:
     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L139"""
@@ -572,20 +619,24 @@ rule map_asm_pieces_to_reference:
         query=rules.chop_assemblies.output.chunks,
         target=lambda wildcards: assemblies[wildcards.sample],
     output:
-        paf=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.paf"
+        paf=evaluation_dir / "{model}" / "{sample}.{model}.rebaler_asm_chunks.paf",
     threads: 8
     resources:
-        mem_mb=int(10 * GB)
-    singularity: containers["conda"]
-    conda: envs["aln_tools"]
+        mem_mb=int(10 * GB),
+    singularity:
+        containers["conda"]
+    conda:
+        envs["aln_tools"]
     params:
         preset="asm5",
-        extras=" ".join([
-            "--secondary=no",  # don't output secondary alignments
-            "-2",  # use two threads for IO
-            "-L",  # Write CIGAR with >65535 operators at the CG tag
-            "-c",  # generate CIGAR
-        ]),
+        extras=" ".join(
+            [
+                "--secondary=no",  # don't output secondary alignments
+                "-2",  # use two threads for IO
+                "-L",  # Write CIGAR with >65535 operators at the CG tag
+                "-c",  # generate CIGAR
+            ]
+        ),
     shell:
         """
         minimap2 -x {params.preset} \
@@ -596,25 +647,28 @@ rule map_asm_pieces_to_reference:
             {input.query}
         """
 
+
 rule calculate_consensus_accuracy:
     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L140"""
     """Aggregate for each model. For each read from all samples, calculate the BLAST
     identity from the PAF files. Look into whether I need to add some kind of coverage
     threshold on this to make sure we aren't assessing small alignments."""
     input:
-        paf=rules.map_asm_pieces_to_reference.output.paf
+        paf=rules.map_asm_pieces_to_reference.output.paf,
     output:
-        csv=evaluation_dir / "{model}" / "{sample}.{model}.consensus_identity.csv"
+        csv=evaluation_dir / "{model}" / "{sample}.{model}.consensus_identity.csv",
     threads: 1
     resources:
-        mem_mb=int(0.5 * GB)
+        mem_mb=int(0.5 * GB),
     params:
         script=scripts["read_identity"],
         delim=",",
-        min_cov=0.5,  # only assess when over half the chunk aligns
-        extras="--primary-only"
-    singularity: containers["conda"]
-    conda: envs["paf"]
+        min_cov=0.5, # only assess when over half the chunk aligns
+        extras="--primary-only",
+    singularity:
+        containers["conda"]
+    conda:
+        envs["paf"]
     shell:
         """
         python {params.script} -i {input.paf} \
@@ -623,6 +677,8 @@ rule calculate_consensus_accuracy:
             --min-cov {params.min_cov} \
             {params.extras}
         """
+
+
 #
 rule calculate_consensus_errors:
     """https://github.com/rrwick/Basecalling-comparison/blob/40c4802b3e78d262f0d6f07851e4e648bff39670/analysis_scripts/analysis.sh#L142-L151"""
@@ -630,29 +686,40 @@ rule calculate_consensus_errors:
         assembly=lambda wildcards: assemblies[wildcards.sample],
         rebaler_asm=rules.rebaler.output.assembly,
     output:
-        err_details=evaluation_dir / "{model}" / "{sample}.{model}.assembly_error_details.tsv",
-        sub_counts=evaluation_dir / "{model}" / "{sample}.{model}.substitution_counts.tsv"
+        err_details=(
+            evaluation_dir / "{model}" / "{sample}.{model}.assembly_error_details.tsv"
+        ),
+        sub_counts=(
+            evaluation_dir / "{model}" / "{sample}.{model}.substitution_counts.tsv"
+        ),
     threads: 1
     resources:
-        mem_mb=int(4 * GB)
-    singularity: containers["conda"]
-    conda: envs["mummer"]
-    shadow: "shallow"
+        mem_mb=int(4 * GB),
+    singularity:
+        containers["conda"]
+    conda:
+        envs["mummer"]
+    shadow:
+        "shallow"
     params:
         error_summary_script=scripts["error_summary"],
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.model}",
         context=5,
-        delta_extras=" ".join([
-            "-r",  # Maps each position of each reference to its best hit in the query, allowing for query overlaps
-            "-q",  # Maps each position of each query to its best hit in the reference, allowing for reference overlaps
-        ]),
-        snps_extras=" ".join([
-            "-C",  # Do not report SNPs from alignments with an ambiguous mapping
-            "-l",  # Include sequence length information in the output
-            "-r",  # Sort output lines by reference IDs and SNP positions
-            "-T",  # Switch to tab-delimited format
-            "-H",  # Do not print the output header
-        ])
+        delta_extras=" ".join(
+            [
+                "-r",  # Maps each position of each reference to its best hit in the query, allowing for query overlaps
+                "-q",  # Maps each position of each query to its best hit in the reference, allowing for reference overlaps
+            ]
+        ),
+        snps_extras=" ".join(
+            [
+                "-C",  # Do not report SNPs from alignments with an ambiguous mapping
+                "-l",  # Include sequence length information in the output
+                "-r",  # Sort output lines by reference IDs and SNP positions
+                "-T",  # Switch to tab-delimited format
+                "-H",  # Do not print the output header
+            ]
+        ),
     shell:
         """
         printf "assembly\tdcm\thomo_del\thomo_ins\tother_del\tother_ins\tsub\n" > {output.err_details}
@@ -669,11 +736,24 @@ rule calculate_consensus_errors:
         rm {params.prefix}.delta {params.prefix}.filter
         """
 
+
 rule report:
     input:
-        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.assembly_error_details.tsv", sample=samples, model=models),
-        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.consensus_identity.csv", sample=samples, model=models),
-        expand(f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.read_identity.csv", sample=samples, model=models),
+        expand(
+            f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.assembly_error_details.tsv",
+            sample=samples,
+            model=models,
+        ),
+        expand(
+            f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.consensus_identity.csv",
+            sample=samples,
+            model=models,
+        ),
+        expand(
+            f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.read_identity.csv",
+            sample=samples,
+            model=models,
+        ),
     output:
         report_dir / "read-identity.png",
         report_dir / "read-relative-len.png",
@@ -683,10 +763,12 @@ rule report:
         report_dir / "consensus-error-types.png",
     threads: 1
     resources:
-        mem_mb=int(2 * GB)
-    singularity: containers["conda"]
-    conda: envs["report"]
-    log: report_dir / "processed-report.ipynb"
+        mem_mb=int(2 * GB),
+    singularity:
+        containers["conda"]
+    conda:
+        envs["report"]
+    log:
+        report_dir / "processed-report.ipynb",
     notebook:
         str(report_notebook)
-
