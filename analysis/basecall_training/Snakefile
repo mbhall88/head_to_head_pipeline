@@ -93,7 +93,7 @@ rule map_basecalls:
                 "--sam-hit-only",  # don't output unmapped reads
             ]
         ),
-        samtools_extras=" ".join(["-b",])  # output BAM,
+        samtools_extras=" ".join(["-b",]), # output BAM,
     shell:
         """
         minimap2 -x {params.preset} \
@@ -406,6 +406,7 @@ rule basecall_evaluation_data:
         model=rules.export_to_guppy.output.model,
     output:
         summary=evaluation_dir / "basecall" / "sequencing_summary.txt",
+        fastq=evaluation_dir / "basecall" / "tubby.fastq.gz",
     threads: 2
     resources:
         mem_mb=int(8 * GB),
@@ -428,6 +429,9 @@ rule basecall_evaluation_data:
             --device {params.device} \
             --num_callers {params.num_callers} \
             --model_file {input.model}
+
+        mkdir fastqs && mv *.fastq.gz fastqs/
+        cat fastqs/* > {output.fastq}
         """
 
 
@@ -465,8 +469,7 @@ def infer_fastq_for_model(wildcards) -> List[str]:
     if model == "guppy":
         return [str(ont_dir / f"{sample}" / f"{sample}.nanopore.fastq.gz")]
     elif model == "tubby":
-        basecall_dir = evaluation_dir / "basecall"
-        return list(map(str, basecall_dir.glob("*.fastq*")))
+        return [str(evaluation_dir / "basecall" / "tubby.fastq.gz")]
     else:
         raise ValueError(f"Got unexpected model. Wildcards: {wildcards}")
 
