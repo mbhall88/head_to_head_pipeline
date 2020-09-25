@@ -47,7 +47,6 @@ baseline_variant_dir = Path(config["baseline_variant_dir"]).resolve()
 # ======================================================
 K: int = config["pandora_k"]
 W: int = config["pandora_w"]
-GT_MODE: str = config["gt_mode"]
 SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
 VARIFIER_JSONS = set()
@@ -118,7 +117,6 @@ rule discover_denovo_variants:
         rule_log_dir / "discover_denovo_variants/{prg_name}/{site}/{sample}.log",
     params:
         outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
-        max_covg=1_000, # i.e. disable subsampling
         prg=lambda wildcards, input: Path(input.prg).resolve(),
         reads=lambda wildcards, input: Path(input.reads).resolve(),
         vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
@@ -127,8 +125,10 @@ rule discover_denovo_variants:
                 "--discover",
                 f"-k {K}",
                 f"-w {W}",
-                f"--genome_size {config['genome_size']}",
-                "--log_level info",
+                f"-g {config['genome_size']}",
+                "-v",
+                "--min-dbg-dp 1",
+                "--max-covg 1000",  # turn off subsampling effectively
             ]
         ),
     shell:
@@ -136,8 +136,8 @@ rule discover_denovo_variants:
         LOG=$(realpath {log})
         cd {params.outdir} || exit 1
         rm -rf ./*
-        pandora map {params.options} -t {threads} -o "$PWD" -p {params.prg} \
-            -r {params.reads} --vcf_refs {params.vcf_refs} > "$LOG" 2>&1
+        pandora map {params.options} -t {threads} -o "$PWD" --vcf-refs {params.vcf_refs} \
+            {params.prg} {params.reads} > "$LOG" 2>&1
         """
 
 
@@ -263,10 +263,7 @@ rule single_sample_genotype:
         reads=rules.discover_denovo_variants.input.reads,
         vcf_refs=rules.discover_denovo_variants.input.vcf_refs,
     output:
-        vcf=(
-            genotype_dir
-            / f"{{prg_name}}/{{site}}/{{sample}}/pandora_genotyped_{GT_MODE}.vcf"
-        ),
+        vcf=genotype_dir / f"{{prg_name}}/{{site}}/{{sample}}/pandora_genotyped.vcf",
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
@@ -282,14 +279,13 @@ rule single_sample_genotype:
         vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
         options=" ".join(
             [
-                f"--genotype {GT_MODE}",
+                f"--genotype",
                 f"-k {K}",
                 f"-w {W}",
-                f"--genome_size {config['genome_size']}",
-                "--log_level info",
-                "--output_kg",
-                "--output_vcf",
-                "--output_covgs",
+                f"-g {config['genome_size']}",
+                "--kg",
+                "--loci-vcf",
+                "--coverages",
             ]
         ),
     shell:
@@ -297,8 +293,8 @@ rule single_sample_genotype:
         LOG=$(realpath {log})
         cd {params.outdir} || exit 1
         rm -rf ./*
-        pandora map {params.options} -t {threads} -o "$PWD" -p {params.prg} \
-            -r {params.reads} --vcf_refs {params.vcf_refs} > "$LOG" 2>&1
+        pandora map {params.options} -t {threads} -o "$PWD" --vcf-refs {params.vcf_refs} \
+            {params.prg} {params.reads}  > "$LOG" 2>&1
         """
 
 
@@ -406,7 +402,7 @@ rule evaluate_all_variants_single_sample:
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
-        | varifier vcf_eval {params.options} \
+        | varifier --debug vcf_eval {params.options} \
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
             --truth_mask {input.truth_mask} \
