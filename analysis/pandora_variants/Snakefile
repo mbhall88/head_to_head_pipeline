@@ -257,7 +257,7 @@ rule single_sample_genotype:
         prg=rules.combine_single_sample_local_prgs.output.prg,
         prg_index=rules.index_single_sample_updated_prg.output.index,
         reads=rules.discover_denovo_variants.input.reads,
-        vcf_refs=rules.discover_denovo_variants.input.vcf_refs,
+        vcf_refs=build_prg("prgs/reference_loci/loci_reference.fa"),
     output:
         vcf=genotype_dir / f"{{prg_name}}/{{site}}/{{sample}}/pandora_genotyped.vcf",
     threads: 8
