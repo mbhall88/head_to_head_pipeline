@@ -104,7 +104,6 @@ rule discover_denovo_variants:
         prg=build_prg("prgs/{prg_name}/{prg_name}.prg"),
         prg_index=build_prg(f"prgs/{{prg_name}}/{{prg_name}}.prg.k{K}.w{W}.idx"),
         reads=qc("subsampled/{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz"),
-        vcf_refs=build_prg("prgs/reference_loci/loci_reference.fa"),
     output:
         denovo_dir=directory(discover_dir / "{prg_name}/{site}/{sample}/denovo_paths"),
         consensus=discover_dir / "{prg_name}/{site}/{sample}/pandora.consensus.fq.gz",
@@ -119,16 +118,14 @@ rule discover_denovo_variants:
         outdir=lambda wildcards, output: Path(output.denovo_dir).parent,
         prg=lambda wildcards, input: Path(input.prg).resolve(),
         reads=lambda wildcards, input: Path(input.reads).resolve(),
-        vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
         options=" ".join(
             [
-                "--discover",
                 f"-k {K}",
                 f"-w {W}",
                 f"-g {config['genome_size']}",
                 "-v",
                 "--min-dbg-dp 1",
-                "--max-covg 1000",  # turn off subsampling effectively
+                "-L 40",  # max. candidate region len
             ]
         ),
     shell:
@@ -136,8 +133,7 @@ rule discover_denovo_variants:
         LOG=$(realpath {log})
         cd {params.outdir} || exit 1
         rm -rf ./*
-        pandora map {params.options} -t {threads} -o "$PWD" --vcf-refs {params.vcf_refs} \
-            {params.prg} {params.reads} > "$LOG" 2>&1
+        pandora discover {params.options} -t {threads} -o "$PWD" {params.prg} {params.reads} > "$LOG" 2>&1
         """
 
 
