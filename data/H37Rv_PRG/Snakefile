@@ -137,7 +137,6 @@ rule create_samples_files:
                     print(sample, file=outstream)
 
 
-
 rule split_into_lineage_vcfs:
     input:
         vcf=config["cryptic_vcf"],
@@ -184,7 +183,6 @@ rule subsample_samples_files:
         selections = random.sample(samples, k=k)
         content = "\n".join(selections)
         Path(output.samples_file).write_text(content)
-
 
 
 rule subsample_vcfs:
@@ -368,7 +366,7 @@ rule multiple_sequence_alignment_of_loci:
         msa_dir=directory(prg_dir / "{prg_name}" / "multiple_sequence_alignments"),
     threads: 16
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
     singularity:
         containers["conda"]
     conda:
@@ -398,7 +396,7 @@ rule build_local_prgs:
         local_prg_dir=directory(prg_dir / "{prg_name}" / "local_prgs"),
     threads: 16
     resources:
-        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
     singularity:
         containers["make_prg"]
     params:
