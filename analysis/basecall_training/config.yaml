@@ -13,7 +13,7 @@ model_training_params: # hard-coding defaults as of 10/04/2020 https://github.co
   size:               256
   stride:             2
   winlen:             19
-  num_gpus:           4
+  num_gpus:           2
   base_learning_rate: 0.002
 
 fast5:

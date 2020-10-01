@@ -1,6 +1,6 @@
 train_model:
   - "-P gpu"
-  - "-gpu 'num=4'"
+  - "-gpu 'num=2'"
   - "-m 'gpu74-v100-hosts'"
 
 basecall_evaluation_data:
