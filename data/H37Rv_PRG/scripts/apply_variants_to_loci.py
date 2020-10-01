@@ -173,12 +173,15 @@ def main(
         with outpath.open("w") as outstream:
             write_record(loci_record, outstream)
             count = 0
+            alt_records: List[Record] = []
             for variant in vcf(f"{chrom}:{start}-{end}"):
                 count += 1
-                alt_records = loci_record.apply_variant(
-                    variant, relative_start=start, max_indel_len=max_indel_len
+                alt_records.extend(
+                    loci_record.apply_variant(
+                        variant, relative_start=start, max_indel_len=max_indel_len
+                    )
                 )
-
+                
             for rec in alt_records:
                 write_record(rec, outstream)
 
