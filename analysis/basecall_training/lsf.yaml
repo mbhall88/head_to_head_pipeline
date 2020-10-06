@@ -1,4 +1,5 @@
 train_model:
+  - "-E '~/Scripts/singularity_preexec_test/singularity_test.sh -t 20s /'"
   - "-P gpu"
   - "-gpu 'num=2'"
   - "-m 'gpu74-v100-hosts'"

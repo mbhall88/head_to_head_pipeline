@@ -416,6 +416,7 @@ rule basecall_evaluation_data:
         num_callers=8,
         fast5_dir=lambda wildcards, input: Path(input.mapping).parent,
         save_path=lambda wildcards, output: Path(output.summary).parent,
+        fastq_outdir=lambda wildcards, output: Path(output.summary).parent / "fastqs",
         device="cuda:all:100%",
         config=config["model_config"],
         extras=" ".join(["--recursive", "--compress_fastq"]),
@@ -430,8 +431,8 @@ rule basecall_evaluation_data:
             --num_callers {params.num_callers} \
             --model_file {input.model}
 
-        mkdir fastqs && mv *.fastq.gz fastqs/
-        cat fastqs/* > {output.fastq}
+        mkdir -p {params.fastq_outdir} && mv {params.save_path}/*.fastq.gz {params.fastq_outdir}
+        cat {params.fastq_outdir}/*.fastq.gz > {output.fastq}
         """
 
 
