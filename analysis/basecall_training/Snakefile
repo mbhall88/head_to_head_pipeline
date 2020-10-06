@@ -743,28 +743,28 @@ rule calculate_consensus_errors:
 
 rule report:
     input:
-        expand(
+        asm_error_tsvs=expand(
             f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.assembly_error_details.tsv",
             sample=samples,
             model=models,
         ),
-        expand(
+        consensus_identity_csvs=expand(
             f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.consensus_identity.csv",
             sample=samples,
             model=models,
         ),
-        expand(
+        read_identity_csvs=expand(
             f"{evaluation_dir}/{{model}}/{{sample}}.{{model}}.read_identity.csv",
             sample=samples,
             model=models,
         ),
     output:
-        report_dir / "read-identity.png",
-        report_dir / "read-relative-len.png",
-        report_dir / "read-identity-vs-len.png",
-        report_dir / "consensus-identity.png",
-        report_dir / "consensus-relative-len.png",
-        report_dir / "consensus-error-types.png",
+        read_identity=report_dir / "read-identity.png",
+        read_relative_len=report_dir / "read-relative-len.png",
+        read_identity_vs_len=report_dir / "read-identity-vs-len.png",
+        consensus_identity=report_dir / "consensus-identity.png",
+        consensus_relative_len=report_dir / "consensus-relative-len.png",
+        error_types=report_dir / "consensus-error-types.png",
     threads: 1
     resources:
         mem_mb=int(2 * GB),
@@ -772,7 +772,12 @@ rule report:
         containers["conda"]
     conda:
         envs["report"]
+    params:
+        style="ggplot",
+        palette="Set1",
+        figsize=(13, 8),
+        dpi=300,
     log:
-        report_dir / "processed-report.ipynb",
+        notebook=report_dir / "processed-report.ipynb",
     notebook:
         str(report_notebook)
