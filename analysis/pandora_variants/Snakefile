@@ -124,7 +124,8 @@ rule discover_denovo_variants:
                 f"-w {W}",
                 f"-g {config['genome_size']}",
                 "-v",
-                "--min-dbg-dp 1",
+                "--min-dbg-dp 2",
+                "-d 22",
                 "-L 40",  # max. candidate region len
             ]
         ),
@@ -281,7 +282,6 @@ rule single_sample_genotype:
                 f"-g {config['genome_size']}",
                 "--kg",
                 "--loci-vcf",
-                "--coverages",
             ]
         ),
     shell:
