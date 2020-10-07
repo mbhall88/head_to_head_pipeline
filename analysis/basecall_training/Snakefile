@@ -30,6 +30,7 @@ fast5["indir"] = Path(fast5["indir"])
 samples: Set[str] = {*assemblies.keys()}
 models = {"guppy", "tubby"}
 model_training_params = config["model_training_params"]
+rule_log_dir = Path("logs/stderr").resolve()
 
 # ======================================================
 # Global functions and variables
@@ -50,6 +51,7 @@ for sample, model in product(samples, models):
         evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv"
     )
 output_files.add(report_dir / "read-identity.png")
+output_files.add(training_dir / "model/model.compact.json.gz")
 
 
 # ======================================================
@@ -398,6 +400,26 @@ rule export_to_guppy:
         """
         dump_json.py {input.checkpoint} > {output.model}
         """
+
+
+rule compress_model:
+    input:
+        model=rules.export_to_guppy.output.model,
+    output:
+        model=training_dir / "model/model.compact.json.gz",
+    log:
+        rule_log_dir / "compress_model.log",
+    run:
+        import json
+        import gzip
+        import sys
+
+        sys.stderr = open(snakemake.log[0], "w")
+
+        with open(snakemake.input.model) as istream:
+            minified_json = json.dumps(json.load(istream), separators=(",", ":"))
+            with open(snakemake.output.model, "wb") as ostream:
+                ostream.write(minified_json.encode("utf-8"))
 
 
 rule basecall_evaluation_data:
@@ -777,7 +799,7 @@ rule report:
         palette="Set1",
         figsize=(13, 8),
         dpi=300,
-        subsample=100_000
+        subsample=100_000,
     log:
         notebook=report_dir / "processed-report.ipynb",
     notebook:
