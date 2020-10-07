@@ -51,7 +51,7 @@ for sample, model in product(samples, models):
         evaluation_dir / f"{model}" / f"{sample}.{model}.substitution_counts.tsv"
     )
 output_files.add(report_dir / "read-identity.png")
-output_files.add(training_dir / "model/model.compact.json.gz")
+output_files.add(training_dir / "model/model.json.gz")
 
 
 # ======================================================
@@ -62,6 +62,7 @@ localrules:
     extract_read_ids,
     subset_read_ids,
     convert_model_json_to_checkpoint,
+    compress_model,
 
 
 rule all:
@@ -406,20 +407,13 @@ rule compress_model:
     input:
         model=rules.export_to_guppy.output.model,
     output:
-        model=training_dir / "model/model.compact.json.gz",
+        model=training_dir / "model/model.json.gz",
     log:
         rule_log_dir / "compress_model.log",
-    run:
-        import json
-        import gzip
-        import sys
-
-        sys.stderr = open(snakemake.log[0], "w")
-
-        with open(snakemake.input.model) as istream:
-            minified_json = json.dumps(json.load(istream), separators=(",", ":"))
-            with open(snakemake.output.model, "wb") as ostream:
-                ostream.write(minified_json.encode("utf-8"))
+    params:
+        options="-9 -c",
+    shell:
+        "gzip {params.options} {input.model} > {output.model} 2> {log}"
 
 
 rule basecall_evaluation_data:
