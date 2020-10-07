@@ -777,6 +777,7 @@ rule report:
         palette="Set1",
         figsize=(13, 8),
         dpi=300,
+        subsample=100_000
     log:
         notebook=report_dir / "processed-report.ipynb",
     notebook:
