@@ -54,7 +54,7 @@ resources.
 An example of how I submit this pipeline on my LSF cluster is
 
 ```sh
-bash scripts/submit_lsf.sh --singularity-args "--nv"
+bash scripts/submit_lsf.sh
 ```
 
 Depending on the size of the data, this pipeline may take a week or two to run.
