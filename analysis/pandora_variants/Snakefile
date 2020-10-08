@@ -29,6 +29,7 @@ data_dir = Path(config["data_dir"]).resolve()
 build_prg_dir = Path(config["build_prg_dir"])
 qc_dir = Path(config["qc_dir"])
 filters = config["filters"]
+discover = config["discover"]
 report_dir = Path("report").resolve()
 compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
 asm_dir = Path(config["asm_dir"]).resolve()
@@ -124,9 +125,9 @@ rule discover_denovo_variants:
                 f"-w {W}",
                 f"-g {config['genome_size']}",
                 "-v",
-                "--min-dbg-dp 2",
-                "-d 22",
-                "-L 40",  # max. candidate region len
+                f"--min-dbg-dp {discover['min_dbg_abundance']}",
+                f"-d {discover['merge_dist']}",
+                f"-L {discover['max_candidate_len']}",
             ]
         ),
     shell:
