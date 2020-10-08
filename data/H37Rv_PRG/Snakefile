@@ -366,7 +366,7 @@ rule multiple_sequence_alignment_of_loci:
         msa_dir=directory(prg_dir / "{prg_name}" / "multiple_sequence_alignments"),
     threads: 16
     resources:
-        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(270 * GB) * attempt,
     singularity:
         containers["conda"]
     conda:
@@ -396,7 +396,7 @@ rule build_local_prgs:
         local_prg_dir=directory(prg_dir / "{prg_name}" / "local_prgs"),
     threads: 16
     resources:
-        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     singularity:
         containers["make_prg"]
     params:

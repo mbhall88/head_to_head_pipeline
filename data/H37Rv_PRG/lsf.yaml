@@ -1,3 +1,7 @@
 __default__:
   - "-E '~/Scripts/singularity_preexec_test/singularity_test.sh -t 20s /'"
   - "-q pandora"
+
+multiple_sequence_alignment_of_loci:
+  - "-q research-rh74"
+  - "-P bigmem"
