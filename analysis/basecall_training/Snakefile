@@ -781,6 +781,7 @@ rule report:
         consensus_identity=report_dir / "consensus-identity.png",
         consensus_relative_len=report_dir / "consensus-relative-len.png",
         error_types=report_dir / "consensus-error-types.png",
+        combined_plot=report_dir / "combined_identity_relative_len.png",
     threads: 1
     resources:
         mem_mb=int(2 * GB),
