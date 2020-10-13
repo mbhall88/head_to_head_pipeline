@@ -3,5 +3,7 @@ __default__:
   - "-q pandora"
   - "-W 24:00"
 
+update_msas_for_single_sample:
+  - "-W 96:00"
 
 
