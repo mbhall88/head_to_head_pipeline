@@ -387,7 +387,7 @@ rule evaluate_all_variants_single_sample:
     resources:
         mem_mb=lambda wildcards, attempt: int(10 * GB) * attempt,
     params:
-        options="--force",
+        options="--force --filter_pass PASS,.",
         flank_length=100,
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:

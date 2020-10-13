@@ -18,8 +18,8 @@ precision_key = snakemake.params.precision_key
 data: List[Tuple[str, str, str, float, float]] = []
 for p in json_files:
     d = json.loads(p.read_text())
-    precision = float(d["Precision"]["FILT"][precision_key])
-    recall = float(d["Recall"]["FILT"][recall_key])
+    precision = float(d["Precision"][precision_key])
+    recall = float(d["Recall"][recall_key])
     prg_name = p.parts[-3]
     sample = p.parts[-2]
     tool = "pandora" if "pandora" in str(p) else "compass"

@@ -18,8 +18,8 @@ precision_key = snakemake.params.precision_key
 data: List[Tuple[str, str, str, float, float]] = []
 for p in json_files:
     d = json.loads(p.read_text())
-    precision = float(d["Precision"]["FILT"][precision_key])
-    recall = float(d["Recall"]["FILT"][recall_key])
+    precision = float(d["Precision"][precision_key])
+    recall = float(d["Recall"][recall_key])
     data.append((*p.parts[-4:-1], precision, recall))
 
 columns = ["filters", "sample", "tool", "precision", "recall"]

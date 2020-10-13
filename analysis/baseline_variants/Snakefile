@@ -375,7 +375,7 @@ rule evaluate_bcftools_snps_with_truth_assembly:
     resources:
         mem_mb=lambda wildcards, attempt: int(22 * GB) * attempt,
     params:
-        options="--force",
+        options="--force --filter_pass PASS,.",
         flank_length=100,
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
