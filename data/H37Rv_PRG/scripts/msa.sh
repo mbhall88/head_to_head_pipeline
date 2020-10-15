@@ -3,4 +3,4 @@ set -u
 infile="$1"
 outfile="$2"
 logfile="$3"
-linsi --thread -1 "$infile" > "$outfile" 2>> "$logfile"
+ginsi --thread -1 "$infile" > "$outfile" 2>> "$logfile"

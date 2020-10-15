@@ -4,5 +4,5 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - mafft=7.467
+  - mafft=7.471
   - fd-find=8.1.1
