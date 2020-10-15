@@ -1,9 +1,4 @@
 __default__:
   - "-E '~/Scripts/singularity_preexec_test/singularity_test.sh -t 20s /'"
   - "-q pandora"
-  - "-W 24:00"
-
-update_msas_for_single_sample:
-  - "-W 96:00"
-
 
