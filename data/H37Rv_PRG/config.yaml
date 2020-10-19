@@ -45,8 +45,8 @@ lineages:
   - "rare"
 # the names for the different density PRGs and the max. number of samples from a single lineage
 prg_names:
-  sparse: 100
-  dense:  500
+  sparse: 20
+  dense:  100
 nesting_level:        5  # for make_prg
 match_length:         7  # for make_prg
 pandora_k:            15  # kmer size for pandora
