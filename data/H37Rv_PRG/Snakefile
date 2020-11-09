@@ -362,9 +362,9 @@ rule multiple_sequence_alignment_of_loci:
         loci_dir=rules.apply_variants_to_loci.output.loci_dir,
     output:
         msa_dir=directory(prg_dir / "{prg_name}" / "multiple_sequence_alignments"),
-    threads: 16
+    threads: 32
     resources:
-        mem_mb=lambda wildcards, attempt: int(270 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(400 * GB) * attempt,
     singularity:
         containers["conda"]
     conda:
