@@ -131,6 +131,7 @@ rule discover_denovo_variants:
                 f"-L {discover['max_candidate_len']}",
                 f'{"--clean-dbg" if discover["clean"] else ""}',
                 f"--max-ins {discover['max_insertion']}",
+                f"-N {discover['max_nb_paths']}",
             ]
         ),
     shell:
