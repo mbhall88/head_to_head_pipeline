@@ -15,11 +15,13 @@ envs:
   filter_vcf:      "envs/filter_vcf.yaml"
   records_to_loci: "envs/records_to_loci.yaml"
   apply_variants:  "envs/apply_variants.yaml"
+  mask_loci:       "envs/mask_loci.yaml"
   msa:             "envs/msa.yaml"
 scripts:
   gff_split:       "scripts/gff_splitter.py"
   assign_lineages: "scripts/assign_lineages.py"
   records_to_loci: "scripts/associate_vcf_records_to_loci.py"
+  mask_loci:       "scripts/mask_loci.py"
   apply_variants:  "scripts/apply_variants_to_loci.py"
   msa:             "scripts/msa.sh"
   make_prg:        "scripts/build_local_prgs.sh"
