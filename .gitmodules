@@ -1,3 +1,0 @@
-[submodule "analysis/basecall_training/taiyaki"]
-	path = analysis/basecall_training/taiyaki
-	url = https://github.com/nanoporetech/taiyaki.git
