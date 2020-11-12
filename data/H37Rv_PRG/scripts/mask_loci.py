@@ -1,6 +1,6 @@
 import sys
 
-sys.stderr = open(snakemake.log)
+sys.stderr = open(snakemake.log[0], "w")
 
 from pathlib import Path
 from typing import TextIO, Union
@@ -10,7 +10,7 @@ from contextlib import ExitStack
 
 PathLike = Union[Path, str]
 
-log_level = logging.DEBUG if snakemake.verbose else logging.INFO
+log_level = logging.DEBUG if snakemake.params.verbose else logging.INFO
 logging.basicConfig(format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level)
 
 
@@ -73,11 +73,11 @@ logging.info("Creating masked loci info file...")
 with ExitStack() as stack:
     outstream = stack.enter_context(open(snakemake.output.masked_loci_info, "w"))
     instream = stack.enter_context(open(snakemake.input.loci_info))
-    _ = next(instream)  # skip header
+    outstream.write(next(instream))  # skip header
     for row in map(str.rstrip, instream):
         fields = row.split(",", maxsplit=6)
         start, end, name = fields[2:5]
-        iv = Interval(start, end, data=name)
+        iv = Interval(int(start), int(end), data=name)
         if iv in masked_tree:
             print(row, file=outstream)  # we stripped the newline
         else:
