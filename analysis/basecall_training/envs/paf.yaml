@@ -1,8 +1,0 @@
-name: paf
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - pafpy=0.1.1
-  - click=7.1.2

@@ -1,8 +1,0 @@
-name: chop
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - pysam=0.15.4
-  - click=7.1.2

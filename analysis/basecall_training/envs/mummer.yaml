@@ -1,8 +1,0 @@
-name: mummer
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - mummer=3.23
-  - python>3.5
