@@ -327,31 +327,31 @@ rule associate_vcf_records_to_loci:
         """
 
 
-rule mask_loci:
-    input:
-        loci_info=rules.split_h37rv.output.info,
-        mask=H37RV["mask"],
-    output:
-        masked_loci_info=prg_dir / "reference_loci" / "loci-info.masked.csv",
-    threads: 1
-    resources:
-        mem_mb=int(0.5 * GB),
-    container:
-        containers["conda"]
-    conda:
-        envs["mask_loci"]
-    log:
-        rule_log_dir / "mask_loci.log",
-    params:
-        verbose=True
-    script:
-        scripts["mask_loci"]
+# rule mask_loci:
+#     input:
+#         loci_info=rules.split_h37rv.output.info,
+#         mask=H37RV["mask"],
+#     output:
+#         masked_loci_info=prg_dir / "reference_loci" / "loci-info.masked.csv",
+#     threads: 1
+#     resources:
+#         mem_mb=int(0.5 * GB),
+#     container:
+#         containers["conda"]
+#     conda:
+#         envs["mask_loci"]
+#     log:
+#         rule_log_dir / "mask_loci.log",
+#     params:
+#         verbose=True
+#     script:
+#         scripts["mask_loci"]
 
 
 rule apply_variants_to_loci:
     input:
         vcf=rules.associate_vcf_records_to_loci.output.vcf,
-        loci_info=rules.mask_loci.output.masked_loci_info,
+        loci_info=rules.split_h37rv.output.info,
     output:
         loci_dir=directory(prg_dir / "{prg_name}" / "applied_variants"),
     threads: 1
@@ -492,7 +492,7 @@ rule index_prg:
 
 rule create_vcf_ref:
     input:
-        loci_info=rules.mask_loci.output.masked_loci_info,
+        loci_info=rules.split_h37rv.output.info,
     output:
         vcf_ref=prg_dir / "reference_loci/loci_reference.fa",
     threads: 1
