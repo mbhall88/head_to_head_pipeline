@@ -2,12 +2,13 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
 from enum import Enum
 from itertools import repeat
+from pathlib import Path
 from typing import TextIO, Tuple, Dict, List
 
 import click
+import numpy as np
 from intervaltree import IntervalTree, Interval
 
 Contig = str
@@ -84,6 +85,50 @@ def is_header(s: str) -> bool:
     return s[0] == ">"
 
 
+def has_adjoining_neighbour_to_left(iv: Interval, tree: IntervalTree) -> bool:
+    """Check if there is *no* gap between the given interval and the neighbour to the
+    left.
+    """
+    return tree.overlaps(iv.begin - 1)
+
+
+def has_adjoining_neighbour_to_right(iv: Interval, tree: IntervalTree) -> bool:
+    """Check if there is *no* gap between the given interval and the neighbour to the
+    right.
+    Note: we don't add 1 to end as it is normally exclusive, but is inclusive in overlap
+    queries.
+    """
+    return tree.overlaps(iv.end)
+
+
+# test
+# tree = IntervalTree.from_tuples([(1, 5), (10, 20)])
+# iv = Interval(6, 8)
+# assert not has_adjoining_neighbour_to_left(iv, tree)
+# assert not has_adjoining_neighbour_to_right(iv, tree)
+
+# iv = Interval(5, 9)
+# assert has_adjoining_neighbour_to_left(iv, tree)
+# assert not has_adjoining_neighbour_to_right(iv, tree)
+
+# iv = Interval(7, 10)
+# assert not has_adjoining_neighbour_to_left(iv, tree)
+# assert has_adjoining_neighbour_to_right(iv, tree)
+
+
+def load_mask(instream: TextIO) -> Dict[Contig, IntervalTree]:
+    """Loads a bedfile mask into an interval tree"""
+    intervals = defaultdict(IntervalTree)
+    for row in map(str.rstrip, instream):
+        fields = row.split("\t")
+        start = int(fields[1])  # BED is zero-based
+        end = int(fields[2])  # BED end is exclusive
+        chrom = fields[0]
+
+        intervals[chrom].add(Interval(start, end))
+    return intervals
+
+
 def index_fasta(stream: TextIO) -> Index:
     fasta_index: Index = dict()
     sequence: List[Seq] = []
@@ -155,26 +200,61 @@ def construct_feature_trees(
 
 
 def merge_short_intervals(tree: IntervalTree, min_len: int = 1) -> IntervalTree:
-    """Merge short intervals with their neighbour.
-    It is expected that there are no gaps between intervals.
-    """
-    intervals: List[Interval] = []
+    """Merge short intervals with their neighbour."""
+    merged_tree = IntervalTree()
     for i, iv in enumerate(sorted(tree)):
         if iv.length() >= min_len:
-            intervals.append(iv)
+            merged_tree.add(iv)
             continue
-        if not intervals:
-            intervals.append(Interval(iv.begin, iv.end + 1, data=iv.data))
-        else:
-            intervals.append(Interval(iv.begin - 1, iv.end, data=iv.data))
+        if has_adjoining_neighbour_to_right(iv, tree):
+            # have to add 2 to end to force merge as is no inclusive
+            merged_tree.add(Interval(iv.begin, iv.end + 2, data=iv.data))
+        elif has_adjoining_neighbour_to_left(iv, tree):
+            merged_tree.add(Interval(iv.begin - 1, iv.end, data=iv.data))
 
-    tree = IntervalTree(intervals)
-    tree.merge_overlaps(data_reducer=data_reducer)
+    merged_tree.merge_overlaps(data_reducer=data_reducer)
 
-    if any(iv.length() < min_len for iv in tree) and len(tree) > 1:
-        return merge_short_intervals(tree, min_len=min_len)
+    if any(iv.length() < min_len for iv in merged_tree):
+        return merge_short_intervals(merged_tree, min_len=min_len)
     else:
-        return tree
+        return merged_tree
+
+
+# test
+# min_len = 3
+# tree = IntervalTree.from_tuples([(1, 5), (6, 8), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = IntervalTree.from_tuples([(1, 5), (10, 20)])
+# assert actual == expected, actual
+
+# tree = IntervalTree.from_tuples([(1, 5), (8, 10), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = tree = IntervalTree.from_tuples([(1, 5), (8, 20, "None+None")])
+# assert actual == expected, actual
+
+# min_len = 50
+# tree = IntervalTree.from_tuples([(1, 5), (7, 10), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = IntervalTree()
+# assert actual == expected, actual
+
+# min_len = 5
+# tree = IntervalTree.from_tuples([(1, 5), (6, 10), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = IntervalTree.from_tuples([(6, 20, "None+None")])
+# assert actual == expected, actual
+
+# min_len = 5
+# tree = IntervalTree.from_tuples([(1, 5), (5, 10), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = IntervalTree.from_tuples([(1, 10, "None+None"), (10, 20)])
+# assert actual == expected, actual
+
+# min_len = 11
+# tree = IntervalTree.from_tuples([(1, 5), (5, 10), (10, 20)])
+# actual = merge_short_intervals(tree, min_len)
+# expected = IntervalTree.from_tuples([(1, 20, "None+None+None")])
+# assert actual == expected, actual
 
 
 def infer_interval_type(interval: Interval) -> str:
@@ -219,6 +299,23 @@ def infer_interval_type(interval: Interval) -> str:
     help="The directory to write the output files to.",
 )
 @click.option(
+    "-m",
+    "--mask",
+    type=click.File(mode="r"),
+    help="BED file of positions to mask from the GFF.",
+)
+@click.option(
+    "-F",
+    "--min-overlap",
+    help=(
+        "Minimum overlap (fraction) between the mask and a locus/feature that causes "
+        "the locus to be removed. Setting to 0 means even a 1bp overlap causes the "
+        "locus to be removed"
+    ),
+    default=0.3,
+    show_default=True,
+)
+@click.option(
     "--types",
     help=(
         "The feature types to split on. Separate types by a space or pass option "
@@ -253,7 +350,9 @@ def infer_interval_type(interval: Interval) -> str:
 def main(
     fasta: TextIO,
     gff: TextIO,
+    mask: TextIO,
     outdir: str,
+    min_overlap: float,
     types: Tuple[str],
     min_len: int,
     max_len: float,
@@ -279,15 +378,21 @@ def main(
         contig: IntervalTree([Interval(1, len(seq))]) for contig, seq in index.items()
     }
 
+    masked_intervals: Dict[Contig, np.ndarray] = dict()
+    if mask is not None:
+        logging.info("Loading the mask...")
+        ivtrees = load_mask(mask)
+        for contig in index:
+            gsize = len(index[contig])
+            arr = np.zeros(gsize, dtype=np.bool)
+            if contig in ivtrees:
+                for i in range(len(arr)):
+                    if ivtrees[contig][i]:
+                        arr[i] = True
+            masked_intervals[contig] = arr
+
     logging.info("Constructing interval tree for features...")
     feature_trees: Dict[Contig, IntervalTree] = construct_feature_trees(gff, types)
-
-    for contig in feature_trees:
-        logging.info(f"Merging overlapping features for {contig}...")
-        feature_trees[contig].merge_overlaps(data_reducer=data_reducer)
-
-    for contig, tree in feature_trees.items():
-        logging.info(f"Found {len(tree)} feature(s) for {contig}")
 
     for contig in index_trees:
         logging.info(f"Inferring intergenic region interval(s) for {contig}...")
@@ -311,6 +416,35 @@ def main(
         contig: index_trees[contig].union(feature_trees[contig])
         for contig in feature_trees
     }
+
+    # go through each interval, and if it overlaps by min_overlap or more, remove it
+    ivs_to_remove: Dict[Contig, List[Interval]] = defaultdict(list)
+    for contig, ivtree in trees.items():
+        if contig not in masked_intervals:
+            continue
+        logging.info(f"Masking {contig}...")
+        for iv in ivtree:
+            frac_masked = masked_intervals[contig][iv.begin : iv.end].mean()
+            if frac_masked > min_overlap:
+                logging.debug(f"Removing {iv.data}")
+                ivs_to_remove[contig].append(iv)
+
+    for contig, ivs in ivs_to_remove.items():
+        logging.info(f"{len(trees[contig])} feature(s) before masking {contig}...")
+        for iv in ivs:
+            trees[contig].remove(iv)
+        logging.info(f"{len(trees[contig])} feature(s) after masking {contig}")
+
+    for contig in feature_trees:
+        logging.info(f"Merging overlapping features for {contig}...")
+        feature_trees[contig].merge_overlaps(data_reducer=data_reducer)
+
+    for contig in trees:
+        logging.info(f"Merging overlapping features for {contig}...")
+        logging.info(f"{len(trees[contig])} features before merging...")
+        trees[contig].merge_overlaps(data_reducer=data_reducer)
+        logging.info(f"{len(trees[contig])} features after merging")
+
     for contig, tree in trees.items():
         logging.info(f"Merging short intervals for {contig}...")
         trees[contig] = merge_short_intervals(tree, min_len=min_len)

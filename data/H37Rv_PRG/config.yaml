@@ -28,6 +28,7 @@ scripts:
   create_vcf_ref:  "scripts/create_vcf_ref.py"
 
 min_chunk_len:        500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
+min_overlap:          0.3  # min. overlap between mask and locus in gff
 lineage_panel:        "resources/snps_for_typing.csv"
 cryptic_vcf:          "vcfs/original/cryptic_release.2020-04.GPI.bcf.gz"
 comas_vcf:            "vcfs/original/cryptic_release.2020-04.comas.bcf.gz"  # must be indexed

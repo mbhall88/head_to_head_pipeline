@@ -58,27 +58,36 @@ rule split_h37rv:
     input:
         genome=H37RV["genome"],
         features=H37RV["features"],
+        mask=H37RV["mask"],
     output:
         info=prg_dir / "reference_loci" / "loci-info.csv",
     threads: 1
     resources:
         mem_mb=1 * GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["gff_split"]
     params:
         script=scripts["gff_split"],
         outdir=lambda wildcards, output: Path(output.info).parent,
-        types="gene",
-        min_len=config["min_chunk_len"],
+        extra=" ".join(
+            [
+                f"--min-len {config['min_chunk_len']}"
+                "--types gene"
+                f"-F {config['min_overlap']}",
+                "--verbose",
+            ]
+        ),
+    log:
+        rule_log_dir / "split_h37rv.log",
     shell:
         """
         python {params.script} --fasta {input.genome} \
             --gff {input.features} \
             --outdir {params.outdir} \
-            --types {params.types} \
-            --min-len {params.min_len} 
+            --mask {input.mask} \
+            {params.extra} 2> {log}
         """
 
 
@@ -91,7 +100,7 @@ rule assign_lineages:
     threads: 1
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["assign_lineages"]
@@ -102,6 +111,8 @@ rule assign_lineages:
         max_alt_lineages=1,
         ref_lineage_position=config["ref_lineage_position"],
         extras="--verbose",
+    log:
+        rule_log_dir / "assign_lineages.log",
     shell:
         """
         python {params.script} --input {input.vcf} \
@@ -110,7 +121,7 @@ rule assign_lineages:
             --default-lineage {params.default_lineage} \
             --max-het {params.max_het} \
             --ref-lineage-position {params.ref_lineage_position} \
-            --max-alt-lineages {params.max_alt_lineages} {params.extras}
+            --max-alt-lineages {params.max_alt_lineages} {params.extras} 2> {log}
         """
 
 
@@ -146,7 +157,7 @@ rule split_into_lineage_vcfs:
     threads: 4
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["bcftools"]
     params:
         output_type="b", # compressed BCF
@@ -194,7 +205,7 @@ rule subsample_vcfs:
     threads: 4
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["bcftools"]
     params:
         output_type="b", # compressed BCF
@@ -218,7 +229,7 @@ rule index_vcfs:
     threads: 4
     resources:
         mem_mb=GB,
-    singularity:
+    container:
         containers["bcftools"]
     params:
         extras=" ".join(["--csi", "--force"]),
@@ -244,7 +255,7 @@ rule merge_vcfs:
     threads: 4
     resources:
         mem_mb=4 * GB,
-    singularity:
+    container:
         containers["bcftools"]
     params:
         output_type="b", # compressed BCF
@@ -269,7 +280,7 @@ rule filter_vcfs:
     threads: 4
     resources:
         mem_mb=2 * GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["filter_vcf"]
@@ -310,7 +321,7 @@ rule associate_vcf_records_to_loci:
     threads: 4
     resources:
         mem_mb=2 * GB,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["records_to_loci"]
@@ -388,7 +399,7 @@ rule multiple_sequence_alignment_of_loci:
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: int(400 * GB) * attempt,
-    singularity:
+    container:
         containers["conda"]
     conda:
         envs["msa"]
@@ -418,7 +429,7 @@ rule build_local_prgs:
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
-    singularity:
+    container:
         containers["make_prg"]
     params:
         extras="--no-ignore --hidden --show-errors",

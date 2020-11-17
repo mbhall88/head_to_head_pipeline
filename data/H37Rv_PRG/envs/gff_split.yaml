@@ -5,3 +5,4 @@ channels:
 dependencies:
   - intervaltree=3.0.2
   - click=7.1.2
+  - numpy=1.18.1
