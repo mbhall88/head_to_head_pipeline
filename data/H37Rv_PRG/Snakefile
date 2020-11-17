@@ -286,7 +286,7 @@ rule filter_vcfs:
         envs["filter_vcf"]
     params:
         output_type="z", # compressed VCF
-        filters=".,PASS",
+        filters=".,PASS,mask-compass,mask-apr2020-inaccessible",
         vcf_extras=" ".join(
             [
                 "--trim-alt-alleles",
@@ -302,7 +302,6 @@ rule filter_vcfs:
             --output-type v \
             {params.vcf_extras} \
             {input.vcf} | \
-        bedtools subtract {params.bedtools_extras} -a - -b {input.mask} | \
         bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
 
         bcftools index --threads {threads} --csi --force {output.vcf}
