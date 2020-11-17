@@ -1,4 +1,7 @@
+import sys
 from pathlib import Path
+
+sys.stderr = open(snakemake.log[0], "w")
 
 outstream = open(snakemake.output.vcf_ref, "w")
 loci_dir = Path(snakemake.input.loci_info).parent

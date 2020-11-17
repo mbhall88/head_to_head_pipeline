@@ -17,15 +17,18 @@ envs:
   apply_variants:  "envs/apply_variants.yaml"
   mask_loci:       "envs/mask_loci.yaml"
   msa:             "envs/msa.yaml"
+  fd:              "envs/fd.yaml"
 scripts:
-  gff_split:       "scripts/gff_splitter.py"
-  assign_lineages: "scripts/assign_lineages.py"
-  records_to_loci: "scripts/associate_vcf_records_to_loci.py"
-  mask_loci:       "scripts/mask_loci.py"
-  apply_variants:  "scripts/apply_variants_to_loci.py"
-  msa:             "scripts/msa.sh"
-  make_prg:        "scripts/build_local_prgs.sh"
-  create_vcf_ref:  "scripts/create_vcf_ref.py"
+  gff_split:               "scripts/gff_splitter.py"
+  assign_lineages:         "scripts/assign_lineages.py"
+  records_to_loci:         "scripts/associate_vcf_records_to_loci.py"
+  mask_loci:               "scripts/mask_loci.py"
+  apply_variants:          "scripts/apply_variants_to_loci.py"
+  msa:                     "scripts/msa.sh"
+  make_prg:                "scripts/build_local_prgs.sh"
+  subsample_samples_files: "scripts/subsample_samples_files.py"
+  create_samples_files:    "scripts/create_samples_files.py"
+  create_vcf_ref:          "scripts/create_vcf_ref.py"
 
 min_chunk_len:        500  # the minimum length for chunks when splitting H37Rv up for PRG skeletons
 min_overlap:          0.3  # min. overlap between mask and locus in gff

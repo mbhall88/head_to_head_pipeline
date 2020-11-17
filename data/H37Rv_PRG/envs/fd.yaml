@@ -1,0 +1,6 @@
+name: fd
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - fd-find=8.1.1

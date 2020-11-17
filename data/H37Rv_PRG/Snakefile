@@ -133,19 +133,12 @@ rule create_samples_files:
     threads: 1
     resources:
         mem_mb=int(0.2 * GB),
-    run:
-        samples = []
-        with open(output.samples_file, "w") as outstream, open(
-            input.assignments
-        ) as instream:
-            for row in map(str.rstrip, instream):
-                fields = row.split(",")
-                sample = fields[0]
-                lin = fields[1]
-                if (
-                    wildcards.lineage == "rare" and lin.lower() in rare_lineages
-                ) or lin == wildcards.lineage:
-                    print(sample, file=outstream)
+    params:
+        rare_lineages=rare_lineages,
+    log:
+        rule_log_dir / "create_samples_files/{lineage}.log",
+    script:
+        scripts["create_samples_files"]
 
 
 rule split_into_lineage_vcfs:
@@ -162,6 +155,8 @@ rule split_into_lineage_vcfs:
     params:
         output_type="b", # compressed BCF
         extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
+    log:
+        rule_log_dir / "split_into_lineage_vcfs/{lineage}.log",
     shell:
         """
         bcftools view --threads {threads} \
@@ -169,7 +164,7 @@ rule split_into_lineage_vcfs:
             --output-type {params.output_type} \
             -o {output.vcf} \
             {params.extras} \
-            {input.vcf}
+            {input.vcf} 2> {log}
         """
 
 
@@ -183,17 +178,11 @@ rule subsample_samples_files:
         mem_mb=int(0.3 * GB),
     params:
         seed=88,
-    run:
-        import random
-        from pathlib import Path
-
-        random.seed(params.seed)
-        samples = list(filter(None, Path(input.samples_file).read_text().splitlines()))
-        threshold = prg_names[wildcards.prg_name]
-        k = min(int(threshold), len(samples))
-        selections = random.sample(samples, k=k)
-        content = "\n".join(selections)
-        Path(output.samples_file).write_text(content)
+        prg_names=prg_names,
+    log:
+        rule_log_dir / "subsample_samples_files/{prg_name}/{lineage}.log",
+    script:
+        scripts["subsample_samples_files"]
 
 
 rule subsample_vcfs:
@@ -210,6 +199,8 @@ rule subsample_vcfs:
     params:
         output_type="b", # compressed BCF
         extras=" ".join(["--trim-alt-alleles", "--exclude-uncalled"]),
+    log:
+        rule_log_dir / "subsample_vcfs/{prg_name}/{lineage}.log",
     shell:
         """
         bcftools view --threads {threads} \
@@ -217,7 +208,7 @@ rule subsample_vcfs:
             --output-type {params.output_type} \
             -o {output.vcf} \
             {params.extras} \
-            {input.vcf}
+            {input.vcf} 2> {log}
         """
 
 
@@ -225,7 +216,7 @@ rule index_vcfs:
     input:
         vcf=rules.subsample_vcfs.output.vcf,
     output:
-        index=vcf_dir / "lineage" / "cryptic.{prg_name}.L{lineage}.bcf.gz.csi",
+        index=vcf_dir / "lineage/cryptic.{prg_name}.L{lineage}.bcf.gz.csi",
     threads: 4
     resources:
         mem_mb=GB,
@@ -233,11 +224,13 @@ rule index_vcfs:
         containers["bcftools"]
     params:
         extras=" ".join(["--csi", "--force"]),
+    log:
+        rule_log_dir / "index_vcfs/{prg_name}/{lineage}.log",
     shell:
         """
         bcftools index --threads {threads} \
             {params.extras} \
-            {input.vcf}
+            {input.vcf} 2> {log}
         """
 
 
@@ -251,7 +244,7 @@ rule merge_vcfs:
         ),
         comas_vcf=config["comas_vcf"],
     output:
-        vcf=vcf_dir / "merged" / "{prg_name}.bcf.gz",
+        vcf=vcf_dir / "merged/{prg_name}.bcf.gz",
     threads: 4
     resources:
         mem_mb=4 * GB,
@@ -260,13 +253,15 @@ rule merge_vcfs:
     params:
         output_type="b", # compressed BCF
         extras="",
+    log:
+        rule_log_dir / "merge_vcfs/{prg_name}.log",
     shell:
         """
         bcftools merge --threads {threads} \
             --output-type {params.output_type} \
             -o {output.vcf} \
             {params.extras} \
-            {input.cryptic_vcfs} {input.comas_vcf}
+            {input.cryptic_vcfs} {input.comas_vcf} 2> {log}
         """
 
 
@@ -295,16 +290,18 @@ rule filter_vcfs:
             ]
         ),
         bedtools_extras=" ".join(["-header", "-A",]), # remove entire feature if any overlap,
+    log:
+        rule_log_dir / "filter_vcfs" / "{prg_name}.log",
     shell:
         """
-        bcftools view --threads {threads} \
+        ( bcftools view --threads {threads} \
             --apply-filters {params.filters} \
             --output-type v \
             {params.vcf_extras} \
             {input.vcf} | \
-        bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads}
+        bcftools convert -O {params.output_type} -o {output.vcf} --threads {threads} ) 2> {log}
 
-        bcftools index --threads {threads} --csi --force {output.vcf}
+        bcftools index --threads {threads} --csi --force {output.vcf} 2>> {log}
         """
 
 
@@ -464,10 +461,14 @@ rule combine_local_prgs:
         mem_mb=int(0.5 * GB),
     params:
         extras="--no-ignore --hidden",
-        extension="prg",
+        extension=lambda wildcards, output: os.path.splitext(output.prg)[-1],
         pattern=".",
     log:
         rule_log_dir / "combine_local_prgs/{prg_name}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["fd"]
     shell:
         """
         fd {params.extras} \
@@ -510,5 +511,7 @@ rule create_vcf_ref:
     threads: 1
     resources:
         mem_mb=int(0.5 * GB),
+    log:
+        rule_log_dir / "create_vcf_ref.log",
     script:
         scripts["create_vcf_ref"]
