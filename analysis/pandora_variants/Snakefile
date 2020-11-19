@@ -180,7 +180,7 @@ rule make_single_sample_local_prgs:
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
-    singularity:
+    container:
         containers["make_prg"]
     params:
         extras="--no-ignore --hidden --show-errors",
@@ -442,5 +442,7 @@ rule plot_evaluation_all_variants_single_sample:
         precision_key="Precision_edit_dist",
         dpi=300,
         figsize=(13, 8),
+    log:
+        rule_log_dir / "plot_evaluation_all_variants_single_sample.log",
     script:
         scripts["plot_truth_eval"]
