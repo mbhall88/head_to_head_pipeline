@@ -435,3 +435,55 @@ class TestFilterFilterStatus:
         expected = str(FilterStatus(high_gaps=True))
 
         assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_maxIndelOnAndIndelIsLong(self, mocked_variant):
+        max_indel = 2
+        assessor = Filter(max_indel=max_indel)
+        mocked_variant.REF = "AAAA"
+        mocked_variant.ALT = ["ATAA", "A"]
+        mocked_variant.genotypes = [[2]]
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(long_indel=True))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_maxIndelOnAndIndelIsSameAsMax(self, mocked_variant):
+        max_indel = 3
+        assessor = Filter(max_indel=max_indel)
+        mocked_variant.REF = "AAAA"
+        mocked_variant.ALT = ["ATAA", "A"]
+        mocked_variant.genotypes = [[2]]
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(long_indel=False))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_maxIndelOnAndIndelIsBelowMax(self, mocked_variant):
+        max_indel = 1
+        assessor = Filter(max_indel=max_indel)
+        mocked_variant.REF = "AAAA"
+        mocked_variant.ALT = ["ATAA", "A"]
+        mocked_variant.genotypes = [[1]]
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(long_indel=False))
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_maxIndelOffAndIndelIsLong(self, mocked_variant):
+        max_indel = None
+        assessor = Filter(max_indel=max_indel)
+        mocked_variant.REF = "AA"
+        mocked_variant.ALT = ["ATACGA", "A"]
+        mocked_variant.genotypes = [[1]]
+
+        actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(long_indel=False))
+
+        assert actual == expected
