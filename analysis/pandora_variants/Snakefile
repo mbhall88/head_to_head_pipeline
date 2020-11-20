@@ -312,17 +312,18 @@ rule normalise_single_sample_vcf:
     resources:
         mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
     params:
-        options="-v",
+        norm_pos_opts="-v",
         script=scripts["normalise_pos"],
         norm_opts="-c e -O b",
+        view_opts="-a", # trim alts
     container:
         containers["conda"]
     conda:
         envs["normalise_pos"]
     shell:
         """
-        (sed 's/Number=A/Number=R/' {input.vcf} \
-        | python {params.script} -l {input.loci_info} -r {input.ref} {params.options} \
+        ( python {params.script} -i {input.vcf} -l {input.loci_info} -r {input.ref} {params.norm_pos_opts} \
+        | bcftools view -aU \
         | bcftools sort \
         | bcftools norm {params.norm_opts} -f {input.ref} -o {output.vcf}) 2> {log}
         """
