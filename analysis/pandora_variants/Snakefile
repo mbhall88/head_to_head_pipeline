@@ -323,7 +323,7 @@ rule normalise_single_sample_vcf:
     shell:
         """
         ( python {params.script} -i {input.vcf} -l {input.loci_info} -r {input.ref} {params.norm_pos_opts} \
-        | bcftools view -aU \
+        | bcftools view {params.view_opts} \
         | bcftools sort \
         | bcftools norm {params.norm_opts} -f {input.ref} -o {output.vcf}) 2> {log}
         """
