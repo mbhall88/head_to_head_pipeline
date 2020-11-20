@@ -50,7 +50,8 @@ K: int = config["pandora_k"]
 W: int = config["pandora_w"]
 SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
-VARIFIER_JSONS = set()
+VARIFIER_JSONS_ALL = set()
+VARIFIER_JSONS_SNP = set()
 prg_names: List[str] = config["prg_names"]
 
 output_files = set()
@@ -63,10 +64,14 @@ for idx, row in samplesheet.iterrows():
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
-                truth_eval_dir / f"{prg_name}/{sample}/summary_stats.json"
+                truth_eval_dir / f"all_variants/{prg_name}/{sample}/summary_stats.json"
+            )
+            pandora_truth_snps_summary = (
+                truth_eval_dir / f"snps/{prg_name}/{sample}/summary_stats.json"
             )
             # compass_truth_summary = baseline_variant_dir / f"truth_eval/{sample}/compass/summary_stats.json"
-            VARIFIER_JSONS.add(pandora_truth_summary)
+            VARIFIER_JSONS_ALL.add(pandora_truth_summary)
+            VARIFIER_JSONS_SNP.add(pandora_truth_snps_summary)
 # VARIFIER_JSONS.add(compass_truth_summary)
 
 output_files.add(truth_eval_dir / "truth_all_eval.recall.png")
@@ -384,8 +389,8 @@ rule evaluate_all_variants_single_sample:
         truth_mask=infer_assembly_mask_path,
     output:
         summary=report(
-            truth_eval_dir / "{prg_name}/{sample}/summary_stats.json",
-            category="Truth Evaluation",
+            truth_eval_dir / "all_variants/{prg_name}/{sample}/summary_stats.json",
+            category="Truth Evaluation - All Variants",
             subcategory="Raw data",
             caption=report_dir / "varifier.rst",
         ),
@@ -418,17 +423,17 @@ rule evaluate_all_variants_single_sample:
 
 rule plot_evaluation_all_variants_single_sample:
     input:
-        json_files=VARIFIER_JSONS,
+        json_files=VARIFIER_JSONS_ALL,
     output:
         recall_plot=report(
-            truth_eval_dir / "truth_all_eval.recall.png",
-            category="Truth Evaluation",
+            truth_eval_dir / "all_variants/truth_all_eval.recall.png",
+            category="Truth Evaluation - All Variants",
             subcategory="Recall",
             caption=report_dir / "truth_all_eval.rst",
         ),
         precision_plot=report(
-            truth_eval_dir / "truth_all_eval.precision.png",
-            category="Truth Evaluation",
+            truth_eval_dir / "all_variants/truth_all_eval.precision.png",
+            category="Truth Evaluation - All Variants",
             subcategory="Precision",
             caption=report_dir / "truth_all_eval.rst",
         ),
@@ -446,5 +451,98 @@ rule plot_evaluation_all_variants_single_sample:
         figsize=(13, 8),
     log:
         rule_log_dir / "plot_evaluation_all_variants_single_sample.log",
+    script:
+        scripts["plot_truth_eval"]
+
+
+rule extract_snps:
+    input:
+        vcf=rules.filter_single_sample_vcf.output.vcf,
+    output:
+        vcf=filter_dir / "{prg_name}/{site}/{sample}.snps.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["bcftools"]
+    params:
+        extra="-O b -v snps,mnps",
+    log:
+        rule_log_dir / "extract_snps/{prg_name}/{site}/{sample}.log",
+    shell:
+        "bcftools view {params.extra} --threads {threads} -o {output.vcf} {input.vcf} 2> {log}"
+
+
+rule evaluate_snps_single_sample:
+    input:
+        truth_asm=infer_assembly_path,
+        vcf_ref=H37RV["genome"],
+        vcf_to_eval=filter_dir / "{prg_name}/madagascar/{sample}.snps.filtered.bcf",
+        ref_mask=H37RV["mask"],
+        truth_mask=infer_assembly_mask_path,
+    output:
+        summary=report(
+            truth_eval_dir / "snps/{prg_name}/{sample}/summary_stats.json",
+            category="Truth Evaluation - SNPs",
+            subcategory="Raw data",
+            caption=report_dir / "varifier.rst",
+        ),
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(10 * GB) * attempt,
+    params:
+        options="--force --filter_pass PASS,.",
+        flank_length=100,
+        outdir=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        rule_log_dir / "evaluate_snps_single_sample/{prg_name}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["varifier"]
+    shell:
+        """
+        (bcftools view -O v {input.vcf_to_eval} \
+        | varifier --debug vcf_eval {params.options} \
+            --flank_length {params.flank_length} \
+            --ref_mask {input.ref_mask} \
+            --truth_mask {input.truth_mask} \
+            {input.truth_asm} \
+            {input.vcf_ref} \
+            - \
+            {params.outdir}) 2> {log}
+        """
+
+
+rule plot_evaluation_snps_single_sample:
+    input:
+        json_files=VARIFIER_JSONS_SNP,
+    output:
+        recall_plot=report(
+            truth_eval_dir / "snps/truth_snps_eval.recall.png",
+            category="Truth Evaluation - SNPs",
+            subcategory="Recall",
+            caption=report_dir / "truth_snps_eval.rst",
+        ),
+        precision_plot=report(
+            truth_eval_dir / "snps/truth_snps_eval.precision.png",
+            category="Truth Evaluation - SNPs",
+            subcategory="Precision",
+            caption=report_dir / "truth_snps_eval.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB * 0.5),
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_truth_eval"]
+    params:
+        recall_key="Recall_edit_dist",
+        precision_key="Precision_edit_dist",
+        dpi=300,
+        figsize=(13, 8),
+    log:
+        rule_log_dir / "plot_evaluation_snps_single_sample.log",
     script:
         scripts["plot_truth_eval"]
