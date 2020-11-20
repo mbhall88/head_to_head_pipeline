@@ -18,6 +18,7 @@ class Tags(Enum):
     HighGaps = "hg"
     GtypeConf = "GT_CONF"
     LowGtConf = "lgc"
+    LongIndel = "lindel"
     Pass = "PASS"
 
     def __str__(self) -> str:
@@ -84,6 +85,7 @@ class FilterStatus:
     strand_bias: bool = False
     low_gt_conf: bool = False
     high_gaps: bool = False
+    long_indel: bool = False
     delim: str = ";"
 
     def __str__(self) -> str:
@@ -98,6 +100,8 @@ class FilterStatus:
             status.append(str(Tags.StrandBias))
         if self.high_gaps:
             status.append(str(Tags.HighGaps))
+        if self.long_indel:
+            status.append(str(Tags.LongIndel))
 
         return self.delim.join(status) if status else str(Tags.Pass)
 
@@ -139,12 +143,14 @@ class Filter:
         min_strand_bias: int = 0,
         min_gt_conf: float = 0,
         max_gaps: float = 0,
+        max_indel: Optional[int] = None,
     ):
         self.min_covg = min_covg
         self.max_covg = max_covg
         self.min_strand_bias = min_strand_bias / 100
         self.min_gt_conf = min_gt_conf
         self.max_gaps = max_gaps
+        self.max_indel = max_indel
 
         if self.min_covg and self.max_covg and self.min_covg > self.max_covg:
             raise ValueError(
@@ -168,6 +174,14 @@ class Filter:
         gaps = get_gaps(variant)
         return gaps > self.max_gaps
 
+    def _is_long_indel(self, variant: Variant) -> bool:
+        gt = Genotype.from_arr(variant.genotypes[0])
+        if not gt.is_hom_alt() or self.max_indel is None:
+            return False
+        alt = variant.ALT[gt.alt_index()]
+        indel_len = abs(len(variant.REF) - len(alt))
+        return indel_len > self.max_indel
+
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
         if self.min_covg or self.max_covg:
@@ -184,6 +198,9 @@ class Filter:
 
         if self.max_gaps != 0:
             status.high_gaps = self._is_high_gaps(variant)
+
+        if self.max_indel is not None:
+            status.long_indel = self._is_long_indel(variant)
 
         return str(status)
 
@@ -233,6 +250,14 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for max. gaps: {header}")
+
+        if self.max_indel is not None:
+            header = {
+                "ID": str(Tags.LongIndel),
+                "Description": (f"Indel is longer than {self.max_indel}."),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. indel: {header}")
 
 
 def get_covg(variant: Variant, sample_idx: int = 0) -> int:
@@ -287,6 +312,7 @@ def get_gaps(variant: Variant, sample_idx: int = 0) -> float:
     default=0,
     show_default=True,
 )
+@click.option("-I", "--max-indel", help="Maximum length of an indel", type=int)
 @click.option(
     "-s",
     "--min-strand-bias",
@@ -335,6 +361,7 @@ def main(
     verbose: bool,
     min_covg: int,
     max_covg: int,
+    max_indel: Optional[int],
     min_strand_bias: int,
     max_gaps: float,
     min_gt_conf: float,
@@ -359,6 +386,7 @@ def main(
         min_strand_bias=min_strand_bias,
         min_gt_conf=min_gt_conf,
         max_gaps=max_gaps,
+        max_indel=max_indel,
     )
 
     vcf_reader = VCF(in_vcf)

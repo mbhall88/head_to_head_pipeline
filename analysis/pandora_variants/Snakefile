@@ -347,6 +347,7 @@ rule filter_single_sample_vcf:
                 f"-s {filters['min_strand_bias']}",
                 f"-g {filters['min_gt_conf']}",
                 f"-G {filters['max_gaps']}",
+                f"-I {filters['max_indel']}",
             ]
         ),
         script=scripts["filter"],
