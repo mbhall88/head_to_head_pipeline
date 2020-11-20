@@ -73,8 +73,8 @@ rule split_h37rv:
         outdir=lambda wildcards, output: Path(output.info).parent,
         extra=" ".join(
             [
-                f"--min-len {config['min_chunk_len']}"
-                "--types gene"
+                f"--min-len {config['min_chunk_len']}",
+                "--types gene",
                 f"-F {config['min_overlap']}",
                 "--verbose",
             ]
