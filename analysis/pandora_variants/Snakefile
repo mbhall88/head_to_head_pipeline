@@ -74,8 +74,10 @@ for idx, row in samplesheet.iterrows():
             VARIFIER_JSONS_SNP.add(pandora_truth_snps_summary)
 # VARIFIER_JSONS.add(compass_truth_summary)
 
-output_files.add(truth_eval_dir / "truth_all_eval.recall.png")
-output_files.add(truth_eval_dir / "truth_all_eval.precision.png")
+output_files.add(truth_eval_dir / "all_variants/truth_all_eval.recall.png")
+output_files.add(truth_eval_dir / "all_variants/truth_all_eval.precision.png")
+output_files.add(truth_eval_dir / "snps/truth_snps_eval.recall.png")
+output_files.add(truth_eval_dir / "snps/truth_snps_eval.precision.png")
 
 
 # ======================================================
