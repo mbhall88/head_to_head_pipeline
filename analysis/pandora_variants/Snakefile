@@ -52,6 +52,7 @@ SITES = samplesheet["site"]
 SAMPLES = samplesheet["sample"]
 VARIFIER_JSONS_ALL = set()
 VARIFIER_JSONS_SNP = set()
+VARIFIER_JSONS_INDELS = set()
 prg_names: List[str] = config["prg_names"]
 
 output_files = set()
@@ -69,9 +70,13 @@ for idx, row in samplesheet.iterrows():
             pandora_truth_snps_summary = (
                 truth_eval_dir / f"snps/{prg_name}/{sample}/summary_stats.json"
             )
+            pandora_truth_indels_summary = (
+                truth_eval_dir / f"indels/{prg_name}/{sample}/summary_stats.json"
+            )
             # compass_truth_summary = baseline_variant_dir / f"truth_eval/{sample}/compass/summary_stats.json"
             VARIFIER_JSONS_ALL.add(pandora_truth_summary)
             VARIFIER_JSONS_SNP.add(pandora_truth_snps_summary)
+            VARIFIER_JSONS_INDELS.add(pandora_truth_indels_summary)
 # VARIFIER_JSONS.add(compass_truth_summary)
 
 output_files.add(truth_eval_dir / "all_variants/truth_all_eval.recall.png")
