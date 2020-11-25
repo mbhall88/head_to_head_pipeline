@@ -22,13 +22,15 @@ envs:
   normalise_pos:   "envs/normalise_pos.yaml"
   plot_truth_eval: "envs/plot_truth_eval.yaml"
   filter:          "envs/filter.yaml"
-  varifier:        "envs/varifier.yaml"
+  varifier:        "../baseline_variants/envs/varifier.yaml"
+  consensus:       "../baseline_variants/envs/consensus.yaml"
 scripts:
   update_msas:     "scripts/update_msas.py"
   make_prg:        "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
   normalise_pos:   "scripts/normalise_pos.py"
   plot_truth_eval: "scripts/plot_truth_eval.py"
   filter:          "scripts/apply_filters.py"
+  consensus:       "../baseline_variants/scripts/consensus.py"
 
 # filters for pandora calls
 filters:
@@ -51,6 +53,8 @@ assemblies:
 
 pandora_k:            15  # kmer size for pandora
 pandora_w:            14  # window size for pandora
+pandora_e:            0.11  # pandora error rate
+pandora_E:            0.01  # pandora genotype error rate
 prg_names:
   - sparse
   - dense

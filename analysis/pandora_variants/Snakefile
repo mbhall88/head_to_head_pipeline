@@ -36,7 +36,7 @@ asm_dir = Path(config["asm_dir"]).resolve()
 assemblies: Dict[str, str] = config["assemblies"]
 nanopore_dir = Path("nanopore").resolve()
 concordance_dir = Path("concordance").resolve()
-consensus_dir = Path("consensus").resolve()
+consensus_dir = nanopore_dir / "consensus"
 distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 discover_dir = nanopore_dir / "discover"
@@ -130,6 +130,7 @@ rule discover_denovo_variants:
             [
                 f"-k {K}",
                 f"-w {W}",
+                f"-e {config['pandora_e']}",
                 f"-g {config['genome_size']}",
                 "-v",
                 f"--min-dbg-dp {discover['min_dbg_abundance']}",
@@ -291,6 +292,8 @@ rule single_sample_genotype:
                 f"--genotype",
                 f"-k {K}",
                 f"-w {W}",
+                f"-e {config['pandora_e']}",
+                f"-E {config['pandora_E']}",
                 f"-g {config['genome_size']}",
                 "--kg",
                 "--loci-vcf",
@@ -475,6 +478,24 @@ rule extract_snps:
         "bcftools view {params.extra} --threads {threads} -o {output.vcf} {input.vcf} 2> {log}"
 
 
+rule extract_indels:
+    input:
+        vcf=rules.filter_single_sample_vcf.output.vcf,
+    output:
+        vcf=filter_dir / "{prg_name}/{site}/{sample}.indels.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["bcftools"]
+    params:
+        extra="-O b -v indels",
+    log:
+        rule_log_dir / "extract_indels/{prg_name}/{site}/{sample}.log",
+    shell:
+        "bcftools view {params.extra} --threads {threads} -o {output.vcf} {input.vcf} 2> {log}"
+
+
 rule evaluate_snps_single_sample:
     input:
         truth_asm=infer_assembly_path,
@@ -498,6 +519,47 @@ rule evaluate_snps_single_sample:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_snps_single_sample/{prg_name}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["varifier"]
+    shell:
+        """
+        (bcftools view -O v {input.vcf_to_eval} \
+        | varifier --debug vcf_eval {params.options} \
+            --flank_length {params.flank_length} \
+            --ref_mask {input.ref_mask} \
+            --truth_mask {input.truth_mask} \
+            {input.truth_asm} \
+            {input.vcf_ref} \
+            - \
+            {params.outdir}) 2> {log}
+        """
+
+
+rule evaluate_indels_single_sample:
+    input:
+        truth_asm=infer_assembly_path,
+        vcf_ref=H37RV["genome"],
+        vcf_to_eval=filter_dir / "{prg_name}/madagascar/{sample}.indels.filtered.bcf",
+        ref_mask=H37RV["mask"],
+        truth_mask=infer_assembly_mask_path,
+    output:
+        summary=report(
+            truth_eval_dir / "indels/{prg_name}/{sample}/summary_stats.json",
+            category="Truth Evaluation - indels",
+            subcategory="Raw data",
+            caption=report_dir / "varifier.rst",
+        ),
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(10 * GB) * attempt,
+    params:
+        options="--force --filter_pass PASS,.",
+        flank_length=100,
+        outdir=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        rule_log_dir / "evaluate_indels_single_sample/{prg_name}/{sample}.log",
     container:
         containers["conda"]
     conda:
@@ -548,3 +610,80 @@ rule plot_evaluation_snps_single_sample:
         rule_log_dir / "plot_evaluation_snps_single_sample.log",
     script:
         scripts["plot_truth_eval"]
+
+
+rule generate_consensus:
+    input:
+        mask=H37RV["mask"],
+        ref_fasta=H37RV["genome"],
+        vcf=rules.extract_snps.output.vcf,
+    output:
+        fasta=consensus_dir / "{prg_name}/{site}/{sample}.consensus.fa",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    container:
+        containers["conda"]
+    conda:
+        envs["consensus"]
+    params:
+        options=" ".join(
+            ["--verbose", "--ignore all", "--sample-id {sample}", "--het-default none"]
+        ),
+        script=scripts["consensus"],
+    log:
+        rule_log_dir / "generate_consensus/{prg_name}/{site}/{sample}.log",
+    shell:
+        """
+        python {params.script} {params.options} \
+            -i {input.vcf} \
+            -f {input.ref_fasta} \
+            -m {input.mask} \
+            -o {output.fasta} 2> {log}
+        """
+
+
+rule aggregate_consensus:
+    input:
+        fastas=expand(
+            consensus_dir / "{{prg_name}}/{site}/{sample}.consensus.fa",
+            zip,
+            site=SITES,
+            sample=SAMPLES,
+        ),
+    output:
+        fasta=consensus_dir / "{prg_name}/pandora.{prg_name}.consensus.fa",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    log:
+        rule_log_dir / "aggregate_consensus/{prg_name}.log",
+    shell:
+        """
+        awk 1 {input.fastas} > {output.fasta} 2> {log}
+        """
+
+
+rule snp_distance:
+    input:
+        fasta=rules.aggregate_consensus.output.fasta,
+    output:
+        matrix=report(
+            distance_dir / "pandora.{prg_name}.matrix.csv",
+            category="Distance",
+            subcategory="Data",
+            caption=report_dir / "distance.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    container:
+        containers["snp-dists"]
+    log:
+        rule_log_dir / "snp_distance/{prg_name}.log",
+    params:
+        options="-c",
+    shell:
+        """
+        snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
+        """

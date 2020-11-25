@@ -4,5 +4,5 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - bioconda::varifier
+  - bioconda::varifier=0.2.0
   - bioconda::bcftools=1.10
