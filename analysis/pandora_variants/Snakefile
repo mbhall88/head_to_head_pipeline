@@ -35,7 +35,7 @@ compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
 asm_dir = Path(config["asm_dir"]).resolve()
 assemblies: Dict[str, str] = config["assemblies"]
 nanopore_dir = Path("nanopore").resolve()
-concordance_dir = Path("concordance").resolve()
+concordance_dir = nanopore_dir / "concordance"
 consensus_dir = nanopore_dir / "consensus"
 distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
@@ -61,7 +61,9 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for prg_name in prg_names:
-        output_files.add(filter_dir / f"{prg_name}/{site}/{sample}.filtered.bcf")
+        output_files.add(
+            concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
+        )
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -692,4 +694,40 @@ rule snp_distance:
     shell:
         """
         snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
+        """
+
+
+rule calculate_concordance:
+    input:
+        truth=compass_vcf_dir / "{sample}.compass.vcf.gz",
+        query=rules.extract_snps.output.vcf,
+        mask=H37RV["mask"],
+    output:
+        csv=concordance_dir / "{prg_name}/{site}/{sample}.concordance.csv",
+        json=report(
+            concordance_dir / "{prg_name}/{site}/{sample}.concordance.json",
+            category="Concordance",
+            subcategory="Raw Data",
+            caption=f"{report_dir}/calculate_concordance.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
+    params:
+        options="--verbose --apply-filter",
+        script=scripts["concordance"],
+    log:
+        rule_log_dir / "calculate_concordance/{prg_name}/{site}/{sample}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["concordance"]
+    shell:
+        """
+        python {params.script} {params.options} \
+            -a {input.truth} \
+            -b {input.query} \
+            -m {input.mask} \
+            -c {output.csv} \
+            -j {output.json} 2> {log}
         """

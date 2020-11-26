@@ -2,7 +2,7 @@ samplesheet:          "../../docs/samplesheet.csv"
 build_prg_dir:        "../../data/H37Rv_PRG"
 baseline_variant_dir: "../baseline_variants"
 qc_dir:               "../../data/QC"
-compass_vcf_dir:      "illumina/gvcfs"
+compass_vcf_dir:      "../baseline_variants/illumina/gvcfs"
 asm_dir:              "../assembly/results"
 data_dir:             "../../data/QC/subsampled"
 genome_size:          4411532
@@ -24,6 +24,7 @@ envs:
   filter:          "envs/filter.yaml"
   varifier:        "../baseline_variants/envs/varifier.yaml"
   consensus:       "../baseline_variants/envs/consensus.yaml"
+  concordance:     "../baseline_variants/envs/concordance.yaml"
 scripts:
   update_msas:     "scripts/update_msas.py"
   make_prg:        "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
@@ -31,6 +32,7 @@ scripts:
   plot_truth_eval: "scripts/plot_truth_eval.py"
   filter:          "scripts/apply_filters.py"
   consensus:       "../baseline_variants/scripts/consensus.py"
+  concordance:          "../baseline_variants/scripts/concordance.py"
 
 # filters for pandora calls
 filters:
