@@ -1,3 +1,4 @@
+samplesheet:     "../../docs/samplesheet.csv"
 baseline_dir: "../baseline_variants"
 pandora_dir:  "../pandora_variants"
 
@@ -8,4 +9,4 @@ envs:
   dotplot: "envs/dotplot.yaml"
 
 scripts:
-  dotplot: "scripts/distance_dot_plot.oy"
+  dotplot: "scripts/distance_dot_plot.py"
