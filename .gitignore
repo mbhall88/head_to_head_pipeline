@@ -386,3 +386,4 @@ analysis/baseline_variants/distance
 analysis/pandora_variants/nanopore
 analysis/pandora_variants/truth_eval
 data/H37Rv_PRG/archive
+data/H37Rv_PRG/resources/mask_eda

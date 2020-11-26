@@ -1,0 +1,160 @@
+import os
+from pathlib import Path
+from typing import Union, Dict
+
+import pandas as pd
+
+GB = 1_024
+PathLike = Union[str, Path, os.PathLike]
+
+
+configfile: "config.yaml"
+
+
+inclusion_expr = "failed_qc == 0 and excluded == 0"
+samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
+containers: Dict[str, PathLike] = config["containers"]
+envs: Dict[str, PathLike] = config["envs"]
+scripts: Dict[str, PathLike] = config["scripts"]
+rule_log_dir = Path("logs/stderr").resolve()
+baseline_dir = Path(config["baseline_dir"]).resolve()
+pandora_dir = Path(config["pandora_dir"]).resolve()
+plot_dir = Path("plots").resolve()
+report_dir = Path("report").resolve()
+
+output_files = set()
+output_files.add(plot_dir / "dotplot.html")
+output_files.add(plot_dir / "close_dotplot.html")
+
+
+# ======================================================
+# Sub Workflows
+# ======================================================
+subworkflow pandora:
+    workdir: pandora_dir
+    snakefile: pandora_dir / "Snakefile"
+    configfile: pandora_dir / "config.yaml"
+
+
+subworkflow baseline:
+    workdir: baseline_dir
+    snakefile: baseline_dir / "Snakefile"
+    configfile: baseline_dir / "config.yaml"
+
+
+rule all:
+    input:
+        output_files,
+
+
+rule dotplot:
+    input:
+        x_matrix=baseline("distance/compass.matrix.csv"),
+        y_matrices=[
+            baseline("distance/bcftools.matrix.csv"),
+            pandora("distance/pandora.sparse.matrix.csv"),
+        ],
+    output:
+        full_plot=report(
+            plot_dir / "dotplot.html",
+            caption=report_dir / "dotplot.rst",
+            category="Distance",
+            subcategory="Plot",
+        ),
+        close_plot=report(
+            plot_dir / "close_dotplot.html",
+            caption=report_dir / "close_dotplot.rst",
+            category="Distance",
+            subcategory="Plot",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(2 * GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["dotplot"]
+    params:
+        y_matrices_str=lambda wildcards, input: "-y ".join(input.y_matrices),
+        script=scripts["dotplot"],
+        threshold=100,
+        options=" ".join(
+            [
+                "--title 'Pairwise SNP distances for COMPASS and Nanopore calls'",
+                "--delim ,",
+            ]
+        ),
+    log:
+        rule_log_dir / "dotplot.log",
+    shell:
+        """
+        python {params.script} {params.options} \
+            -x {input.x_matrix} {params.y_matrices_str} \
+            -o {output.full_plot} 2> {log}
+
+        python {params.script} {params.options} \
+            -x {input.x_matrix} {params.y_matrices_str} \
+            -o {output.close_plot} -T {params.threshold} 2>> {log}
+        """
+
+
+#
+# rule plot_concordance:
+#     input:
+#         jsons=expand(
+#             f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
+#             zip,
+#             site=SITES,
+#             sample=SAMPLES,
+#         ),
+#         filter_logs=FILTER_LOGS,
+#     output:
+#         alt_plot=report(
+#             concordance_dir / "alt_concordance.html",
+#             caption=f"{report_dir}/alt_concordance.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#         gw_plot=report(
+#             concordance_dir / "gw_concordance.html",
+#             caption=f"{report_dir}/gw_concordance.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#         depth_call_rate_plot=report(
+#             concordance_dir / "depth_call_rate.html",
+#             caption=f"{report_dir}/depth_call_rate.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#         depth_gw_call_rate_plot=report(
+#             concordance_dir / "depth_gw_call_rate.html",
+#             caption=f"{report_dir}/depth_gw_call_rate.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#         depth_concordance_plot=report(
+#             concordance_dir / "depth_concordance.html",
+#             caption=f"{report_dir}/depth_concordance.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#         depth_gw_concordance_plot=report(
+#             concordance_dir / "depth_gw_concordance.html",
+#             caption=f"{report_dir}/depth_gw_concordance.rst",
+#             category="Concordance",
+#             subcategory="Plots",
+#         ),
+#     threads: 1
+#     resources:
+#         mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
+#     params:
+#         colour_by="site",
+#         index="sample",
+#         log_scale=True,
+#     container:
+#         containers["conda"]
+#     conda:
+#         envs["plot_concordance"]
+#     script:
+#         scripts["plot_concordance"]

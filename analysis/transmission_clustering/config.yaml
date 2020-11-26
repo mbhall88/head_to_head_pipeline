@@ -1,0 +1,11 @@
+baseline_dir: "../baseline_variants"
+pandora_dir:  "../pandora_variants"
+
+containers:
+  conda: "docker://continuumio/miniconda3:4.7.12"
+
+envs:
+  dotplot: "envs/dotplot.yaml"
+
+scripts:
+  dotplot: "scripts/distance_dot_plot.oy"

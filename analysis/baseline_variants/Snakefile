@@ -243,67 +243,6 @@ rule calculate_concordance:
         """
 
 
-rule plot_concordance:
-    input:
-        jsons=expand(
-            f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
-            zip,
-            site=SITES,
-            sample=SAMPLES,
-        ),
-        filter_logs=FILTER_LOGS,
-    output:
-        alt_plot=report(
-            concordance_dir / "alt_concordance.html",
-            caption=f"{report_dir}/alt_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        gw_plot=report(
-            concordance_dir / "gw_concordance.html",
-            caption=f"{report_dir}/gw_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_call_rate_plot=report(
-            concordance_dir / "depth_call_rate.html",
-            caption=f"{report_dir}/depth_call_rate.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_gw_call_rate_plot=report(
-            concordance_dir / "depth_gw_call_rate.html",
-            caption=f"{report_dir}/depth_gw_call_rate.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_concordance_plot=report(
-            concordance_dir / "depth_concordance.html",
-            caption=f"{report_dir}/depth_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_gw_concordance_plot=report(
-            concordance_dir / "depth_gw_concordance.html",
-            caption=f"{report_dir}/depth_gw_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-    threads: 1
-    resources:
-        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
-    params:
-        colour_by="site",
-        index="sample",
-        log_scale=True,
-    container:
-        containers["conda"]
-    conda:
-        envs["plot_concordance"]
-    script:
-        scripts["plot_concordance"]
-
-
 def infer_assembly_path(wildcards):
     asm = assemblies[wildcards.sample]
     return f"{asm_dir}/{wildcards.sample}/{asm}/pacbio/decontam.assembly.{asm}.pacbio.fasta"
@@ -539,56 +478,8 @@ rule plot_distance_matrix:
         containers["conda"]
     conda:
         envs["plot_distance_matrix"]
+    log:
+        rule_log_dir / "plot_distance_matrix/{caller}.log",
     shell:
-        """
-        python {params.script} {params.options} -i {input.matrix} -o {output.plot}
-        """
+        "python {params.script} {params.options} -i {input.matrix} -o {output.plot} 2> {log}"
 
-
-rule dotplot:
-    input:
-        x_matrix=distance_dir / "compass.matrix.csv",
-        y_matrix=distance_dir / "bcftools.matrix.csv",
-    output:
-        full_plot=report(
-            distance_dir / "dotplot.html",
-            caption=report_dir / "dotplot.rst",
-            category="Distance",
-            subcategory="Plot",
-        ),
-        close_plot=report(
-            distance_dir / "close_dotplot.html",
-            caption=report_dir / "close_dotplot.rst",
-            category="Distance",
-            subcategory="Plot",
-        ),
-    threads: 1
-    resources:
-        mem_mb=int(2 * GB),
-    container:
-        containers["conda"]
-    conda:
-        envs["dotplot"]
-    params:
-        script=scripts["dotplot"],
-        xname="compass",
-        yname="bcftools",
-        threshold=100,
-        options=" ".join(
-            [
-                "--title 'Pairwise SNP distances for compass and bcftools calls'",
-                "--delim ,",
-            ]
-        ),
-    shell:
-        """
-        python {params.script} {params.options} \
-            -X {params.xname} -Y {params.yname} \
-            -x {input.x_matrix} -y {input.y_matrix} \
-            -o {output.full_plot}
-
-        python {params.script} {params.options} \
-            -X {params.xname} -Y {params.yname} \
-            -x {input.x_matrix} -y {input.y_matrix} \
-            -o {output.close_plot} -T {params.threshold}
-        """
