@@ -29,17 +29,18 @@ output_files.add(plot_dir / "close_dotplot.html")
 
 # ======================================================
 # Sub Workflows
+# todo: the subworkflow system is not working with this pipeline for some reason
 # ======================================================
-subworkflow pandora:
-    workdir: str(pandora_dir)
-    snakefile: pandora_dir / "Snakefile"
-    configfile: pandora_dir / "config.yaml"
-
-
-subworkflow baseline:
-    workdir: str(baseline_dir)
-    snakefile: baseline_dir / "Snakefile"
-    configfile: baseline_dir / "config.yaml"
+# subworkflow pandora:
+#     workdir: str(pandora_dir)
+#     snakefile: pandora_dir / "Snakefile"
+#     configfile: pandora_dir / "config.yaml"
+#
+#
+# subworkflow baseline:
+#     workdir: str(baseline_dir)
+#     snakefile: baseline_dir / "Snakefile"
+#     configfile: baseline_dir / "config.yaml"
 
 
 rule all:
@@ -49,10 +50,10 @@ rule all:
 
 rule dotplot:
     input:
-        x_matrix=baseline("distance/compass.matrix.csv"),
+        x_matrix=baseline_dir / "distance/compass.matrix.csv",
         y_matrices=[
-            baseline("distance/bcftools.matrix.csv"),
-            pandora("distance/pandora.sparse.matrix.csv"),
+            baseline_dir / "distance/bcftools.matrix.csv",
+            pandora_dir / "distance/pandora.sparse.matrix.csv",
         ],
     output:
         full_plot=report(
