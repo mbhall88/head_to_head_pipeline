@@ -76,7 +76,9 @@ rule dotplot:
     conda:
         envs["dotplot"]
     params:
-        y_matrices_str=lambda wildcards, input: "-y ".join(input.y_matrices),
+        y_matrices_str=lambda wildcards, input: " ".join(
+            [f"-y {p}" for p in input.y_matrices]
+        ),
         script=scripts["dotplot"],
         threshold=100,
         options=" ".join(
