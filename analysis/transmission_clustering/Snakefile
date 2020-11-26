@@ -41,6 +41,7 @@ output_files.add(plot_dir / "close_dotplot.html")
 #     workdir: str(baseline_dir)
 #     snakefile: baseline_dir / "Snakefile"
 #     configfile: baseline_dir / "config.yaml"
+report: report_dir / "workflow.rst"
 
 
 rule all:
