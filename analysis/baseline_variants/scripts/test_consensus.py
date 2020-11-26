@@ -111,6 +111,7 @@ class TestClassifier:
         mocked_variant = patch("cyvcf2.Variant", autospec=True, create=True)
         mocked_variant.CHROM = "chr1"
         mocked_variant.POS = 3
+        mocked_variant.REF = "A"
         classifier = Classifier(mask=bed, ignore_mask=True)
 
         actual = classifier.classify(mocked_variant)
@@ -158,6 +159,7 @@ class TestClassifier:
     def test_variantFailsFilterAndIgnoreFilter(self, mocked_variant):
         classifier = Classifier(ignore_filter=True)
         mocked_variant.FILTER = "FAIL"
+        mocked_variant.REF = "A"
 
         actual = classifier.classify(mocked_variant)
         expected = N
@@ -194,6 +196,7 @@ class TestClassifier:
     def test_variantIsNullAndIgnoreNull(self, mocked_variant):
         classifier = Classifier(ignore_null=True)
         mocked_variant.genotypes = [[-1]]
+        mocked_variant.REF = "A"
 
         actual = classifier.classify(mocked_variant)
         expected = N
@@ -216,6 +219,7 @@ class TestClassifier:
     def test_variantIsHetAndDefaultIsNone(self, mocked_variant):
         classifier = Classifier(het_default="none")
         mocked_variant.genotypes = [[1, 0]]
+        mocked_variant.REF = "A"
 
         actual = classifier.classify(mocked_variant)
         expected = N
@@ -258,6 +262,7 @@ class TestClassifier:
         mocked_variant = patch("cyvcf2.Variant", autospec=True, create=True)
         mocked_variant.genotypes = [[1, 2]]
         mocked_variant.ALT = alt
+        mocked_variant.REF = "A"
 
         actual = classifier.classify(mocked_variant)
         expected = alt[1]
@@ -289,6 +294,19 @@ class TestClassifier:
 
         actual = classifier.classify(mocked_variant)
         expected = ref
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_variantIsMNPButFailsFilter(self, mocked_variant):
+        classifier = Classifier(ignore_filter=True)
+        ref = "AT"
+        mocked_variant.genotypes = [[0, 0]]
+        mocked_variant.REF = ref
+        mocked_variant.FILTER = "FAIL"
+
+        actual = classifier.classify(mocked_variant)
+        expected = N * len(ref)
 
         assert actual == expected
 

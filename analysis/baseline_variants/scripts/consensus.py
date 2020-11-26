@@ -134,18 +134,19 @@ class Classifier:
         self.mask = mask
 
     def classify(self, variant: Variant) -> str:
+        length = len(variant.REF)
         if self.ignore_mask and variant in self.mask:
-            return N
+            return N * length
 
         if self.ignore_filter and variant.FILTER is not None:
-            return N
+            return N * length
 
         classification = Classification.from_variant(variant)
         if classification is Classification.Null:
-            return N if self.ignore_null else variant.REF
+            return N * length if self.ignore_null else variant.REF
         if classification is Classification.Het:
             if self.het_default == "none":
-                return N
+                return N * length
             else:
                 return_ref = self.het_default == "ref"
                 if return_ref:
@@ -296,13 +297,14 @@ def main(
     if bedfile:
         logging.info("Loading mask...")
         mask = Bed(bedfile)
-        logging.info(f"Loaded {len(mask.positions)} positions to mask.")
+        logging.info(f"Loaded mask for {len(mask.positions)} chromosome(s).")
     else:
         logging.info("No mask given...")
         mask = Bed()
 
     logging.info("Loading reference fasta...")
     consensus = load_reference(ref)
+    expected_consensus_seq_lens = {k: len(s) for k, s in consensus.items()}
     logging.info(f"Loaded {len(consensus)} sequence(s) from reference fasta")
 
     vcf_reader = VCF(vcf)
@@ -341,10 +343,12 @@ def main(
             warned_chroms.add(variant.CHROM)
             continue
 
-        base = classifier.classify(variant)
-        zero_based_pos = variant.POS - 1
-        consensus[variant.CHROM][zero_based_pos] = base
-        positions_in_vcf[variant.CHROM].add(zero_based_pos)
+        bases = classifier.classify(variant)
+        start_on_consensus = variant.POS - 1
+        end_on_consensus = start_on_consensus + len(bases)
+        consensus[variant.CHROM][start_on_consensus:end_on_consensus] = list(bases)
+        for i in range(start_on_consensus, end_on_consensus):
+            positions_in_vcf[variant.CHROM].add(i)
     logging.info("Consensus from variants complete")
 
     if ignore_missing:
@@ -364,6 +368,10 @@ def main(
             header = f">{chrom}|{sample_id}"
         print(header, file=output)
         consensus_seq = "".join(consensus[chrom])
+        expected_length = expected_consensus_seq_lens[chrom]
+        assert (
+            len(consensus_seq) == expected_length
+        ), f"{chrom}'s consensus sequence ({len(consensus_seq)}) is not the expected length {expected_length}"
         print(consensus_seq, file=output)
 
     logging.info("Done")
