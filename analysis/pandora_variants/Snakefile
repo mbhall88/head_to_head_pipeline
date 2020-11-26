@@ -637,7 +637,12 @@ rule generate_consensus:
         envs["consensus"]
     params:
         options=" ".join(
-            ["--verbose", "--ignore all", "--sample-id {sample}", "--het-default none"]
+            [
+                "--verbose",
+                "-I null -I filter -I mask",
+                "--sample-id {sample}",
+                "--het-default none",
+            ]
         ),
         script=scripts["consensus"],
     log:
