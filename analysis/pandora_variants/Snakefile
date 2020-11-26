@@ -64,7 +64,7 @@ for idx, row in samplesheet.iterrows():
         output_files.add(
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
-        output_files.add(distance_dir / f"pandora.{prg_name}.matrix.csv")
+        output_files.add(distance_dir / f"{prg_name}.heatmap.html")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
