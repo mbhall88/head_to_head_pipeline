@@ -13,10 +13,11 @@ PathLike = Union[str, Path]
 
 
 class DummyVariant(NamedTuple):
+    CHROM: str
     POS: float
 
 
-DUMMY = DummyVariant(float("inf"))
+DUMMY = DummyVariant(CHROM="dummy", POS=float("inf"))
 COLUMNS = ["pos", "a", "b", "outcome"]
 
 
@@ -384,7 +385,7 @@ def main(
         logging.info("Loading mask...")
         # make 1-based as this is the same as VCF
         mask = Bed(bedfile, zero_based=False)
-        logging.info(f"Loaded {len(mask.positions)} positions to mask.")
+        logging.info(f"Loaded mask for {len(mask.positions)} chromosome(s).")
     else:
         logging.info("No mask given. Classifying all positions...")
         mask = Bed()
