@@ -31,13 +31,13 @@ output_files.add(plot_dir / "close_dotplot.html")
 # Sub Workflows
 # ======================================================
 subworkflow pandora:
-    workdir: pandora_dir
+    workdir: str(pandora_dir)
     snakefile: pandora_dir / "Snakefile"
     configfile: pandora_dir / "config.yaml"
 
 
 subworkflow baseline:
-    workdir: baseline_dir
+    workdir: str(baseline_dir)
     snakefile: baseline_dir / "Snakefile"
     configfile: baseline_dir / "config.yaml"
 
