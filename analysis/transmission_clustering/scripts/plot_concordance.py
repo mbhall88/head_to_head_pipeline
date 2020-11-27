@@ -1,5 +1,7 @@
+import sys
+
+sys.stderr = open(snakemake.log[0], "w")
 import json
-import subprocess
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Dict, Tuple
@@ -58,6 +60,9 @@ class PlotFactory:
         self.minor_grid_alpha = minor_grid_alpha
         self.x_axis_type = x_axis_type
         self.y_axis_type = y_axis_type
+        self.axis_label_font_size = "12pt"
+        self.tick_font_size = "10pt"
+        self.font = "helvetica"
 
     def _build_tooltips(
         self, x_var: str, y_var: str, xlabel: str, ylabel: str
@@ -96,6 +101,8 @@ class PlotFactory:
             title=self.colour_by.capitalize(),
             background_fill_alpha=0.1,
             title_text_font_style="bold",
+            title_text_font=self.font,
+            label_text_font=self.font,
         )
 
     def generate_plot(
@@ -111,7 +118,8 @@ class PlotFactory:
         output_file(outfile, title=title, mode="inline")
 
         for i, cat in enumerate(self.categories):
-            cat_data = self.data[self.data[self.colour_by] == cat]
+            cat_data = self.data.query(f"{self.colour_by} == @cat")
+            cat_data.reset_index(inplace=True)
             source = ColumnDataSource(cat_data)
             fig.circle(
                 x=x_var,
@@ -127,6 +135,14 @@ class PlotFactory:
         fig.ygrid.minor_grid_line_alpha = self.minor_grid_alpha
         fig.xgrid.minor_grid_line_color = self.minor_grid_colour
         fig.xgrid.minor_grid_line_alpha = self.minor_grid_alpha
+        fig.xaxis.axis_label_text_font_size = self.axis_label_font_size
+        fig.xaxis.axis_label_text_font = self.font
+        fig.xaxis.major_label_text_font = self.font
+        fig.xaxis.major_label_text_font_size = self.tick_font_size
+        fig.yaxis.axis_label_text_font_size = self.axis_label_font_size
+        fig.yaxis.axis_label_text_font = self.font
+        fig.yaxis.major_label_text_font = self.font
+        fig.yaxis.major_label_text_font_size = self.tick_font_size
 
         save(fig)
 

@@ -168,10 +168,12 @@ rule plot_concordance:
     params:
         colour_by="caller",
         index="sample",
-        log_scale=True,
+        log_scale=False,
     container:
         containers["conda"]
     conda:
         envs["plot_concordance"]
+    log:
+        rule_log_dir / "plot_concordance.log"
     script:
         scripts["plot_concordance"]
