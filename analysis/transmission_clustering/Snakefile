@@ -26,6 +26,7 @@ report_dir = Path("report").resolve()
 output_files = set()
 output_files.add(plot_dir / "dotplot.html")
 output_files.add(plot_dir / "close_dotplot.html")
+output_files.add(plot_dir / "alt_concordance.html")
 
 
 # ======================================================
@@ -118,6 +119,7 @@ for idx, row in samplesheet.iterrows():
         else:
             raise NotImplemented(f"Caller {caller} is not supported")
         concordance_jsons.add(directory / f"{site}/{sample}.concordance.json")
+
 
 rule plot_concordance:
     input:
