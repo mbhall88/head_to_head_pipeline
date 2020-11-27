@@ -12,6 +12,8 @@ containers:
 
 envs:
   dotplot: "envs/dotplot.yaml"
+  plot_concordance: "envs/plot_concordance.yaml"
 
 scripts:
   dotplot: "scripts/distance_dot_plot.py"
+  plot_concordance: "scripts/plot_concordance.py"

@@ -111,7 +111,7 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
 
-    for caller in config["nanopore_caller"]:
+    for caller in config["nanopore_callers"]:
         if caller == "pandora":
             directory = pandora_dir / "concordance/sparse"
         elif caller == "bcftools":
