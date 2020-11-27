@@ -54,15 +54,21 @@ def ripgrep_extract_covg(file: Path) -> float:
 )
 @click.option(
     "-o",
-    "--outfile",
-    type=click.Path(exists=False, dir_okay=False),
+    "--plotfile",
+    type=click.Path(exists=False, dir_okay=False, allow_dash=True),
     default="-",
     show_default=True,
-    help="The filepath to write the output HTML file to.",
+    help="The filepath to write the output plot HTML file to.",
 )
-def main(
-    assignment_dir: str, log_dirs: List[str], outfile: str,
-):
+@click.option(
+    "-c",
+    "--csv",
+    help="The filepath to write the output CSV file to.",
+    type=click.Path(dir_okay=False, writable=True),
+    default="coverage.csv",
+    show_default=True,
+)
+def main(assignment_dir: str, log_dirs: List[str], plotfile: str, csv: str):
     """This script generates a HTML file containing a plot of the coverage for each
     sample after they have been through the QC pipeline.\n
     LOG_DIRS: Director(y/ies) containing the subsampling log files. (Coverage is
@@ -89,6 +95,7 @@ def main(
 
     df = pd.DataFrame(data).T
     df.index.name = "sample"
+    df.to_csv(csv)
     cds = ColumnDataSource(df)
 
     sites = list(set(df["site"]))
@@ -105,7 +112,7 @@ def main(
     legend_var = "lineage"
 
     # inline effectively allows the plot to work offline
-    output_file(outfile, title=title, mode="inline")
+    output_file(plotfile, title=title, mode="inline")
 
     p = figure(
         tools=TOOLS,

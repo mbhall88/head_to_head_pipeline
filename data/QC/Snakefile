@@ -54,8 +54,10 @@ for idx, row in samplesheet.iterrows():
             rule_log_dir / f"subsample_{tech}_reads" / f"{site}" / f"{sample}.log"
         )
         output_files.add(plot_dir / "krona" / f"{site}" / f"{sample}.{tech}.krona.html")
-        output_files.add(report_dir / "composition.html")
-        output_files.add(report_dir / "coverage.html")
+
+output_files.add(report_dir / "composition.html")
+output_files.add(report_dir / "coverage.html")
+output_files.add(report_dir / "coverage.csv")
 
 
 # ======================================================
@@ -487,6 +489,7 @@ rule coverage_report:
             category="Coverage",
             caption=report_dir / "coverage.rst",
         ),
+        csv=report(report_dir / "coverage.csv", category="Coverage"),
     threads: 1
     resources:
         mem_mb=GB,
@@ -505,6 +508,6 @@ rule coverage_report:
     shell:
         """
         python {params.script} --assignment-dir {params.assignment_dir} \
-            -o {output.html} \
+            -o {output.html} -c {output.csv} \
             {params.logs_dir} 2> {log}
         """
