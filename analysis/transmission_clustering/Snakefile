@@ -19,6 +19,7 @@ scripts: Dict[str, PathLike] = config["scripts"]
 rule_log_dir = Path("logs/stderr").resolve()
 baseline_dir = Path(config["baseline_dir"]).resolve()
 pandora_dir = Path(config["pandora_dir"]).resolve()
+qc_dir = Path(config["qc_dir"]).resolve()
 plot_dir = Path("plots").resolve()
 report_dir = Path("report").resolve()
 
@@ -33,14 +34,16 @@ output_files.add(plot_dir / "close_dotplot.html")
 # ======================================================
 # subworkflow pandora:
 #     workdir: str(pandora_dir)
-#     snakefile: pandora_dir / "Snakefile"
-#     configfile: pandora_dir / "config.yaml"
 #
 #
 # subworkflow baseline:
 #     workdir: str(baseline_dir)
-#     snakefile: baseline_dir / "Snakefile"
-#     configfile: baseline_dir / "config.yaml"
+
+
+# subworkflow qc:
+#     workdir: str(qc_dir)
+
+
 report: report_dir / "workflow.rst"
 
 
@@ -102,63 +105,71 @@ rule dotplot:
         """
 
 
-#
-# rule plot_concordance:
-#     input:
-#         jsons=expand(
-#             f"{concordance_dir}/{{site}}/{{sample}}.concordance.json",
-#             zip,
-#             site=SITES,
-#             sample=SAMPLES,
-#         ),
-#         filter_logs=FILTER_LOGS,
-#     output:
-#         alt_plot=report(
-#             concordance_dir / "alt_concordance.html",
-#             caption=f"{report_dir}/alt_concordance.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#         gw_plot=report(
-#             concordance_dir / "gw_concordance.html",
-#             caption=f"{report_dir}/gw_concordance.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#         depth_call_rate_plot=report(
-#             concordance_dir / "depth_call_rate.html",
-#             caption=f"{report_dir}/depth_call_rate.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#         depth_gw_call_rate_plot=report(
-#             concordance_dir / "depth_gw_call_rate.html",
-#             caption=f"{report_dir}/depth_gw_call_rate.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#         depth_concordance_plot=report(
-#             concordance_dir / "depth_concordance.html",
-#             caption=f"{report_dir}/depth_concordance.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#         depth_gw_concordance_plot=report(
-#             concordance_dir / "depth_gw_concordance.html",
-#             caption=f"{report_dir}/depth_gw_concordance.rst",
-#             category="Concordance",
-#             subcategory="Plots",
-#         ),
-#     threads: 1
-#     resources:
-#         mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
-#     params:
-#         colour_by="site",
-#         index="sample",
-#         log_scale=True,
-#     container:
-#         containers["conda"]
-#     conda:
-#         envs["plot_concordance"]
-#     script:
-#         scripts["plot_concordance"]
+concordance_jsons = set()
+for idx, row in samplesheet.iterrows():
+    site = row["site"]
+    sample = row["sample"]
+
+    for caller in config["nanopore_caller"]:
+        if caller == "pandora":
+            directory = pandora_dir / "concordance/sparse"
+        elif caller == "bcftools":
+            directory = baseline_dir / "concordance"
+        else:
+            raise NotImplemented(f"Caller {caller} is not supported")
+        concordance_jsons.add(directory / f"{site}/{sample}.concordance.json")
+
+rule plot_concordance:
+    input:
+        jsons=concordance_jsons,
+        coveragesheet=qc_dir / "report/coverage.csv",
+    output:
+        alt_plot=report(
+            plot_dir / "alt_concordance.html",
+            caption=f"{report_dir}/alt_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        gw_plot=report(
+            plot_dir / "gw_concordance.html",
+            caption=f"{report_dir}/gw_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_call_rate_plot=report(
+            plot_dir / "depth_call_rate.html",
+            caption=f"{report_dir}/depth_call_rate.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_gw_call_rate_plot=report(
+            plot_dir / "depth_gw_call_rate.html",
+            caption=f"{report_dir}/depth_gw_call_rate.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_concordance_plot=report(
+            plot_dir / "depth_concordance.html",
+            caption=f"{report_dir}/depth_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+        depth_gw_concordance_plot=report(
+            plot_dir / "depth_gw_concordance.html",
+            caption=f"{report_dir}/depth_gw_concordance.rst",
+            category="Concordance",
+            subcategory="Plots",
+        ),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
+    params:
+        colour_by="caller",
+        index="sample",
+        log_scale=True,
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_concordance"]
+    script:
+        scripts["plot_concordance"]
