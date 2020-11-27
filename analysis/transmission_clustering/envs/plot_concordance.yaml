@@ -4,5 +4,4 @@ channels:
   - defaults
 dependencies:
   - pandas=1.0.3
-  - bokeh=2.1.1
-  - ripgrep=12.1.1
+  - bokeh=2.2.3

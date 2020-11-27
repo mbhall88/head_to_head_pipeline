@@ -14,14 +14,9 @@ PIXEL_INCHES = 96
 HEIGHT = 8 * PIXEL_INCHES
 WIDTH = 13 * PIXEL_INCHES
 JSON_FILES: List[Path] = [Path(p) for p in snakemake.input.jsons]
-LOG_FILES: List[Path] = [Path(p) for p in snakemake.input.filter_logs]
 COLOUR_BY: str = snakemake.params.colour_by
 INDEX: str = snakemake.params.index
 LOG_SCALE: bool = snakemake.params.log_scale
-
-
-class RipgrepError(Exception):
-    pass
 
 
 class PlotFactory:
@@ -49,8 +44,9 @@ class PlotFactory:
         self.index = index
         self.colour_by = colour_by
         self.data = data
-        self.categories = set(self.data[self.colour_by])
-        self.palette = palette[len(self.categories)]
+        _, cats = zip(*self.data.index)
+        self.categories = set(cats)
+        self.palette = palette[max(len(self.categories), 3)]
         self.tools = tools
         self.height = height
         self.width = width
@@ -140,39 +136,30 @@ def load_concordance_data(json_files: List[Path]) -> pd.DataFrame:
     for path in json_files:
         site = path.parts[-2]
         sample = path.name.split(".")[0]
+        if "pandora" in str(path):
+            caller = "pandora"
+        elif "baseline" in str(path):
+            caller = "bcftools"
+        else:
+            raise NotImplementedError(f"{path} is not from a known caller")
         with path.open() as fp:
-            data[site, sample] = json.load(fp)
+            data[site, sample, caller] = json.load(fp)
 
     df = pd.DataFrame(data).T
     df.reset_index(inplace=True)
     return df
 
 
-def ripgrep_extract_depth(file: Path) -> float:
-    pattern = r"Expected depth:\s(?P<depth>\d+?\.?\d+)$"
-    extra_params = ["--replace", "$depth", "--only-matching", "--no-line-number"]
-    process = subprocess.Popen(
-        ["rg", *extra_params, pattern, str(file)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-    )
-    exit_code = process.wait()
-    if exit_code != 0:
-        raise RipgrepError(
-            f"Failed to execute the rg command on the file {file} due to the "
-            f"following error:\n{process.stderr.read()}"
-        )
-    return float(process.stdout.read().strip())
-
-
 concordance_df = load_concordance_data(JSON_FILES)
-concordance_df.rename(columns={"level_0": COLOUR_BY, "level_1": INDEX}, inplace=True)
-concordance_df.set_index(INDEX, drop=True, inplace=True)
-for file in LOG_FILES:
-    sample = file.with_suffix("").name
-    site = file.parts[-2]
-    depth = ripgrep_extract_depth(file)
+concordance_df.rename(
+    columns={"level_0": "site", "level_1": INDEX, "level_2": COLOUR_BY}, inplace=True
+)
+concordance_df.set_index([INDEX, COLOUR_BY], drop=True, inplace=True)
+covg_df = pd.read_csv(snakemake.input.coveragesheet, index_col=INDEX)
+for sample in covg_df.index:
+    if sample not in concordance_df.index:
+        continue
+    depth = covg_df.at[sample, "nanopore_covg"]
     concordance_df.at[sample, "depth"] = depth
 
 xscale = "log" if LOG_SCALE else "auto"
