@@ -478,13 +478,16 @@ rule extract_snps:
     resources:
         mem_mb=int(0.5 * GB),
     container:
-        containers["bcftools"]
+        containers["conda"]
+    conda:
+        envs["extract_snps"]
     params:
-        extra="-O b -v snps,mnps",
+        script=scripts["extract_snps"],
+        extra="--keep-mnps -v",
     log:
         rule_log_dir / "extract_snps/{prg_name}/{site}/{sample}.log",
     shell:
-        "bcftools view {params.extra} --threads {threads} -o {output.vcf} {input.vcf} 2> {log}"
+        "python {params.script} {params.extra} -i {input.vcf} -o {output.vcf} 2> {log}"
 
 
 rule extract_indels:

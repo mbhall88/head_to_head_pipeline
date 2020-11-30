@@ -26,9 +26,11 @@ envs:
   consensus:            "../baseline_variants/envs/consensus.yaml"
   concordance:          "../baseline_variants/envs/concordance.yaml"
   plot_distance_matrix: "../baseline_variants/envs/plot_distance_matrix.yaml"
+  extract_snps:         "envs/extract_snps.yaml"
 scripts:
   update_msas:          "scripts/update_msas.py"
   make_prg:             "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
+  extract_snps:         "scripts/extract_snps.py"
   normalise_pos:        "scripts/normalise_pos.py"
   plot_truth_eval:      "scripts/plot_truth_eval.py"
   filter:               "scripts/apply_filters.py"

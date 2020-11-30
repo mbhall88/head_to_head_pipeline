@@ -143,7 +143,7 @@ def main(
             raise KeyError(f"{variant.CHROM} is not in the loci information file")
 
         loci = loci_df.loc[variant.CHROM]
-        loci_len = loci.end - loci.start + 1
+        loci_len = loci.end - loci.start
         if variant.POS > loci_len:
             raise IndexError(
                 f"Position {variant.POS} for loci {variant.CHROM} is outside the "
