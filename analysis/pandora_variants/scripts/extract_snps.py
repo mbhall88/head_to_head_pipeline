@@ -45,7 +45,7 @@ def main(
         keep_this_record = False
         ref_len = len(record.REF)
         ref_is_single_base = ref_len == 1
-        empty_alt = bool(record.ALT)
+        empty_alt = not bool(record.ALT)
         if empty_alt and (keep_mnps or ref_is_single_base):
             keep_this_record = True
         elif ref_len == len(record.ALT[0]) and (ref_is_single_base or keep_mnps):
