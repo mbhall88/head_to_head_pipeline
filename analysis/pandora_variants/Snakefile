@@ -142,6 +142,7 @@ rule discover_denovo_variants:
                 f"-e {config['pandora_e']}",
                 f"-g {config['genome_size']}",
                 "-v",
+                "--mapped-reads",
                 f"--min-dbg-dp {discover['min_dbg_abundance']}",
                 f"-d {discover['merge_dist']}",
                 f"--discover-k {discover['kmer_size']}",
@@ -306,6 +307,7 @@ rule single_sample_genotype:
                 f"-g {config['genome_size']}",
                 "--kg",
                 "--loci-vcf",
+                "--mapped-reads",
             ]
         ),
     shell:
