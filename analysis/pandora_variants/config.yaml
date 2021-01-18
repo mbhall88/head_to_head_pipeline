@@ -28,15 +28,16 @@ envs:
   plot_distance_matrix: "../baseline_variants/envs/plot_distance_matrix.yaml"
   extract_snps:         "envs/extract_snps.yaml"
 scripts:
-  update_msas:          "scripts/update_msas.py"
-  make_prg:             "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
-  extract_snps:         "scripts/extract_snps.py"
-  normalise_pos:        "scripts/normalise_pos.py"
-  plot_truth_eval:      "scripts/plot_truth_eval.py"
-  filter:               "scripts/apply_filters.py"
-  consensus:            "../baseline_variants/scripts/consensus.py"
-  concordance:          "../baseline_variants/scripts/concordance.py"
-  plot_distance_matrix: "../baseline_variants/scripts/plot_distance_matrix.py"
+  update_msas:            "scripts/update_msas.py"
+  make_prg:               "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
+  extract_snps:           "scripts/extract_snps.py"
+  aggregate_denovo_paths: "scripts/aggregate_denovo_paths.py"
+  normalise_pos:          "scripts/normalise_pos.py"
+  plot_truth_eval:        "scripts/plot_truth_eval.py"
+  filter:                 "scripts/apply_filters.py"
+  consensus:              "../baseline_variants/scripts/consensus.py"
+  concordance:            "../baseline_variants/scripts/concordance.py"
+  plot_distance_matrix:   "../baseline_variants/scripts/plot_distance_matrix.py"
 
 # filters for pandora calls
 filters:

@@ -41,6 +41,7 @@ distance_dir = Path("distance").resolve()
 truth_eval_dir = Path("truth_eval").resolve()
 discover_dir = nanopore_dir / "discover"
 genotype_dir = nanopore_dir / "genotype"
+compare_dir = nanopore_dir / "compare"
 filter_dir = nanopore_dir / "filtered"
 baseline_variant_dir = Path(config["baseline_variant_dir"]).resolve()
 # ======================================================
@@ -770,3 +771,24 @@ rule calculate_concordance:
             -c {output.csv} \
             -j {output.json} 2> {log}
         """
+
+
+rule aggregate_denovo_paths:
+    input:
+        denovo_dirs=expand(
+            discover_dir / "{{prg_name}}/{site}/{sample}/denovo_paths",
+            zip,
+            site=SITES,
+            sample=SAMPLES,
+        ),
+    output:
+        outdir=directory(compare_dir / "{prg_name}/denovo_paths"),
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    container:
+        containers["conda"]
+    log:
+        rule_log_dir / "aggregate_denovo_paths/{prg_name}.log",
+    script:
+        scripts["aggregate_denovo_paths"]
