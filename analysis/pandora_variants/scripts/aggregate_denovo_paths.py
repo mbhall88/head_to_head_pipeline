@@ -32,6 +32,8 @@ def concatenate(infiles: List[Path], outfile: Path):
 input_dirs = [Path(p) for p in snakemake.input.denovo_dirs]
 eprint(f"Aggregating de novo paths from {len(input_dirs)} directories")
 outdir = Path(snakemake.output.outdir)
+if not outdir.exists():
+    outdir.mkdir()
 input_files = chain.from_iterable(d.glob("*.fa") for d in input_dirs)
 
 prg_name_to_paths = defaultdict(list)
