@@ -66,6 +66,7 @@ for idx, row in samplesheet.iterrows():
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
         output_files.add(distance_dir / f"{prg_name}.heatmap.html")
+        output_files.add(compare_dir / f"{prg_name}/denovo_paths/deduplicated")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -294,7 +295,7 @@ rule single_sample_genotype:
         rule_log_dir / "single_sample_genotype/{prg_name}/{site}/{sample}.log",
     params:
         outdir=lambda wildcards, output: Path(output.vcf).parent,
-        max_covg=1_000, # i.e. disable subsampling
+        max_covg=1_000,  # i.e. disable subsampling
         prg=lambda wildcards, input: Path(input.prg).resolve(),
         reads=lambda wildcards, input: Path(input.reads).resolve(),
         vcf_refs=lambda wildcards, input: Path(input.vcf_refs).resolve(),
@@ -337,7 +338,7 @@ rule normalise_single_sample_vcf:
         norm_pos_opts="-v",
         script=scripts["normalise_pos"],
         norm_opts="-c e -O b",
-        view_opts="-a", # trim alts
+        view_opts="-a",  # trim alts
     container:
         containers["conda"]
     conda:
@@ -782,7 +783,7 @@ rule aggregate_denovo_paths:
             sample=SAMPLES,
         ),
     output:
-        outdir=directory(compare_dir / "{prg_name}/denovo_paths"),
+        outdir=directory(compare_dir / "{prg_name}/denovo_paths/all"),
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
@@ -792,3 +793,28 @@ rule aggregate_denovo_paths:
         rule_log_dir / "aggregate_denovo_paths/{prg_name}.log",
     script:
         scripts["aggregate_denovo_paths"]
+
+
+rule deduplicate_denovo_paths:
+    input:
+        denovo_paths=rules.aggregate_denovo_paths.output.outdir,
+    output:
+        outdir=directory(compare_dir / "{prg_name}/denovo_paths/deduplicated"),
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    container:
+        containers["conda"]
+    conda:
+        envs["fd"]
+    log:
+        rule_log_dir / "deduplicate_denovo_paths/{prg_name}.log",
+    params:
+        script=scripts["deduplicate_fasta"],
+    shell:
+        """
+        fd -j {threads} \
+          -e fa \
+          -x bash {params.script} '{{}}' {output.outdir} \; \
+          . {input.denovo_paths}
+        """

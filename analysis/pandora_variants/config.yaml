@@ -34,6 +34,7 @@ scripts:
   aggregate_denovo_paths: "scripts/aggregate_denovo_paths.py"
   normalise_pos:          "scripts/normalise_pos.py"
   plot_truth_eval:        "scripts/plot_truth_eval.py"
+  deduplicate_fasta:      "scripts/deduplicate_fasta.sh"
   filter:                 "scripts/apply_filters.py"
   consensus:              "../baseline_variants/scripts/consensus.py"
   concordance:            "../baseline_variants/scripts/concordance.py"
