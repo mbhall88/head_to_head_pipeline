@@ -27,6 +27,7 @@ envs:
   concordance:          "../baseline_variants/envs/concordance.yaml"
   plot_distance_matrix: "../baseline_variants/envs/plot_distance_matrix.yaml"
   extract_snps:         "envs/extract_snps.yaml"
+  deduplicate_fasta:    "envs/deduplicate_fasta.yaml"
 scripts:
   update_msas:            "scripts/update_msas.py"
   make_prg:               "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"

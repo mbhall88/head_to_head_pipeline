@@ -1,0 +1,8 @@
+name: deduplicate_fasta
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - fd-find=8.1.1
+  - fastx_toolkit=0.0.14

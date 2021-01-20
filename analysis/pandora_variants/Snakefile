@@ -806,7 +806,7 @@ rule deduplicate_denovo_paths:
     container:
         containers["conda"]
     conda:
-        envs["fd"]
+        envs["deduplicate_fasta"]
     log:
         rule_log_dir / "deduplicate_denovo_paths/{prg_name}.log",
     params:
