@@ -22,12 +22,7 @@ class MafftError(Exception):
 
 
 def extract_name_from_path(path: Path) -> str:
-    if path.suffix == ".gz":
-        path = path.with_suffix("")
-    path = path.with_suffix("")
-    if path.suffix.endswith("denovo_discovery"):
-        path = path.with_suffix("")
-    return path.name
+    return path.name.split(".")[0]
 
 
 def concatenate(infiles: List[Path], outfile: Path):
