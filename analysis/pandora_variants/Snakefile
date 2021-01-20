@@ -813,10 +813,11 @@ rule deduplicate_denovo_paths:
         script=scripts["deduplicate_fasta"],
     shell:
         """
+        mkdir {output.outdir} 2> {log}
         fd -j {threads} \
           -e fa \
           -x bash {params.script} '{{}}' {output.outdir} \; \
-          . {input.denovo_paths} 2> {log}
+          . {input.denovo_paths} 2>> {log}
         """
 
 
