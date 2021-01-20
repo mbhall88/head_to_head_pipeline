@@ -2,8 +2,9 @@
 set -eu
 
 infile="$1"
+infilename=$(basename "$infile")
 outdir="$2"
-outfile="${outdir}/${$(basename "$infile")%%.*}.deduplicated.fa"
+outfile="${outdir}/${$infilename%%.*}.deduplicated.fa"
 
 # snippet taken from https://www.biostars.org/p/3003/#3008
 sed -e '/^>/s/$/@/' -e 's/^>/#/' "$infile"  |\

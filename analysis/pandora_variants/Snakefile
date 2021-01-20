@@ -816,7 +816,7 @@ rule deduplicate_denovo_paths:
         fd -j {threads} \
           -e fa \
           -x bash {params.script} '{{}}' {output.outdir} \; \
-          . {input.denovo_paths}
+          . {input.denovo_paths} 2> {log}
         """
 
 
