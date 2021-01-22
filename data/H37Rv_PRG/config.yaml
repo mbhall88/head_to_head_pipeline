@@ -7,7 +7,7 @@ h37rv:
 containers:
   conda:    "docker://continuumio/miniconda3:4.7.12"
   bcftools: "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
-  make_prg: "library://mbhall88/default/make_prg:0bb4a27"
+  make_prg:  "docker://quay.io/iqballab/make_prg:adbbb94"
   pandora:  "docker://quay.io/mbhall88/pandora:824ad3b"
 envs:
   gff_split:       "envs/gff_split.yaml"
