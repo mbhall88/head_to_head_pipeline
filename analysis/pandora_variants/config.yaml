@@ -28,6 +28,7 @@ envs:
   plot_distance_matrix: "../baseline_variants/envs/plot_distance_matrix.yaml"
   extract_snps:         "envs/extract_snps.yaml"
   deduplicate_fasta:    "envs/deduplicate_fasta.yaml"
+  create_sample_index:  "envs/create_sample_index.yaml"
 scripts:
   update_msas:            "scripts/update_msas.py"
   make_prg:               "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
@@ -40,6 +41,7 @@ scripts:
   consensus:              "../baseline_variants/scripts/consensus.py"
   concordance:            "../baseline_variants/scripts/concordance.py"
   plot_distance_matrix:   "../baseline_variants/scripts/plot_distance_matrix.py"
+  create_sample_index:    "scripts/create_sample_index.py"
 
 # filters for pandora calls
 filters:

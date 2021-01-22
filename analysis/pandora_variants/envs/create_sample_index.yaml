@@ -1,0 +1,6 @@
+name: create_sample_index
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pandas=1.0.5

@@ -66,7 +66,9 @@ for idx, row in samplesheet.iterrows():
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
         output_files.add(distance_dir / f"{prg_name}.heatmap.html")
-        output_files.add(compare_dir / f"{prg_name}/{prg_name}.prg.k{K}.w{W}.idx")
+        output_files.add(
+            compare_dir / f"{prg_name}/pandora/pandora_multisample_genotyped.vcf"
+        )
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -680,9 +682,7 @@ rule aggregate_consensus:
     log:
         rule_log_dir / "aggregate_consensus/{prg_name}.log",
     shell:
-        """
-        awk 1 {input.fastas} > {output.fasta} 2> {log}
-        """
+        "awk 1 {input.fastas} > {output.fasta} 2> {log}"
 
 
 rule snp_distance:
@@ -705,9 +705,7 @@ rule snp_distance:
     params:
         options="-c",
     shell:
-        """
-        snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
-        """
+        "snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}"
 
 
 rule plot_distance_matrix:
@@ -926,4 +924,60 @@ rule index_multi_sample_updated_prg:
     shell:
         """
         pandora index -k {params.K} -w {params.W} -t {threads} {input.prg} > {log} 2>&1
+        """
+
+
+rule create_sample_index:
+    output:
+        sample_idx=nanopore_dir / "sample_idx.tsv",
+    threads: 1
+    resources:
+        mem_mb=int(0.3 * GB),
+    log:
+        rule_log_dir / "create_sample_index.log",
+    params:
+        qc_dir=qc_dir,
+        samplesheet=samplesheet,
+    container:
+        containers["conda"]
+    conda:
+        envs["create_sample_index"]
+    script:
+        scripts["create_sample_index"]
+
+
+rule multi_sample_compare:
+    input:
+        prg=rules.combine_multi_sample_local_prgs.output.prg,
+        idx=rules.index_multi_sample_updated_prg.output.index,
+        sample_idx=rules.create_sample_index.output.sample_idx,
+    output:
+        gt_vcf=compare_dir / "{prg_name}/pandora/pandora_multisample_genotyped.vcf",
+        consensus_vcf=(
+            compare_dir / "{prg_name}/pandora/pandora_multisample_consensus.vcf"
+        ),
+        matrix=compare_dir / "{prg_name}/pandora/pandora_multisample.matrix",
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+    container:
+        containers["pandora"]
+    params:
+        outdir=lambda wildcards, output: Path(output.gt_vcf).parent,
+        options=" ".join(
+            [
+                f"-k {K}",
+                f"-w {W}",
+                f"-e {config['pandora_e']}",
+                f"-g {config['genome_size']}",
+                "--genotype",
+                f"-E {config['pandora_E']}",
+            ]
+        ),
+    log:
+        rule_log_dir / "multi_sample_compare/{prg_name}.log",
+    shell:
+        """
+        pandora compare {params.options} -o {params.outdir} -t {threads} \
+          {input.prg} {input.sample_idx} 2> {log}
         """
