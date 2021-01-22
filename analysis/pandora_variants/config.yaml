@@ -15,7 +15,7 @@ containers:
   bcftools:  "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
-  make_prg:  "docker://leandroishilima/make_prg:c61d9b"
+  make_prg:  "docker://quay.io/iqballab/make_prg:ee08900"
 envs:
   update_msas:          "envs/update_msas.yaml"
   fd:                   "envs/fd.yaml"
