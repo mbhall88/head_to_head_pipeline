@@ -957,6 +957,7 @@ rule multi_sample_compare:
             compare_dir / "{prg_name}/pandora/pandora_multisample_consensus.vcf"
         ),
         matrix=compare_dir / "{prg_name}/pandora/pandora_multisample.matrix",
+        vcf_ref=compare_dir / "{prg_name}/pandora/pandora_multisample.vcf_ref.fa",
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
@@ -979,5 +980,5 @@ rule multi_sample_compare:
     shell:
         """
         pandora compare {params.options} -o {params.outdir} -t {threads} \
-          {input.prg} {input.sample_idx} 2> {log}
+          {input.prg} {input.sample_idx} > {log} 2>&1
         """
