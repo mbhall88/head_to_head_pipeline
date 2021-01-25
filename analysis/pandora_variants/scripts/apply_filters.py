@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional, NamedTuple, List, Tuple
 
 import click
+import numpy as np
 from cyvcf2 import Variant, VCF, Writer
 
 
@@ -20,6 +21,8 @@ class Tags(Enum):
     LowGtConf = "lgc"
     LongIndel = "lindel"
     Pass = "PASS"
+    FormatFilter = "FT"
+    AllFail = "FAIL"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -144,6 +147,7 @@ class Filter:
         min_gt_conf: float = 0,
         max_gaps: float = 0,
         max_indel: Optional[int] = None,
+        is_multisample: bool = False,
     ):
         self.min_covg = min_covg
         self.max_covg = max_covg
@@ -151,6 +155,7 @@ class Filter:
         self.min_gt_conf = min_gt_conf
         self.max_gaps = max_gaps
         self.max_indel = max_indel
+        self.is_multisample = is_multisample
 
         if self.min_covg and self.max_covg and self.min_covg > self.max_covg:
             raise ValueError(
@@ -158,53 +163,88 @@ class Filter:
                 f"{self.min_covg:.1f} > {self.max_covg:.1f}"
             )
 
-    def _is_low_covg(self, variant: Variant) -> bool:
-        variant_covg = get_covg(variant)
-        return variant_covg < self.min_covg if self.min_covg else False
+    def _is_low_covg(self, variant: Variant) -> List[bool]:
+        variant_covgs = [
+            get_covg(variant, sample_idx=i) for i in range(len(variant.genotypes))
+        ]
+        return [
+            covg < self.min_covg if self.min_covg else False for covg in variant_covgs
+        ]
 
-    def _is_high_covg(self, variant: Variant) -> bool:
-        variant_covg = get_covg(variant)
-        return variant_covg > self.max_covg if self.max_covg else False
+    def _is_high_covg(self, variant: Variant) -> List[bool]:
+        variant_covgs = [
+            get_covg(variant, sample_idx=i) for i in range(len(variant.genotypes))
+        ]
+        return [
+            covg < self.max_covg if self.max_covg else False for covg in variant_covgs
+        ]
 
-    def _is_low_gt_conf(self, variant: Variant) -> bool:
-        gt_conf = get_gt_conf(variant)
-        return gt_conf < self.min_gt_conf
+    def _is_low_gt_conf(self, variant: Variant) -> List[bool]:
+        gt_confs = [
+            get_gt_conf(variant, sample_idx=i) for i in range(len(variant.genotypes))
+        ]
+        return [gt_conf < self.min_gt_conf for gt_conf in gt_confs]
 
-    def _is_high_gaps(self, variant: Variant) -> bool:
-        gaps = get_gaps(variant)
-        return gaps > self.max_gaps
+    def _is_high_gaps(self, variant: Variant) -> List[bool]:
+        gaps = [get_gaps(variant, sample_idx=i) for i in range(len(variant.genotypes))]
+        return [gap > self.max_gaps for gap in gaps]
 
-    def _is_long_indel(self, variant: Variant) -> bool:
-        gt = Genotype.from_arr(variant.genotypes[0])
-        if not gt.is_hom_alt() or self.max_indel is None:
-            return False
-        alt = variant.ALT[gt.alt_index()]
-        indel_len = abs(len(variant.REF) - len(alt))
-        return indel_len > self.max_indel
+    def _is_long_indel(self, variant: Variant) -> List[bool]:
+        judgements: List[bool] = []
+        for i in range(len(variant.genotypes)):
+            gt = Genotype.from_arr(variant.genotypes[i])
+            if not gt.is_hom_alt() or self.max_indel is None:
+                judgements.append(False)
+            else:
+                alt = variant.ALT[gt.alt_index()]
+                indel_len = abs(len(variant.REF) - len(alt))
+                judgements.append(indel_len > self.max_indel)
+        return judgements
 
-    def filter_status(self, variant: Variant) -> str:
-        status = FilterStatus()
+    def filter_status(self, variant: Variant) -> List[str]:
+        statuses = [FilterStatus() for _ in variant.genotypes]
         if self.min_covg or self.max_covg:
-            status.low_covg = self._is_low_covg(variant)
-            status.high_covg = self._is_high_covg(variant)
+            for i, (is_low, is_high) in enumerate(
+                zip(self._is_low_covg(variant), self._is_high_covg(variant))
+            ):
+                statuses[i].low_covg = is_low
+                statuses[i].high_covg = is_high
 
         if self.min_gt_conf:
-            status.low_gt_conf = self._is_low_gt_conf(variant)
+            for i, is_low in self._is_low_gt_conf(variant):
+                statuses[i].low_gt_conf = is_low
 
         if self.min_strand_bias:
-            strand = Strand.from_variant(variant)
-
-            status.strand_bias = strand.ratio < self.min_strand_bias
+            for i in range(len(variant.genotypes)):
+                strand = Strand.from_variant(variant, sample_idx=i)
+                statuses[i].strand_bias = strand.ratio < self.min_strand_bias
 
         if self.max_gaps != 0:
-            status.high_gaps = self._is_high_gaps(variant)
+            for i, is_high in enumerate(self._is_high_gaps(variant)):
+                statuses[i].high_gaps = is_high
 
         if self.max_indel is not None:
-            status.long_indel = self._is_long_indel(variant)
+            for i, is_long in enumerate(self._is_long_indel(variant)):
+                statuses[i].long_indel = is_long
 
-        return str(status)
+        return [str(status) for status in statuses]
 
     def add_filters_to_header(self, vcf: VCF):
+        if self.is_multisample:
+            header = {
+                "ID": str(Tags.AllFail),
+                "Description": "All samples failed filtering",
+            }
+            vcf.add_filter_to_header(header)
+
+            header = {
+                "ID": str(Tags.FormatFilter),
+                "Description": 'Filter indicating if this genotype was "called"',
+                "Type": "String",
+                "Number": "1",
+            }
+            vcf.add_format_to_header(header)
+
         if self.min_covg > 0:
             header = {
                 "ID": str(Tags.LowCovg),
@@ -254,7 +294,7 @@ class Filter:
         if self.max_indel is not None:
             header = {
                 "ID": str(Tags.LongIndel),
-                "Description": (f"Indel is longer than {self.max_indel}."),
+                "Description": f"Indel is longer than {self.max_indel}.",
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for max. indel: {header}")
@@ -380,6 +420,10 @@ def main(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
     )
 
+    vcf_reader = VCF(in_vcf)
+    is_multisample = len(vcf_reader.samples) > 1
+    has_ft_tag = str(Tags.FormatFilter) in vcf_reader
+
     assessor = Filter(
         min_covg=min_covg,
         max_covg=max_covg,
@@ -387,26 +431,39 @@ def main(
         min_gt_conf=min_gt_conf,
         max_gaps=max_gaps,
         max_indel=max_indel,
+        is_multisample=is_multisample,
     )
 
-    vcf_reader = VCF(in_vcf)
     assessor.add_filters_to_header(vcf_reader)
     vcf_writer = Writer(out_vcf, tmpl=vcf_reader)
 
     stats = Counter()
     logging.info("Filtering variants...")
     for variant in vcf_reader:
-        filter_status = assessor.filter_status(variant)
+        filter_statuses = np.array(assessor.filter_status(variant))
+        all_samples_fail = all(status != str(Tags.Pass) for status in filter_statuses)
 
-        if (
-            (not overwrite)
-            and variant.FILTER is not None
-            and filter_status != str(Tags.Pass)
-        ):
-            current_filter = variant.FILTER.rstrip(";")
-            variant.FILTER = f"{current_filter};{filter_status}"
+        if not all_samples_fail:
+            filter_col = str(Tags.Pass)
         else:
-            variant.FILTER = filter_status
+            filter_col = str(Tags.AllFail) if is_multisample else filter_statuses[0]
+
+        if overwrite or variant.FILTER is None:
+            variant.FILTER = filter_col
+        else:
+            current_filter = variant.FILTER.rstrip(";")
+            variant.FILTER = f"{current_filter};{filter_col}"
+
+        if is_multisample:
+            if overwrite or (not has_ft_tag):
+                variant.set_format(str(Tags.FormatFilter), filter_statuses)
+            else:
+                current_filters = variant.format(str(Tags.FormatFilter))
+                updated_filters = [
+                    f"{current.rstrip(';')};{new}"
+                    for current, new in zip(current_filters, filter_statuses)
+                ]
+                variant.set_format(str(Tags.FormatFilter), np.array(updated_filters))
 
         vcf_writer.write_record(variant)
 
