@@ -34,6 +34,7 @@ scripts:
   make_prg:               "../../data/H37Rv_PRG/scripts/build_local_prgs.sh"
   extract_snps:           "scripts/extract_snps.py"
   aggregate_denovo_paths: "scripts/aggregate_denovo_paths.py"
+  make_genotype_matrix:   "scripts/genotype_matrix.sh"
   normalise_pos:          "scripts/normalise_pos.py"
   plot_truth_eval:        "scripts/plot_truth_eval.py"
   deduplicate_fasta:      "scripts/deduplicate_fasta.sh"

@@ -1080,13 +1080,6 @@ rule make_genotype_matrix:
     log:
         rule_log_dir / "make_genotype_matrix/{prg_name}.log",
     params:
-        fmt="'%CHROM,%POS,[%GT,]\n'",
+        script=scripts["make_genotype_matrix"],
     shell:
-        """
-        printf "CHROM,POS," > {output.matrix} 2> {log}
-        (bcftools query -l {input.vcf} | \
-          tr '\n' ',' | \
-          sed 's/,$/\n/g') >> {output.matrix} 2>> {log}
-        (bcftools query -f {params.fmt} {input.vcf} | \
-          sed 's/,$//g') >> {output.matrix} 2>> {log}
-        """
+        "bash {params.script} {input.vcf} {output.matrix} 2> {log}"
