@@ -982,9 +982,34 @@ rule multi_sample_compare:
         """
 
 
-rule filter_multi_sample_vcf:
+rule add_contigs_to_vcf_header:
     input:
         vcf=rules.multi_sample_compare.output.gt_vcf,
+    output:
+        bcf=compare_dir / "{prg_name}/pandora/pandora_multisample_genotyped.bcf",
+    threads: 2
+    shadow:
+        "shallow"
+    resources:
+        mem_mb=int(4 * GB),
+    container:
+        containers["bcftools"]
+    log:
+        rule_log_dir / "add_contigs_to_vcf_header/{prg_name}.log",
+    params:
+        opts="-O b ",
+    shell:
+        """
+        tmp="tmp.vcf.gz"
+        bgzip -c {input.vcf} > "$tmp" 2> {log}
+        bcftools index "$tmp" 2> {log}
+        bcftools convert {params.opts} --threads {threads} "$tmp" -o {output.bcf} 2> {log}  
+        """
+
+
+rule filter_multi_sample_vcf:
+    input:
+        vcf=rules.add_contigs_to_vcf_header.output.bcf,
     output:
         vcf=compare_dir / "{prg_name}/{prg_name}.filtered.bcf",
     threads: 1
