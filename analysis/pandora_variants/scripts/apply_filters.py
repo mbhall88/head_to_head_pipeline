@@ -2,11 +2,17 @@ import logging
 from collections import Counter
 from dataclasses import dataclass
 from enum import Enum
+from itertools import chain
 from typing import Optional, NamedTuple, List, Tuple
 
 import click
 import numpy as np
 from cyvcf2 import Variant, VCF, Writer
+
+
+def flatten(list_of_lists):
+    """Flatten one level of nesting"""
+    return chain.from_iterable(list_of_lists)
 
 
 class Tags(Enum):
@@ -239,7 +245,7 @@ class Filter:
 
             header = {
                 "ID": str(Tags.FormatFilter),
-                "Description": 'Filter indicating if this genotype was "called"',
+                "Description": "Filter indicating if this genotype was called",
                 "Type": "String",
                 "Number": "1",
             }
@@ -440,7 +446,7 @@ def main(
     stats = Counter()
     logging.info("Filtering variants...")
     for variant in vcf_reader:
-        filter_statuses = np.array(assessor.filter_status(variant))
+        filter_statuses = assessor.filter_status(variant)
         all_samples_fail = all(status != str(Tags.Pass) for status in filter_statuses)
 
         if not all_samples_fail:
@@ -456,18 +462,23 @@ def main(
 
         if is_multisample:
             if overwrite or (not has_ft_tag):
-                variant.set_format(str(Tags.FormatFilter), filter_statuses)
+                ft_tags_to_write = filter_statuses
             else:
                 current_filters = variant.format(str(Tags.FormatFilter))
-                updated_filters = [
+                ft_tags_to_write = [
                     f"{current.rstrip(';')};{new}"
                     for current, new in zip(current_filters, filter_statuses)
                 ]
-                variant.set_format(str(Tags.FormatFilter), np.array(updated_filters))
+
+            variant.set_format(
+                str(Tags.FormatFilter), np.array(ft_tags_to_write, dtype=np.bytes_)
+            )
 
         vcf_writer.write_record(variant)
 
-        stats.update(filter_status.split(";") for filter_status in filter_statuses)
+        stats.update(
+            flatten(filter_status.split(";") for filter_status in filter_statuses)
+        )
 
     vcf_reader.close()
     vcf_writer.close()
