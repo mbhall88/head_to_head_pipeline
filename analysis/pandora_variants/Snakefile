@@ -66,9 +66,7 @@ for idx, row in samplesheet.iterrows():
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
         output_files.add(distance_dir / f"{prg_name}.heatmap.html")
-        output_files.add(
-            compare_dir / f"{prg_name}/pandora/pandora_multisample_genotyped.vcf"
-        )
+        output_files.add(compare_dir / f"{prg_name}/{prg_name}.filtered.bcf")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -981,4 +979,40 @@ rule multi_sample_compare:
         """
         pandora compare {params.options} -o {params.outdir} -t {threads} \
           {input.prg} {input.sample_idx} > {log} 2>&1
+        """
+
+
+rule filter_multi_sample_vcf:
+    input:
+        vcf=rules.multi_sample_compare.output.gt_vcf,
+    output:
+        vcf=compare_dir / "{prg_name}/{prg_name}.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(2 * GB),
+    params:
+        options=" ".join(
+            [
+                "--verbose",
+                "--overwrite",
+                f"-d {filters['min_covg']}",
+                f"-D {filters['max_covg']}",
+                f"-s {filters['min_strand_bias']}",
+                f"-g {filters['min_gt_conf']}",
+                f"-G {filters['max_gaps']}",
+                f"-I {filters['max_indel']}",
+            ]
+        ),
+        script=scripts["filter"],
+    log:
+        rule_log_dir / "filter_multi_sample_vcf/{prg_name}.log",
+    container:
+        containers["conda"]
+    conda:
+        envs["filter"]
+    shell:
+        """
+        python {params.script} {params.options} \
+            -i {input.vcf} \
+            -o {output.vcf} 2> {log}
         """
