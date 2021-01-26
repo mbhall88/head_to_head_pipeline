@@ -1002,14 +1002,38 @@ rule add_contigs_to_vcf_header:
         """
         tmp="tmp.vcf.gz"
         bgzip -c {input.vcf} > "$tmp" 2> {log}
-        bcftools index "$tmp" 2> {log}
-        bcftools convert {params.opts} --threads {threads} "$tmp" -o {output.bcf} 2> {log}  
+        bcftools index "$tmp" 2>> {log}
+        bcftools convert {params.opts} --threads {threads} "$tmp" -o {output.bcf} 2>> {log}  
+        """
+
+
+rule normalise_multi_sample_vcf:
+    input:
+        vcf=rules.add_contigs_to_vcf_header.output.bcf,
+        ref=rules.multi_sample_compare.output.vcf_ref,
+    output:
+        vcf=compare_dir / "{prg_name}/pandora/pandora_multisample_genotyped.norm.bcf",
+    log:
+        rule_log_dir / "normalise_multi_sample_vcf/{prg_name}.log",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
+    params:
+        norm_pos_opts="-v",
+        norm_opts="-c e -O b",
+        view_opts="-a -O v",  # trim alts
+    container:
+        containers["bcftools"]
+    shell:
+        """
+        (bcftools view {params.view_opts} {input.vcf} \
+        | bcftools norm {params.norm_opts} -f {input.ref} -o {output.vcf}) 2> {log}
         """
 
 
 rule filter_multi_sample_vcf:
     input:
-        vcf=rules.add_contigs_to_vcf_header.output.bcf,
+        vcf=rules.normalise_multi_sample_vcf.output.vcf,
     output:
         vcf=compare_dir / "{prg_name}/{prg_name}.filtered.bcf",
     threads: 1
