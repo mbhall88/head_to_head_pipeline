@@ -176,7 +176,7 @@ class Filter:
             get_covg(variant, sample_idx=i) for i in range(len(variant.genotypes))
         ]
         return [
-            covg < self.max_covg if self.max_covg else False for covg in variant_covgs
+            covg > self.max_covg if self.max_covg else False for covg in variant_covgs
         ]
 
     def _is_low_gt_conf(self, variant: Variant) -> List[bool]:
@@ -211,7 +211,7 @@ class Filter:
                 statuses[i].high_covg = is_high
 
         if self.min_gt_conf:
-            for i, is_low in self._is_low_gt_conf(variant):
+            for i, is_low in enumerate(self._is_low_gt_conf(variant)):
                 statuses[i].low_gt_conf = is_low
 
         if self.min_strand_bias:
@@ -467,7 +467,7 @@ def main(
 
         vcf_writer.write_record(variant)
 
-        stats.update(filter_status.split(";"))
+        stats.update(filter_status.split(";") for filter_status in filter_statuses)
 
     vcf_reader.close()
     vcf_writer.close()

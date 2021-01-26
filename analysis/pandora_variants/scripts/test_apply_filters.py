@@ -1,7 +1,9 @@
+from itertools import cycle
 from unittest.mock import patch, call
 
-from apply_filters import *
 from pytest import raises
+
+from apply_filters import *
 
 
 class TestGetCovg:
@@ -133,83 +135,90 @@ class TestFilterFilterStatus:
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_noFilters_returnsPass(self, mocked_variant):
         assessor = Filter()
+        mocked_variant.genotypes = [[0]]
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowCovgOnAndVarHasLowCovg(self, mocked_variant):
         min_covg = 10
         assessor = Filter(min_covg=min_covg)
         variant_covg = 9
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(low_covg=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowCovgOnAndVarHasGoodCovg(self, mocked_variant):
         min_covg = 9
         assessor = Filter(min_covg=min_covg)
         variant_covg = 12
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(Tags.Pass)
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowCovgOnAndVarHasMinCovg(self, mocked_variant):
         min_covg = 9
         assessor = Filter(min_covg=min_covg)
         variant_covg = 9
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(Tags.Pass)
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxCovgOnAndVarHasHighCovg(self, mocked_variant):
         max_covg = 20
         assessor = Filter(max_covg=max_covg)
         variant_covg = 201
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(high_covg=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxCovgOnAndVarHasOkCovg(self, mocked_variant):
         max_covg = 20
         assessor = Filter(max_covg=max_covg)
         variant_covg = 2
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(Tags.Pass)
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxCovgOnAndVarHasMaxCovg(self, mocked_variant):
         max_covg = 20
         assessor = Filter(max_covg=max_covg)
         variant_covg = 20
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(Tags.Pass)
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_bothCovgFiltersOnAndVarHasExpectedCovg(self, mocked_variant):
@@ -217,18 +226,20 @@ class TestFilterFilterStatus:
         max_covg = 20
         assessor = Filter(max_covg=max_covg, min_covg=min_covg)
         variant_covg = 15
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(Tags.Pass)
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_bothCovgFiltersOnAndMaxLowerThanMin_raisesError(self, mocked_variant):
         expected_covg = 100
         max_covg = 0.2
         min_covg = 0.5
+        mocked_variant.genotypes = [[0]]
 
         with raises(ValueError) as err:
             Filter(max_covg=max_covg, min_covg=min_covg)
@@ -240,12 +251,13 @@ class TestFilterFilterStatus:
         max_covg = 20
         assessor = Filter(max_covg=max_covg, min_covg=min_covg)
         variant_covg = 1
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(low_covg=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_bothCovgFiltersOnAndVarHasHighCovg(self, mocked_variant):
@@ -253,60 +265,65 @@ class TestFilterFilterStatus:
         max_covg = 20
         assessor = Filter(max_covg=max_covg, min_covg=min_covg)
         variant_covg = 100
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(high_covg=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowGtConfOnAndVarHasHighGtConf(self, mocked_variant):
         min_gt_conf = 1.1
         assessor = Filter(min_gt_conf=min_gt_conf)
         variant_gt_conf = 2.2
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_gt_conf", return_value=variant_gt_conf):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowGtConfOnAndVarHasLowGtConf(self, mocked_variant):
         min_gt_conf = 1.1
         assessor = Filter(min_gt_conf=min_gt_conf)
         variant_gt_conf = 0.5
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_gt_conf", return_value=variant_gt_conf):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(low_gt_conf=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowGtConfOnAndVarHasMinGtConf(self, mocked_variant):
         min_gt_conf = 1.1
         assessor = Filter(min_gt_conf=min_gt_conf)
         variant_gt_conf = 1.1
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_gt_conf", return_value=variant_gt_conf):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowGtConfOnAndVarHasMinGtConfMinusOne(self, mocked_variant):
         min_gt_conf = 1.1
         assessor = Filter(min_gt_conf=min_gt_conf)
         variant_gt_conf = 1.09
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_gt_conf", return_value=variant_gt_conf):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(low_gt_conf=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_lowGtConfLowCovgOnAndVarFailsBoth(self, mocked_variant):
@@ -315,6 +332,7 @@ class TestFilterFilterStatus:
         assessor = Filter(min_covg=min_covg, min_gt_conf=min_gt_conf)
         variant_covg = 4
         variant_gt_conf = 0.8
+        mocked_variant.genotypes = [[0]]
 
         with patch("apply_filters.get_covg", return_value=variant_covg), patch(
             "apply_filters.get_gt_conf", return_value=variant_gt_conf
@@ -322,7 +340,7 @@ class TestFilterFilterStatus:
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(low_gt_conf=True, low_covg=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch.object(Strand, Strand.from_variant.__name__)
     @patch("cyvcf2.Variant", autospec=True, create=True)
@@ -331,11 +349,12 @@ class TestFilterFilterStatus:
         assessor = Filter(min_strand_bias=bias)
         strand_covgs = Strand(5, 5)
         mocked_strand.return_value = strand_covgs
+        mocked_variant.genotypes = [[0]]
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch.object(Strand, Strand.from_variant.__name__)
     @patch("cyvcf2.Variant", autospec=True, create=True)
@@ -344,11 +363,12 @@ class TestFilterFilterStatus:
         assessor = Filter(min_strand_bias=bias)
         strand_covgs = Strand(5, 1)
         mocked_strand.return_value = strand_covgs
+        mocked_variant.genotypes = [[0]]
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(strand_bias=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch.object(Strand, Strand.from_variant.__name__)
     @patch("cyvcf2.Variant", autospec=True, create=True)
@@ -356,12 +376,13 @@ class TestFilterFilterStatus:
         bias = 25
         assessor = Filter(min_strand_bias=bias)
         strand_covgs = Strand(0, 0)
+        mocked_variant.genotypes = [[0]]
         mocked_strand.return_value = strand_covgs
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_strandBiasOnAndVarIsNull_usesRef(self, mocked_variant):
@@ -375,20 +396,21 @@ class TestFilterFilterStatus:
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(strand_bias=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch.object(Strand, Strand.from_variant.__name__)
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_strandBiasOnAndVarBiasIsOnLimit(self, mocked_variant, mocked_strand):
         bias = 25
         assessor = Filter(min_strand_bias=bias)
+        mocked_variant.genotypes = [[0]]
         strand_covgs = Strand(15, 5)
         mocked_strand.return_value = strand_covgs
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch.object(Strand, Strand.from_variant.__name__)
     @patch("cyvcf2.Variant", autospec=True, create=True)
@@ -397,11 +419,12 @@ class TestFilterFilterStatus:
         assessor = Filter(min_strand_bias=bias)
         strand_covgs = Strand(24, 76)
         mocked_strand.return_value = strand_covgs
+        mocked_variant.genotypes = [[0]]
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(strand_bias=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_strandBiasOnAndVarIsHet(self, mocked_variant):
@@ -416,25 +439,27 @@ class TestFilterFilterStatus:
     def test_maxGapsOnAndVarHasLowGaps(self, mocked_variant):
         max_gaps = 0.5
         assessor = Filter(max_gaps=max_gaps)
+        mocked_variant.genotypes = [[0]]
         variant_gaps = 0.3
 
         with patch("apply_filters.get_gaps", return_value=variant_gaps):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus())
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxGapsOnAndVarHasHighGaps(self, mocked_variant):
         max_gaps = 0.5
         assessor = Filter(max_gaps=max_gaps)
+        mocked_variant.genotypes = [[0]]
         variant_gaps = 0.6
 
         with patch("apply_filters.get_gaps", return_value=variant_gaps):
             actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(high_gaps=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxIndelOnAndIndelIsLong(self, mocked_variant):
@@ -447,7 +472,7 @@ class TestFilterFilterStatus:
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(long_indel=True))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxIndelOnAndIndelIsSameAsMax(self, mocked_variant):
@@ -460,7 +485,7 @@ class TestFilterFilterStatus:
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(long_indel=False))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxIndelOnAndIndelIsBelowMax(self, mocked_variant):
@@ -473,7 +498,7 @@ class TestFilterFilterStatus:
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(long_indel=False))
 
-        assert actual == expected
+        assert actual[0] == expected
 
     @patch("cyvcf2.Variant", autospec=True, create=True)
     def test_maxIndelOffAndIndelIsLong(self, mocked_variant):
@@ -485,5 +510,40 @@ class TestFilterFilterStatus:
 
         actual = assessor.filter_status(mocked_variant)
         expected = str(FilterStatus(long_indel=False))
+
+        assert actual[0] == expected
+
+
+class TestMultisampleVariantFilterStatus:
+    @patch("cyvcf2.Variant", autospec=True, create=True)
+    def test_oneSamplelowGtConfOneSampleLowCovgAndVarOnePassOneMaxIndel(
+        self, mocked_variant
+    ):
+        min_gt_conf = 1.1
+        min_covg = 9
+        max_indel = 2
+        assessor = Filter(
+            min_covg=min_covg,
+            min_gt_conf=min_gt_conf,
+            max_indel=max_indel,
+            is_multisample=True,
+        )
+        variant_covgs = cycle([4, 10, 11, 12])
+        variant_gt_confs = cycle([10, 0.8, 100, 100])
+        mocked_variant.REF = "AAAA"
+        mocked_variant.ALT = ["ATAA", "A"]
+        mocked_variant.genotypes = [[0], [0], [2], [1]]
+
+        with patch("apply_filters.get_covg", side_effect=variant_covgs), patch(
+            "apply_filters.get_gt_conf", side_effect=variant_gt_confs
+        ):
+            actual = assessor.filter_status(mocked_variant)
+        expected = str(FilterStatus(low_gt_conf=True, low_covg=True))
+        expected = [
+            str(FilterStatus(low_covg=True)),
+            str(FilterStatus(low_gt_conf=True)),
+            str(FilterStatus(long_indel=True)),
+            str(FilterStatus()),
+        ]
 
         assert actual == expected
