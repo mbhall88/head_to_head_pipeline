@@ -66,7 +66,7 @@ for idx, row in samplesheet.iterrows():
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
         output_files.add(distance_dir / f"{prg_name}.heatmap.html")
-        output_files.add(compare_dir / f"{prg_name}/{prg_name}.filtered.bcf")
+        output_files.add(compare_dir / f"{prg_name}/{prg_name}.gt.csv")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -1064,4 +1064,29 @@ rule filter_multi_sample_vcf:
         python {params.script} {params.options} \
             -i {input.vcf} \
             -o {output.vcf} 2> {log}
+        """
+
+
+rule make_genotype_matrix:
+    input:
+        vcf=rules.filter_multi_sample_vcf.output.vcf,
+    output:
+        matrix=compare_dir / "{prg_name}/{prg_name}.gt.csv",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["bcftools"]
+    log:
+        rule_log_dir / "make_genotype_matrix/{prg_name}.log",
+    params:
+        fmt="'%CHROM,%POS,[%GT,]\n'",
+    shell:
+        """
+        printf "CHROM,POS," > {output.matrix} 2> {log}
+        (bcftools query -l {input.vcf} | \
+          tr '\n' ',' | \
+          sed 's/,$/\n/g') >> {output.matrix} 2>> {log}
+        (bcftools query -f {params.fmt} {input.vcf} | \
+          sed 's/,$//g') >> {output.matrix} 2>> {log}
         """
