@@ -27,7 +27,7 @@ print(delim.join(["CHROM", "POS", *samples]), file=outstream)
 
 for variant in vcf_reader:
     chrom = variant.CHROM
-    pos = variant.POS
+    pos = str(variant.POS)
     genotypes = np.full(N, FILTERED)
     if variant.FILTER is None:  # i.e. PASS or .
         mask = variant.format("FT") == "PASS"
