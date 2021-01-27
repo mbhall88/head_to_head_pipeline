@@ -3,7 +3,7 @@ filter (FT) tag for each sample. If there is a FT tag present, the genotype is e
 as -2"""
 import sys
 
-sys.stderr = open(snakemake.log[0])
+sys.stderr = open(snakemake.log[0], "w")
 
 import numpy as np
 from cyvcf2 import VCF
