@@ -1,0 +1,8 @@
+name: genotype_matrix
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::cyvcf2=0.30.4
+  - numpy>=1.18.1
