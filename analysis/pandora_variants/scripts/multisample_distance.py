@@ -1,6 +1,19 @@
+import logging
+from itertools import combinations
+from typing import Dict, Tuple
+
 import click
 import pandas as pd
-import logging
+
+
+def dist(x: int, y: int) -> int:
+    if x == y or x < 0 or y < 0:
+        return 0
+    return 1
+
+
+def distance_between(xs: pd.Series, ys: pd.Series) -> int:
+    return sum(dist(x, y) for x, y in zip(xs, ys))
 
 
 @click.command()
@@ -28,10 +41,24 @@ import logging
     default=",",
     show_default=True,
 )
-@click.option("-H", "--no-header", help="The input has no header line", is_flag=True)
+@click.option(
+    "--null", help="Value used for null genotypes", default=-1, show_default=True
+)
+@click.option(
+    "--filtered",
+    help="Value used for filtered genotypes",
+    default=-2,
+    show_default=True,
+)
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
 def main(
-    verbose: bool, matrix: str, output: str, delim: str, in_delim: str, no_header: bool
+    verbose: bool,
+    matrix: str,
+    output: str,
+    delim: str,
+    in_delim: str,
+    null: int,
+    filtered: int,
 ):
     """Produces a distance matrix based on a given genotype matrix.
 
@@ -41,6 +68,21 @@ def main(
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
     )
+    gt_matrix = pd.read_csv(
+        matrix,
+        delimiter=delim,
+        header=0,
+        usecols=lambda colname: colname not in ("CHROM", "POS"),
+    )
+
+    samples = gt_matrix.columns.values.tolist()
+    pairs = combinations(samples, 2)
+    pairwise_distances: Dict[Tuple[str, str], int] = dict()
+
+    for x, y in pairs:
+        pairwise_distances[(x, y)] = distance_between(gt_matrix[x], gt_matrix[y])
+
+    # todo: turn dict into dist matrix
 
 
 if __name__ == "__main__":
