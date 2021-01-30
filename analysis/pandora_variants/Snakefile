@@ -1106,3 +1106,34 @@ rule calculate_multi_sample_distance:
         rule_log_dir / "calculate_multi_sample_distance/{prg_name}.log",
     shell:
         "python {params.script} {params.opts} -o {output.matrix} {input.matrix} 2> {log}"
+
+
+rule plot_multi_sample_distance_matrix:
+    input:
+        matrix=rules.calculate_multi_sample_distance.output.matrix,
+    output:
+        plot=report(
+            distance_dir / "{prg_name}.multisample.heatmap.html",
+            category="Distance",
+            subcategory="Plot",
+            caption=report_dir / "plot_multisample_distance_matrix.rst",
+        ),
+    params:
+        script=scripts["plot_distance_matrix"],
+        options=" ".join(
+            [
+                "--delim ,",
+                "--title 'Pandora {prg_name} PRG multi-sample pairwise distance'",
+            ]
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["plot_distance_matrix"]
+    log:
+        rule_log_dir / "plot_distance_matrix/{prg_name}.log",
+    shell:
+        "python {params.script} {params.options} -i {input.matrix} -o {output.plot} 2> {log}"
