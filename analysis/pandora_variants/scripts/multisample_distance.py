@@ -106,6 +106,10 @@ def main(
         dist_matrix[i, j] = dist
         dist_matrix[j, i] = dist
 
+    diagonal_is_zero = all(dist_matrix[i, i] == 0 for i in range(n_samples))
+    if not diagonal_is_zero:
+        AsymmetrixMatrixError("Diagonal of distance matrix is not all zeros")
+
     matrix_is_symmetric = np.allclose(dist_matrix, dist_matrix.T)
     if not matrix_is_symmetric:
         raise AsymmetrixMatrixError("Distance matrix is not symmetric")
