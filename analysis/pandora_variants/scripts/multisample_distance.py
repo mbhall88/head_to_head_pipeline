@@ -1,19 +1,18 @@
 import logging
 from itertools import combinations
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Callable
 
 import click
+import numpy as np
 import pandas as pd
 
 
-def dist(x: int, y: int) -> int:
-    if x == y or x < 0 or y < 0:
-        return 0
-    return 1
+class AsymmetrixMatrixError(Exception):
+    pass
 
 
-def distance_between(xs: pd.Series, ys: pd.Series) -> int:
-    return sum(dist(x, y) for x, y in zip(xs, ys))
+def distance_between(xs: pd.Series, ys: pd.Series, dist_func: Callable) -> int:
+    return sum(dist_func(x, y) for x, y in zip(xs, ys))
 
 
 @click.command()
@@ -68,21 +67,55 @@ def main(
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s]: %(message)s", level=log_level
     )
+
+    def dist(x: int, y: int) -> int:
+        if x == y or any(gt in (null, filtered) for gt in [x, y]):
+            return 0
+        return 1
+
+    logging.info("Loading genotype matrix...")
+
     gt_matrix = pd.read_csv(
         matrix,
-        delimiter=delim,
+        delimiter=in_delim,
         header=0,
         usecols=lambda colname: colname not in ("CHROM", "POS"),
     )
 
     samples = gt_matrix.columns.values.tolist()
+    n_samples = len(samples)
+    logging.info(f"Loaded genotype matrix for {n_samples} samples")
     pairs = combinations(samples, 2)
     pairwise_distances: Dict[Tuple[str, str], int] = dict()
 
-    for x, y in pairs:
-        pairwise_distances[(x, y)] = distance_between(gt_matrix[x], gt_matrix[y])
+    logging.info("Calculating distances between all pairs...")
+    for a, b in pairs:
+        logging.debug(f"Calculating distance for pair ({a}, {b})")
+        pairwise_distances[(a, b)] = distance_between(gt_matrix[a], gt_matrix[b], dist)
+    logging.info(f"Calculated distances for {len(pairwise_distances)} pairs")
 
-    # todo: turn dict into dist matrix
+    logging.info("Filling distance matrix...")
+    dist_matrix = np.zeros(shape=(n_samples, n_samples), dtype=int)
+    # loop through pair indices and fill matrix with distances
+    for i, j in combinations(range(n_samples), 2):
+        try:
+            dist = pairwise_distances[(samples[i], samples[j])]
+        except KeyError:
+            dist = pairwise_distances[(samples[j], samples[i])]
+
+        dist_matrix[i, j] = dist
+        dist_matrix[j, i] = dist
+
+    matrix_is_symmetric = np.allclose(dist_matrix, dist_matrix.T)
+    if not matrix_is_symmetric:
+        raise AsymmetrixMatrixError("Distance matrix is not symmetric")
+    logging.info("Distance matrix is symmetrical")
+
+    # write matrix to file
+    pd.DataFrame(dist_matrix, index=samples, columns=samples).to_csv(
+        output, index=True, header=True, sep=delim
+    )
+    logging.info(f"Distance matrix written to {output}")
 
 
 if __name__ == "__main__":
