@@ -66,7 +66,7 @@ for idx, row in samplesheet.iterrows():
             concordance_dir / f"{prg_name}/{site}/{sample}.concordance.json"
         )
         output_files.add(distance_dir / f"{prg_name}.heatmap.html")
-        output_files.add(distance_dir / f"{prg_name}.multisample.heatmap.html")
+        output_files.add(distance_dir / f"{prg_name}.heatmap.multisample.html")
 
         if row["pacbio"] == 1:
             pandora_truth_summary = (
@@ -1113,7 +1113,7 @@ rule plot_multi_sample_distance_matrix:
         matrix=rules.calculate_multi_sample_distance.output.matrix,
     output:
         plot=report(
-            distance_dir / "{prg_name}.multisample.heatmap.html",
+            distance_dir / "{prg_name}.heatmap.multisample.html",
             category="Distance",
             subcategory="Plot",
             caption=report_dir / "plot_multisample_distance_matrix.rst",
