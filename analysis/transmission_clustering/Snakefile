@@ -62,8 +62,7 @@ def generate_y_names(wildcards, input) -> str:
         else:
             name = name.split(".")[0]
         names.append(name)
-    names_str = ",".join(names)
-    return f"-Y {names_str}"
+    return ",".join(names)
 
 
 rule dotplot:
@@ -112,11 +111,11 @@ rule dotplot:
     shell:
         """
         python {params.script} {params.options} \
-            -x {input.x_matrix} {params.y_matrices_str} \
+            -x {input.x_matrix} {params.y_matrices_str} {params.y_names} \
             -o {output.full_plot} 2> {log}
 
         python {params.script} {params.options} \
-            -x {input.x_matrix} {params.y_matrices_str} \
+            -x {input.x_matrix} {params.y_matrices_str} {params.y_names} \
             -o {output.close_plot} -T {params.threshold} 2>> {log}
         """
 
