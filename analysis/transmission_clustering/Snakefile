@@ -53,12 +53,26 @@ rule all:
         output_files,
 
 
+def generate_y_names(wildcards, input) -> str:
+    names = []
+    for fpath in map(Path, input.y_matrices):
+        name = fpath.name
+        if "pandora" in name:
+            name = "pandora_multi" if "multisample" in name else "pandora_single"
+        else:
+            name = name.split(".")[0]
+        names.append(name)
+    names_str = ",".join(names)
+    return f"-Y {names_str}"
+
+
 rule dotplot:
     input:
         x_matrix=baseline_dir / "distance/compass.matrix.csv",
         y_matrices=[
             baseline_dir / "distance/bcftools.matrix.csv",
             pandora_dir / "distance/pandora.sparse.matrix.csv",
+            pandora_dir / "distance/pandora.sparse.multisample.distance.csv",
         ],
     output:
         full_plot=report(
@@ -84,6 +98,7 @@ rule dotplot:
         y_matrices_str=lambda wildcards, input: " ".join(
             [f"-y {p}" for p in input.y_matrices]
         ),
+        y_names=generate_y_names,
         script=scripts["dotplot"],
         threshold=100,
         options=" ".join(
@@ -174,6 +189,6 @@ rule plot_concordance:
     conda:
         envs["plot_concordance"]
     log:
-        rule_log_dir / "plot_concordance.log"
+        rule_log_dir / "plot_concordance.log",
     script:
         scripts["plot_concordance"]
