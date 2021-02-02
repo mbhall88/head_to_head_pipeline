@@ -18,7 +18,7 @@ TITLE = "Distance matrix dot plot"
 PAIR_IDX = ("sample1", "sample2")
 
 
-def load_matrix(fpath: str, delim: str) -> pd.DataFrame:
+def load_matrix(fpath: str, delim: str, name: str) -> pd.DataFrame:
     matrix = []
     with open(fpath) as instream:
         header = next(instream).rstrip()
@@ -27,7 +27,12 @@ def load_matrix(fpath: str, delim: str) -> pd.DataFrame:
             matrix.append(map(int, row.split(delim)[1:]))
     df = pd.DataFrame(matrix, index=names, columns=names)
     # remove the lower triangle of the matrix and the middle diagonal
-    return df.where(np.triu(np.ones(df.shape), k=1).astype(np.bool))
+    df = df.where(np.triu(np.ones(df.shape), k=1).astype(np.bool)).sort_index()
+    df = df.stack().rename(name).astype(int)
+    df = df.rename_axis(PAIR_IDX)
+    sorted_idx = [sorted(ix) for ix in df.index]
+    df.index = pd.MultiIndex.from_tuples(sorted_idx, names=df.index.names)
+    return df
 
 
 class PlotFactory:
@@ -257,16 +262,12 @@ def main(
     else:
         ynames = ynames.split(",")
 
-    xmat = load_matrix(x_matrix, delim)
     xcol = f"{xname}_dist"
-    xdf = xmat.stack().rename(xcol)
-    xdf = xdf.rename_axis(PAIR_IDX)
+    xdf = load_matrix(x_matrix, delim, xcol)
 
     ydfs = []
     for yname, y_matrix in zip(ynames, y_matrices):
-        ymat = load_matrix(y_matrix, delim)
-        ydf = ymat.stack().rename(yname)
-        ydf = ydf.rename_axis(PAIR_IDX)
+        ydf = load_matrix(y_matrix, delim, yname)
         ydfs.append(ydf)
 
     # merge the matrices
