@@ -106,15 +106,17 @@ rule dotplot:
                 "--delim ,",
             ]
         ),
+        close_alpha=0.4,
+        full_alpha=0.2,
     log:
         rule_log_dir / "dotplot.log",
     shell:
         """
-        python {params.script} {params.options} \
+        python {params.script} {params.options} --alpha {params.full_alpha} \
             -x {input.x_matrix} {params.y_matrices_str} -Y {params.y_names} \
             -o {output.full_plot} 2> {log}
 
-        python {params.script} {params.options} \
+        python {params.script} {params.options} --alpha {params.close_alpha} \
             -x {input.x_matrix} {params.y_matrices_str} -Y {params.y_names} \
             -o {output.close_plot} -T {params.threshold} 2>> {log}
         """
