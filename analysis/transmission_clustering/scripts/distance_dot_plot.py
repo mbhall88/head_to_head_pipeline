@@ -14,6 +14,7 @@ TOOLS = "pan,wheel_zoom,box_zoom,reset,box_select,lasso_select,undo,redo,save,ho
 PIXEL_INCHES = 96
 HEIGHT = 8 * PIXEL_INCHES
 WIDTH = 13 * PIXEL_INCHES
+ALPHA = 0.2
 TITLE = "Distance matrix dot plot"
 PAIR_IDX = ("sample1", "sample2")
 
@@ -243,6 +244,9 @@ class PlotFactory:
     help="Only plot pairs where SNP distance is no greater than this threshold.",
     type=int,
 )
+@click.option(
+    "--alpha", help="The transparency of points", default=ALPHA, show_default=True
+)
 def main(
     x_matrix: str,
     y_matrices: List[str],
@@ -254,6 +258,7 @@ def main(
     width: int,
     height: int,
     threshold: int,
+    alpha: float,
 ):
     if not xname:
         xname = Path(x_matrix).name.split(".")[0]
@@ -294,7 +299,7 @@ def main(
         colour_by=yvar_name,
         palette=Set2,
         data=df,
-        point_alpha=0.4,
+        point_alpha=alpha,
         width=width,
         height=height,
     )
