@@ -106,7 +106,7 @@ rule dotplot:
                 "--delim ,",
             ]
         ),
-        close_alpha=0.4,
+        close_alpha=0.75,
         full_alpha=0.2,
     log:
         rule_log_dir / "dotplot.log",
