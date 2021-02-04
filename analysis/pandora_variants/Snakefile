@@ -1031,9 +1031,33 @@ rule normalise_multi_sample_vcf:
         """
 
 
-rule filter_multi_sample_vcf:
+rule extract_multi_sample_snps:
     input:
         vcf=rules.normalise_multi_sample_vcf.output.vcf,
+    output:
+        vcf=(
+            compare_dir
+            / "{prg_name}/pandora/pandora_multisample_genotyped.norm.snps.bcf"
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["extract_snps"]
+    params:
+        script=scripts["extract_snps"],
+        extra="-v",
+    log:
+        rule_log_dir / "extract_multi_sample_snps/{prg_name}.log",
+    shell:
+        "python {params.script} {params.extra} -i {input.vcf} -o {output.vcf} 2> {log}"
+
+
+rule filter_multi_sample_vcf:
+    input:
+        vcf=rules.extract_multi_sample_snps.output.vcf,
     output:
         vcf=compare_dir / "{prg_name}/{prg_name}.filtered.bcf",
     threads: 1

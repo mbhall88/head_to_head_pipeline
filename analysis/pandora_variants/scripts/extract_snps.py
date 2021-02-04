@@ -48,7 +48,9 @@ def main(
         empty_alt = not bool(record.ALT)
         if empty_alt and (keep_mnps or ref_is_single_base):
             keep_this_record = True
-        elif ref_len == len(record.ALT[0]) and (ref_is_single_base or keep_mnps):
+        elif all(ref_len == len(alt) for alt in record.ALT) and (
+            ref_is_single_base or keep_mnps
+        ):
             keep_this_record = True
 
         if keep_this_record:
