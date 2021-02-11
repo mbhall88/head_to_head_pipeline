@@ -982,6 +982,22 @@ rule multi_sample_compare:
         """
 
 
+rule index_vcf_ref:
+    input:
+        vcf_ref=rules.multi_sample_compare.output.vcf_ref,
+    output:
+        idx=compare_dir / "{prg_name}/pandora/pandora_multisample.vcf_ref.fa.fai",
+    threads: 1
+    resources:
+        mem_mb=int(0.5 * GB),
+    container:
+        containers["samtools"]
+    log:
+        rule_log_dir / "index_vcf_ref/{prg_name}.log",
+    shell:
+        "samtools faidx --fai-idx {output.idx} {input.vcf_ref} 2> {log}"
+
+
 rule add_contigs_to_vcf_header:
     input:
         vcf=rules.multi_sample_compare.output.gt_vcf,
@@ -1011,6 +1027,7 @@ rule normalise_multi_sample_vcf:
     input:
         vcf=rules.add_contigs_to_vcf_header.output.bcf,
         ref=rules.multi_sample_compare.output.vcf_ref,
+        ref_idx=rules.index_vcf_ref.output.idx,
     output:
         vcf=compare_dir / "{prg_name}/pandora/pandora_multisample_genotyped.norm.bcf",
     log:

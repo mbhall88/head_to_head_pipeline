@@ -16,6 +16,7 @@ containers:
   varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
   make_prg:  "docker://quay.io/iqballab/make_prg:0.1.1"
+  samtools:  "docker://quay.io/biocontainers/samtools:1.11--h6270b1f_0"
 envs:
   update_msas:          "envs/update_msas.yaml"
   fd:                   "envs/fd.yaml"
