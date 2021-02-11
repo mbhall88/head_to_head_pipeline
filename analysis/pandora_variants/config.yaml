@@ -11,7 +11,7 @@ h37rv:
   mask:   "../../data/H37Rv_PRG/resources/compass-mask.bed"
 containers:
   conda:     "docker://continuumio/miniconda3:4.7.12"
-  pandora:   "docker://quay.io/mbhall88/pandora:824ad3b"
+  pandora:   "docker://quay.io/mbhall88/pandora:7bd03f8"
   bcftools:  "docker://quay.io/biocontainers/bcftools:1.10.2--hd2cd319_0"
   varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
