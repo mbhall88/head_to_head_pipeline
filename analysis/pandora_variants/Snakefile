@@ -646,7 +646,7 @@ rule generate_consensus:
         options=" ".join(
             [
                 "--verbose",
-                "-I null -I filter -I mask",
+                "-I all",
                 "--sample-id {sample}",
                 "--het-default none",
             ]

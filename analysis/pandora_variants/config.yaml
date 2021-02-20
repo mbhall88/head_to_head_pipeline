@@ -52,7 +52,7 @@ scripts:
 filters:
   min_covg:        3
   max_covg:        0
-  min_gt_conf:     70
+  min_gt_conf:     15
   min_strand_bias: 1
   max_gaps:        0
   max_indel:       20
