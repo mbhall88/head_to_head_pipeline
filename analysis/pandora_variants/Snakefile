@@ -371,6 +371,7 @@ rule filter_single_sample_vcf:
                 f"-g {filters['min_gt_conf']}",
                 f"-G {filters['max_gaps']}",
                 f"-I {filters['max_indel']}",
+                f"-K {filters['min_frs']}",
             ]
         ),
         script=scripts["filter"],
@@ -719,7 +720,10 @@ rule plot_distance_matrix:
     params:
         script=scripts["plot_distance_matrix"],
         options=" ".join(
-            ["--delim ,", "--title 'Pandora {prg_name} PRG pairwise distance'",]
+            [
+                "--delim ,",
+                "--title 'Pandora {prg_name} PRG pairwise distance'",
+            ]
         ),
     threads: 1
     resources:
@@ -1091,6 +1095,7 @@ rule filter_multi_sample_vcf:
                 f"-g {filters['min_gt_conf']}",
                 f"-G {filters['max_gaps']}",
                 f"-I {filters['max_indel']}",
+                f"-K {filters['min_frs']}",
             ]
         ),
         script=scripts["filter"],

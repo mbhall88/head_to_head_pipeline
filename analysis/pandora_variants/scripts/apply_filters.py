@@ -15,9 +15,17 @@ def flatten(list_of_lists):
     return chain.from_iterable(list_of_lists)
 
 
+def validate_fraction(ctx, param, value):
+    f = float(value)
+    if f > 1.0 or f < 0.0:
+        raise click.BadParameter("fractions must be between 0.0 and 1.0")
+    else:
+        return f
+
+
 class Tags(Enum):
-    FwdCovg = "MEAN_FWD_COVG"
-    RevCovg = "MEAN_REV_COVG"
+    FwdCovg = "MED_FWD_COVG"
+    RevCovg = "MED_REV_COVG"
     LowCovg = "ld"
     HighCovg = "hd"
     StrandBias = "sb"
@@ -26,6 +34,7 @@ class Tags(Enum):
     GtypeConf = "GT_CONF"
     LowGtConf = "lgc"
     LongIndel = "lindel"
+    LowSupport = "frs"
     Pass = "PASS"
     FormatFilter = "FT"
     AllFail = "FAIL"
@@ -95,6 +104,7 @@ class FilterStatus:
     low_gt_conf: bool = False
     high_gaps: bool = False
     long_indel: bool = False
+    low_support: bool = False
     delim: str = ";"
 
     def __str__(self) -> str:
@@ -111,6 +121,8 @@ class FilterStatus:
             status.append(str(Tags.HighGaps))
         if self.long_indel:
             status.append(str(Tags.LongIndel))
+        if self.low_support:
+            status.append(str(Tags.LowSupport))
 
         return self.delim.join(status) if status else str(Tags.Pass)
 
@@ -152,6 +164,7 @@ class Filter:
         min_strand_bias: int = 0,
         min_gt_conf: float = 0,
         max_gaps: float = 0,
+        min_frs: float = 0,
         max_indel: Optional[int] = None,
         is_multisample: bool = False,
     ):
@@ -161,6 +174,7 @@ class Filter:
         self.min_gt_conf = min_gt_conf
         self.max_gaps = max_gaps
         self.max_indel = max_indel
+        self.min_frs = min_frs
         self.is_multisample = is_multisample
 
         if self.min_covg and self.max_covg and self.min_covg > self.max_covg:
@@ -191,6 +205,13 @@ class Filter:
         ]
         return [gt_conf < self.min_gt_conf for gt_conf in gt_confs]
 
+    def _is_low_support(self, variant: Variant) -> List[bool]:
+        supports = [
+            fraction_read_support(variant, sample_idx=i)
+            for i in range(len(variant.genotypes))
+        ]
+        return [frs <= self.min_frs if self.min_frs else False for frs in supports]
+
     def _is_high_gaps(self, variant: Variant) -> List[bool]:
         gaps = [get_gaps(variant, sample_idx=i) for i in range(len(variant.genotypes))]
         return [gap > self.max_gaps for gap in gaps]
@@ -215,6 +236,10 @@ class Filter:
             ):
                 statuses[i].low_covg = is_low
                 statuses[i].high_covg = is_high
+
+        if self.min_frs:
+            for i, is_low_support in enumerate(self._is_low_support(variant)):
+                statuses[i].low_support = is_low_support
 
         if self.min_gt_conf:
             for i, is_low in enumerate(self._is_low_gt_conf(variant)):
@@ -266,6 +291,14 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for max. covg: {header}")
+
+        if self.min_frs > 0:
+            header = {
+                "ID": str(Tags.LowSupport),
+                "Description": f"Fraction of read support on called allele is less than {self.min_frs}",
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. FRS: {header}")
 
         if self.min_gt_conf > 0:
             header = {
@@ -320,6 +353,18 @@ def get_gaps(variant: Variant, sample_idx: int = 0) -> float:
     return variant.format(Tags.Gaps.value)[sample_idx][gt_idx]
 
 
+def fraction_read_support(variant: Variant, sample_idx: int = 0) -> float:
+    fwd_covgs = variant.format(Tags.FwdCovg.value)[sample_idx]
+    rev_covgs = variant.format(Tags.RevCovg.value)[sample_idx]
+    total_covg = sum(fwd_covgs) + sum(rev_covgs)
+    called_idx = Genotype.from_arr(variant.genotypes[sample_idx]).allele_index()
+    called_covg = fwd_covgs[called_idx] + rev_covgs[called_idx]
+    try:
+        return called_covg / total_covg
+    except ZeroDivisionError:
+        return 1.0
+
+
 @click.command()
 @click.help_option("--help", "-h")
 @click.option(
@@ -342,7 +387,7 @@ def get_gaps(variant: Variant, sample_idx: int = 0) -> float:
     "-d",
     "--min-covg",
     help=(
-        f"Minimum kmer coverage for the called allele of a position. This filter has ID: {Tags.LowCovg}. "
+        f"Minimum kmer coverage for the called allele of a position. This filter has ID: {Tags.LowCovg.value}. "
         f"Set to 0 to disable"
     ),
     default=0,
@@ -352,25 +397,42 @@ def get_gaps(variant: Variant, sample_idx: int = 0) -> float:
     "-D",
     "--max-covg",
     help=(
-        "Maximum kmer coverage for the called allele of a position. This filter has ID: {Tags.HighDepth}. "
-        "Set to 0 to disable"
+        f"Maximum kmer coverage for the called allele of a position. This filter has ID: {Tags.HighCovg.value}. "
+        f"Set to 0 to disable"
     ),
     default=0,
     show_default=True,
 )
-@click.option("-I", "--max-indel", help="Maximum length of an indel", type=int)
+@click.option(
+    "-I",
+    "--max-indel",
+    help=f"Maximum length of an indel. This filter has ID: {Tags.LongIndel.value}",
+    type=int,
+)
 @click.option(
     "-s",
     "--min-strand-bias",
     help=(
         "Filter a variant if either strand has less than INT% of the kmer coverage "
-        f"on the called allele. This filter has ID: {Tags.StrandBias}. Set to 0 to "
+        f"on the called allele. This filter has ID: {Tags.StrandBias.value}. Set to 0 to "
         f"disable"
     ),
     type=click.IntRange(0, 50),
     metavar="INT",
     default=0,
     show_default=True,
+)
+@click.option(
+    "-K",
+    "--min-frs",
+    help=(
+        f"Minimum fraction of reads supporting the called allele. "
+        f"This filter has ID: {Tags.LowSupport.value}. Set to 0 to disable"
+    ),
+    default=0.0,
+    type=float,
+    show_default=True,
+    callback=validate_fraction,
 )
 @click.option(
     "-G",
@@ -411,6 +473,7 @@ def main(
     min_strand_bias: int,
     max_gaps: float,
     min_gt_conf: float,
+    min_frs: float,
 ):
     """Apply the following filters to a pandora VCF:\n
       - Minimum kmer coverage\n
@@ -418,6 +481,7 @@ def main(
       - Minimum Strand bias percentage\n
       - Maximum gaps fraction\n
       - Minimum genotype confidence score\n
+      - Minimum fraction of read support\n
 
     Note: The reference allele metrics will be used for null calls.
     """
@@ -437,6 +501,7 @@ def main(
         min_gt_conf=min_gt_conf,
         max_gaps=max_gaps,
         max_indel=max_indel,
+        min_frs=min_frs,
         is_multisample=is_multisample,
     )
 

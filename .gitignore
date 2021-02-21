@@ -390,3 +390,7 @@ data/H37Rv_PRG/resources/mask_eda
 analysis/pandora_variants/concordance
 analysis/pandora_variants/consensus
 analysis/pandora_variants/distance
+analysis/pandora_variants/outliers
+analysis/pandora_variants/scripts/cleanup_truth_sample_filters.sh
+analysis/transmission_clustering/eda
+analysis/transmission_clustering/plots
