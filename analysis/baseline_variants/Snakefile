@@ -190,6 +190,7 @@ rule filter_nanopore_snps:
                 f"-r {filters['min_rpb']}",
                 f"-V {filters['min_vdb']}",
                 f"-G {filters['max_sgb']}",
+                f"-K {filters['min_frs']}",
             ]
         ),
         script=scripts["filter"],
@@ -470,7 +471,12 @@ rule plot_distance_matrix:
         ),
     params:
         script=scripts["plot_distance_matrix"],
-        options=" ".join(["--delim ,", "--title '{caller} pairwise distance'",]),
+        options=" ".join(
+            [
+                "--delim ,",
+                "--title '{caller} pairwise distance'",
+            ]
+        ),
     threads: 1
     resources:
         mem_mb=int(GB),
@@ -482,4 +488,3 @@ rule plot_distance_matrix:
         rule_log_dir / "plot_distance_matrix/{caller}.log",
     shell:
         "python {params.script} {params.options} -i {input.matrix} -o {output.plot} 2> {log}"
-

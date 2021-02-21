@@ -11,6 +11,14 @@ from cyvcf2 import Variant, VCF, Writer
 HIST_BINS = 40
 
 
+def validate_fraction(ctx, param, value):
+    f = float(value)
+    if f > 1.0 or f < 0.0:
+        raise click.BadParameter("fractions must be between 0.0 and 1.0")
+    else:
+        return f
+
+
 class Tags(Enum):
     Depth = "DP"
     LowDepth = "ld"
@@ -29,6 +37,7 @@ class Tags(Enum):
     HighSegBias = "hsgb"
     VariantDistanceBias = "VDB"
     LowVarDistBias = "lvdb"
+    LowSupport = "frs"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -45,6 +54,7 @@ class FilterStatus:
     low_rpb: bool = False
     high_sgb: bool = False
     low_vdb: bool = False
+    low_support: bool = False
     delim: str = ";"
 
     def __str__(self) -> str:
@@ -67,6 +77,8 @@ class FilterStatus:
             status.append(str(Tags.HighSegBias))
         if self.low_vdb:
             status.append(str(Tags.LowVarDistBias))
+        if self.low_support:
+            status.append(str(Tags.LowSupport))
 
         return self.delim.join(status) if status else str(Tags.Pass)
 
@@ -145,6 +157,15 @@ class Genotype(NamedTuple):
             return None
         return max(self.allele1, self.allele2) - 1
 
+    def allele_index(self) -> Optional[int]:
+        """The index of the called allele"""
+        if self.is_hom_ref() or self.is_null():
+            return 0
+        elif self.is_hom_alt():
+            return self.alt_index() + 1
+        else:
+            raise NotImplementedError(f"Het Genotype is unexpected: {self}")
+
     @staticmethod
     def from_arr(arr: List[int]) -> "Genotype":
         alleles = [a for a in arr if type(a) is int]
@@ -166,6 +187,7 @@ class Filter:
         min_rpb: float = 0,
         max_sgb: float = 0,
         min_vdb: float = 0,
+        min_frs: float = 0,
     ):
         self.expected_depth = expected_depth
         self.min_depth_frac = min_depth
@@ -179,6 +201,7 @@ class Filter:
         self.min_rpb = min_rpb
         self.max_sgb = max_sgb
         self.min_vdb = min_vdb
+        self.min_frs = min_frs
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
@@ -216,6 +239,10 @@ class Filter:
     def _is_low_vdb(self, variant: Variant) -> bool:
         vdb = variant.INFO.get(str(Tags.VariantDistanceBias))
         return vdb is not None and vdb < self.min_vdb
+
+    def _is_low_support(self, variant: Variant) -> bool:
+        frs = fraction_read_support(variant)
+        return frs < self.min_frs if self.min_frs else False
 
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
@@ -311,6 +338,14 @@ class Filter:
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for strand bias: {header}")
 
+        if self.min_frs > 0:
+            header = {
+                "ID": str(Tags.LowSupport),
+                "Description": f"Fraction of read support on called allele is less than {self.min_frs}",
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. FRS: {header}")
+
         if self.min_bqb > 0:
             header = {
                 "ID": str(Tags.LowBaseQualBias),
@@ -366,6 +401,22 @@ class Filter:
             logging.debug(f"Header for min. variant distance bias: {header}")
 
 
+def fraction_read_support(variant: Variant, sample_idx: int = 0) -> float:
+    strand_depths = get_strand_depths(variant)
+    if strand_depths is None:
+        return 1.0
+    total_covg = sum(strand_depths.to_tuple())
+    called_idx = Genotype.from_arr(variant.genotypes[0]).allele_index()
+    if called_idx == 0:  # ref
+        called_covg = sum(strand_depths.ref_depths)
+    else:
+        called_covg = sum(strand_depths.alt_depths)
+    try:
+        return called_covg / total_covg
+    except ZeroDivisionError:
+        return 1.0
+
+
 def get_depth(variant: Variant, default: int = 0) -> int:
     return variant.INFO.get(str(Tags.Depth), default)
 
@@ -400,7 +451,7 @@ def get_strand_depths(
     "--min-depth",
     help=(
         "Minimum depth as a percentage of the expected (median) depth. This filter "
-        f"has ID: {Tags.LowDepth}. Set to 0 to disable"
+        f"has ID: {Tags.LowDepth.value}. Set to 0 to disable"
     ),
     default=0.2,
     show_default=True,
@@ -410,7 +461,7 @@ def get_strand_depths(
     "--max-depth",
     help=(
         "Maximum depth as a fraction of the expected (median) depth. This filter "
-        f"has ID: {Tags.HighDepth}. Set to 0 to disable"
+        f"has ID: {Tags.HighDepth.value}. Set to 0 to disable"
     ),
     default=2.0,
     show_default=True,
@@ -420,7 +471,7 @@ def get_strand_depths(
     "--min-strand-bias",
     help=(
         "Filter a variant if either strand has less than INT% of the (high-quality) "
-        f"depth on the called allele ({Tags.StrandDepth}). This filter has ID: "
+        f"depth on the called allele ({Tags.StrandDepth.value}). This filter has ID: "
         f"{Tags.StrandBias}. Set to 0 to disable"
     ),
     type=click.IntRange(0, 50),
@@ -433,17 +484,29 @@ def get_strand_depths(
     "--min-qual",
     help=(
         f"Filter a variant if QUAL is less than INT. This filter has ID: "
-        f"{Tags.LowQual}. Set to 0 to disable"
+        f"{Tags.LowQual.value}. Set to 0 to disable"
     ),
     default=0.0,
     show_default=True,
 )
 @click.option(
+    "-K",
+    "--min-frs",
+    help=(
+        f"Minimum fraction of reads supporting the called allele. "
+        f"This filter has ID: {Tags.LowSupport.value}. Set to 0 to disable"
+    ),
+    default=0.0,
+    type=float,
+    show_default=True,
+    callback=validate_fraction,
+)
+@click.option(
     "-b",
     "--min-bqb",
     help=(
-        f"Filter a variant if base quality bias ({Tags.BaseQualBias}) is less "
-        f"than FLOAT. This filter has ID: {Tags.LowBaseQualBias}. Set to 0 to "
+        f"Filter a variant if base quality bias ({Tags.BaseQualBias.value}) is less "
+        f"than FLOAT. This filter has ID: {Tags.LowBaseQualBias.value}. Set to 0 to "
         f"disable"
     ),
     default=0.0,
@@ -453,8 +516,8 @@ def get_strand_depths(
     "-m",
     "--min-mqb",
     help=(
-        f"Filter a variant if mapping quality bias ({Tags.MapQualBias}) is "
-        f"less than FLOAT. This filter has ID: {Tags.LowMapQualBias}. Set to 0 to "
+        f"Filter a variant if mapping quality bias ({Tags.MapQualBias.value}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowMapQualBias.value}. Set to 0 to "
         f"disable"
     ),
     default=0.0,
@@ -464,8 +527,8 @@ def get_strand_depths(
     "-r",
     "--min-rpb",
     help=(
-        f"Filter a variant if read position bias ({Tags.ReadPosBias}) is "
-        f"less than FLOAT. This filter has ID: {Tags.LowReadPosBias}. Set to 0 to "
+        f"Filter a variant if read position bias ({Tags.ReadPosBias.value}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowReadPosBias.value}. Set to 0 to "
         f"disable"
     ),
     default=0.0,
@@ -475,8 +538,8 @@ def get_strand_depths(
     "-G",
     "--max-sgb",
     help=(
-        f"Filter a variant if segregation bias ({Tags.SegregationBias}) is "
-        f"greater than FLOAT. This filter has ID: {Tags.HighSegBias}. Set to 0 to "
+        f"Filter a variant if segregation bias ({Tags.SegregationBias.value}) is "
+        f"greater than FLOAT. This filter has ID: {Tags.HighSegBias.value}. Set to 0 to "
         f"disable"
     ),
     default=0.0,
@@ -486,8 +549,8 @@ def get_strand_depths(
     "-V",
     "--min-vdb",
     help=(
-        f"Filter a variant if variant distance bias ({Tags.VariantDistanceBias}) "
-        f"is less than FLOAT. This filter has ID: {Tags.LowVarDistBias}. Set to 0 "
+        f"Filter a variant if variant distance bias ({Tags.VariantDistanceBias.value}) "
+        f"is less than FLOAT. This filter has ID: {Tags.LowVarDistBias.value}. Set to 0 "
         f"to disable"
     ),
     default=0.0,
@@ -523,12 +586,13 @@ def main(
     max_sgb: float,
     min_vdb: float,
     hist: bool,
+    min_frs: float,
 ):
     """Apply the following filters to a VCF:\n
-      - Minimum proportion of the expected (median) depth\n
-      - Maximum proportion of the expected (median) depth\n
-      - Minimum QUAL threshold\n
-      - Minimum Strand bias percentage
+    - Minimum proportion of the expected (median) depth\n
+    - Maximum proportion of the expected (median) depth\n
+    - Minimum QUAL threshold\n
+    - Minimum Strand bias percentage
     """
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
@@ -592,6 +656,7 @@ def main(
         min_rpb=min_rpb,
         max_sgb=max_sgb,
         min_vdb=min_vdb,
+        min_frs=min_frs,
     )
 
     vcf_reader = VCF(in_vcf)

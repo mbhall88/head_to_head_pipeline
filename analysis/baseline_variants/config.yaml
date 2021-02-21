@@ -41,6 +41,7 @@ filters:
   min_rpb:         0.05
   max_sgb:         -0.5
   min_vdb:         0.002
+  min_frs:         0.9
 
 assemblies:
   mada_101:  "flye"
