@@ -55,7 +55,7 @@ filters:
   min_gt_conf:     5
   min_strand_bias: 1
   max_gaps:        0
-  min_frs:         0.85
+  min_frs:         0.9
   max_indel:       20
 
 assemblies:
