@@ -362,8 +362,8 @@ rule plot_truth_snp_concordance:
     conda:
         envs["plot_truth_eval"]
     params:
-        recall_key="Recall",
-        precision_key="Precision",
+        recall_key="Recall_edit_dist",
+        precision_key="Precision_edit_dist",
         dpi=300,
         figsize=(13, 8),
     script:
