@@ -291,6 +291,9 @@ class Filter:
         if self.min_vdb:
             status.low_vdb = self._is_low_vdb(variant)
 
+        if self.min_frs:
+            status.low_support = self._is_low_support(variant)
+
         return str(status)
 
     def add_filters_to_header(self, vcf: VCF):
