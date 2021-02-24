@@ -28,7 +28,8 @@ H37RV = config["h37rv"]
 data_dir = Path(config["data_dir"]).resolve()
 build_prg_dir = Path(config["build_prg_dir"])
 qc_dir = Path(config["qc_dir"])
-filters = config["filters"]
+single_filters = config["single_filters"]
+multi_filters = config["multi_filters"]
 discover = config["discover"]
 report_dir = Path("report").resolve()
 compass_vcf_dir = Path(config["compass_vcf_dir"]).resolve()
@@ -365,13 +366,13 @@ rule filter_single_sample_vcf:
             [
                 "--verbose",
                 "--overwrite",
-                f"-d {filters['min_covg']}",
-                f"-D {filters['max_covg']}",
-                f"-s {filters['min_strand_bias']}",
-                f"-g {filters['min_gt_conf']}",
-                f"-G {filters['max_gaps']}",
-                f"-I {filters['max_indel']}",
-                f"-K {filters['min_frs']}",
+                f"-d {single_filters['min_covg']}",
+                f"-D {single_filters['max_covg']}",
+                f"-s {single_filters['min_strand_bias']}",
+                f"-g {single_filters['min_gt_conf']}",
+                f"-G {single_filters['max_gaps']}",
+                f"-I {single_filters['max_indel']}",
+                f"-K {single_filters['min_frs']}",
             ]
         ),
         script=scripts["filter"],
@@ -1089,13 +1090,13 @@ rule filter_multi_sample_vcf:
             [
                 "--verbose",
                 "--overwrite",
-                f"-d {filters['min_covg']}",
-                f"-D {filters['max_covg']}",
-                f"-s {filters['min_strand_bias']}",
-                f"-g {filters['min_gt_conf']}",
-                f"-G {filters['max_gaps']}",
-                f"-I {filters['max_indel']}",
-                f"-K {filters['min_frs']}",
+                f"-d {multi_filters['min_covg']}",
+                f"-D {multi_filters['max_covg']}",
+                f"-s {multi_filters['min_strand_bias']}",
+                f"-g {multi_filters['min_gt_conf']}",
+                f"-G {multi_filters['max_gaps']}",
+                f"-I {multi_filters['max_indel']}",
+                f"-K {multi_filters['min_frs']}",
             ]
         ),
         script=scripts["filter"],

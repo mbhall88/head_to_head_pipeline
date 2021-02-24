@@ -48,14 +48,24 @@ scripts:
   plot_distance_matrix:   "../baseline_variants/scripts/plot_distance_matrix.py"
   create_sample_index:    "scripts/create_sample_index.py"
 
-# filters for pandora calls
-filters:
+# filters for pandora single sample calls
+single_filters:
   min_covg:        3
   max_covg:        0
   min_gt_conf:     5
   min_strand_bias: 1
   max_gaps:        0
   min_frs:         0.9
+  max_indel:       20
+
+# filters for pandora multi sample calls
+multi_filters:
+  min_covg:        3
+  max_covg:        0
+  min_gt_conf:     5
+  min_strand_bias: 1
+  max_gaps:        0
+  min_frs:         0.75
   max_indel:       20
 
 assemblies:
