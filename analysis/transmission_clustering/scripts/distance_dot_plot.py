@@ -19,21 +19,39 @@ TITLE = "Distance matrix dot plot"
 PAIR_IDX = ("sample1", "sample2")
 
 
-def load_matrix(fpath: str, delim: str, name: str) -> pd.DataFrame:
+class AsymmetrixMatrixError(Exception):
+    pass
+
+
+def load_matrix(fpath, delim: str = ",", name: str = "") -> pd.DataFrame:
     matrix = []
     with open(fpath) as instream:
         header = next(instream).rstrip()
-        names = header.split(delim)[1:]
+        names = np.array(header.split(delim)[1:])
+        idx = np.argsort(names)
+        sorted_names = names[idx]
         for row in map(str.rstrip, instream):
-            matrix.append(map(int, row.split(delim)[1:]))
-    df = pd.DataFrame(matrix, index=names, columns=names)
+            # sort row according to the name sorting
+            sorted_row = np.array(row.split(delim)[1:], dtype=np.int)[idx]
+            matrix.append(sorted_row)
+
+    sorted_matrix = np.array(matrix)[idx]
+    n_samples = len(sorted_names)
+    diagonal_is_zero = all(sorted_matrix[i, i] == 0 for i in range(n_samples))
+    if not diagonal_is_zero:
+        raise AsymmetrixMatrixError("Distance matrix diagonal is not all zero")
+
+    matrix_is_symmetric = np.allclose(sorted_matrix, sorted_matrix.T)
+    if not matrix_is_symmetric:
+        raise AsymmetrixMatrixError("Distance matrix is not symmetric")
+
+    mx = pd.DataFrame(sorted_matrix, columns=sorted_names, index=sorted_names)
     # remove the lower triangle of the matrix and the middle diagonal
-    df = df.where(np.triu(np.ones(df.shape), k=1).astype(np.bool)).sort_index()
-    df = df.stack().rename(name).astype(int)
-    df = df.rename_axis(PAIR_IDX)
-    sorted_idx = [sorted(ix) for ix in df.index]
-    df.index = pd.MultiIndex.from_tuples(sorted_idx, names=df.index.names)
-    return df
+    mx = mx.where(np.triu(np.ones(mx.shape), k=1).astype(np.bool))
+    mx = mx.stack().rename(name).astype(int)
+    mx = mx.rename_axis(PAIR_IDX)
+
+    return mx
 
 
 class PlotFactory:
