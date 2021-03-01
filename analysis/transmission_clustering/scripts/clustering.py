@@ -1,17 +1,39 @@
+import logging
 from pathlib import Path
 from typing import List, Collection, Callable
-import pandas as pd
+
+import click
 import networkx as nx
 import numpy as np
-import click
-import logging
-
+import pandas as pd
+from bokeh.io import output_file, save
+from bokeh.models import (
+    Range1d,
+    Plot,
+    Circle,
+    MultiLine,
+    LinearColorMapper,
+    ColorBar,
+    BasicTicker,
+    HoverTool,
+    BoxZoomTool,
+    ResetTool,
+    PanTool,
+    WheelZoomTool,
+    UndoTool,
+    SaveTool,
+    ColumnDataSource,
+    LabelSet,
+)
+from bokeh.palettes import inferno, Category20
+from bokeh.plotting import from_networkx
 from scipy import stats
 
-WIDTH = 960
+WIDTH = 1280
 HEIGHT = 720
 DELIM = ","
 PAIR_IDX = ("sample1", "sample2")
+PALETTE = Category20[20] * 10  # effectively 10 cycles of 20 colours
 
 
 class AsymmetrixMatrixError(Exception):
@@ -81,6 +103,107 @@ def fit(xs: List[int], ys: List[int]) -> Callable:
         return slope * threshold + intercept
 
     return threshold_converter
+
+
+def plot_graph(
+    graph: nx.Graph, outfile: Path, threshold: int, height: int, width: int, name: str
+) -> None:
+    title = f"{name} clusters"
+    # inline effectively allows the plot to work offline
+    output_file(str(outfile), title=title, mode="inline")
+
+    edge_attrs = {}
+    cmap = inferno(threshold + 1)
+
+    for u, v, d in graph.edges(data=True):
+        edge_colour = cmap[d["weight"]]
+        edge_attrs[(u, v)] = edge_colour
+
+    nx.set_edge_attributes(graph, edge_attrs, "edge_colour")
+
+    node_attrs = {}
+    clusters = (graph.subgraph(c) for c in nx.connected_components(graph))
+    for i, cluster in enumerate(clusters):
+        colour = "#e5e9f0"
+        for v in cluster.nodes:
+            node_attrs[v] = colour
+
+    nx.set_node_attributes(graph, node_attrs, "node_colour")
+
+    pos = nx.nx_agraph.graphviz_layout(graph, prog="neato")
+    xmin = -5
+    xmax = max((x for (x, _) in pos.values())) * 1.05
+    xrange = Range1d(xmin, xmax)
+    ymin = -5
+    ymax = max((y for (_, y) in pos.values())) * 1.05
+    yrange = Range1d(ymin, ymax)
+
+    plot = Plot(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+    plot.title.align = "center"
+
+    graph_renderer = from_networkx(graph, pos)
+    graph_renderer.node_renderer.glyph = Circle(
+        size=40, fill_color="node_colour", line_alpha=0.2
+    )
+    graph_renderer.edge_renderer.glyph = MultiLine(
+        line_width=6, line_color="edge_colour", line_alpha=0.9
+    )
+    plot.renderers.append(graph_renderer)
+
+    cmapper = LinearColorMapper(palette="Inferno256", low=0, high=threshold)
+    color_bar = ColorBar(
+        color_mapper=cmapper,
+        major_label_text_font_size="14px",
+        ticker=BasicTicker(desired_num_ticks=threshold),
+        label_standoff=6,
+        major_label_text_baseline="middle",
+        border_line_color=None,
+        location=(0, 0),
+        title="SNP distance",
+        title_text_align="center",
+        title_standoff=10,
+    )
+    plot.add_layout(color_bar, "right")
+
+    node_hover_tool = HoverTool(
+        tooltips=[("sample", "@index")],
+    )
+    plot.add_tools(
+        node_hover_tool,
+        BoxZoomTool(),
+        ResetTool(),
+        PanTool(),
+        WheelZoomTool(),
+        UndoTool(),
+        SaveTool(),
+    )
+
+    labels = []
+    x_vals = []
+    y_vals = []
+    for lab, (x, y) in pos.items():
+        labels.append(lab)
+        x_vals.append(x)
+        y_vals.append(y)
+
+    d = {"labels": labels, "x_values": x_vals, "y_values": y_vals}
+    src = ColumnDataSource(d)
+
+    label_set = LabelSet(
+        source=src,
+        x="x_values",
+        y="y_values",
+        text="labels",
+        y_offset=-5,
+        text_align="center",
+        text_font_size="10px",
+        text_font_style="bold",
+        text_color="black",
+        text_font="monospace",
+    )
+    plot.add_layout(label_set)
+
+    save(plot)
 
 
 def cluster_info(graph: nx.Graph, name: str, threshold: int) -> None:
@@ -251,6 +374,22 @@ def main(
         query_graph = dist_matrix_to_graph(mx, threshold=t)
         cluster_info(query_graph, name=name, threshold=t)
         query_graphs.append(query_graph)
+
+    for i, graph in enumerate([target_graph, *query_graphs]):
+        name = samples[i]
+        logging.info(f"Making cluster visualisation for {name}")
+        plot_path = outdir / f"{name}.clusters.html"
+        plot_graph(
+            graph,
+            outfile=plot_path,
+            threshold=threshold[i],
+            height=height,
+            width=width,
+            name=name,
+        )
+        logging.info(f"Cluster plot saved to {plot_path}")
+
+    logging.info("Done!")
 
 
 if __name__ == "__main__":
