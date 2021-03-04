@@ -1,6 +1,8 @@
 import logging
+import math
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Collection, Callable
+from typing import List, Collection, Callable, Tuple
 
 import click
 import networkx as nx
@@ -38,6 +40,62 @@ PALETTE = Category20[20] * 10  # effectively 10 cycles of 20 colours
 
 class AsymmetrixMatrixError(Exception):
     pass
+
+
+@dataclass
+class ConfusionMatrix:
+    tp: int = 0
+    tn: int = 0
+    fp: int = 0
+    fn: int = 0
+
+    def ravel(self) -> Tuple[int, int, int, int]:
+        """Return the matrix as a flattened tuple.
+        The order of return is TN, FP, FN, TP
+        """
+        return self.tn, self.fp, self.fn, self.tp
+
+    def as_matrix(self) -> np.ndarray:
+        """Returns a 2x2 matrix [[TN, FP], [FN, TP]]"""
+        return np.array([[self.tn, self.fp], [self.fn, self.tp]])
+
+    def precision(self) -> float:
+        """Also known as positive predictive value (PPV)"""
+        return self.tp / (self.tp + self.fp)
+
+    def recall(self) -> float:
+        """Also known as true positive rate (TPR)"""
+        return self.tp / (self.tp + self.fn)
+
+    def fowlkes_mallows_index(self) -> float:
+        """Geometric mean between precision and recall"""
+        return math.sqrt(self.precision() * self.recall())
+
+    def f_score(self, beta: float = 1.0) -> float:
+        """Harmonic mean of precision and recall.
+        When beta is set to 0, you get precision. When beta is set to 1, you get the
+        unweighted F-score which is the harmonic mean of precision and recall. Setting
+        beta to 2 weighs recall twice as much as precision. Setting beta to 0.5 weighs
+        precision twice as much as recall.
+        """
+        ppv = self.precision()
+        tpr = self.recall()
+        beta2 = beta ** 2
+
+        return ((beta2 + 1) * ppv * tpr) / ((beta2 * ppv) + tpr)
+
+    def matthews_correlation_coefficient(self) -> float:
+        """A correlation coefficient between the observed and predicted binary
+        classifications.
+        """
+        tn, fp, fn, tp = self.ravel()
+        numerator = tp * tn - fp * fn
+        denominator = math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        return numerator / denominator
+
+    @staticmethod
+    def from_predictions(predictions: List[bool], truth: List[bool]) -> "ConfusionMatrix":
+        
 
 
 def parse_threshold(ctx, param, value):
@@ -365,7 +423,7 @@ def main(
     elif n_thresholds == 1:
         threshold = [threshold[0]] * n_matrices
 
-    logging.info("Reducing graphs to on those nodes with edges <= threshold")
+    logging.info("Reducing graphs to only those nodes with edges <= threshold")
 
     target_graph = dist_matrix_to_graph(target_mtx, threshold=threshold[0])
     cluster_info(target_graph, name=target_name, threshold=threshold[0])
