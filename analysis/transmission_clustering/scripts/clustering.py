@@ -94,8 +94,13 @@ class ConfusionMatrix:
         return numerator / denominator
 
     @staticmethod
-    def from_predictions(predictions: List[bool], truth: List[bool]) -> "ConfusionMatrix":
-        
+    def from_predictions(pred: List[bool], truth: List[bool]) -> "ConfusionMatrix":
+        assert len(pred) == len(truth)
+        mtx = [[0, 0], [0, 0]]
+        for y_true, y_pred in zip(truth, pred):
+            mtx[y_true][y_pred] += 1
+        [tn, fp], [fn, tp] = mtx
+        return ConfusionMatrix(tp=tp, tn=tn, fp=fp, fn=fn)
 
 
 def parse_threshold(ctx, param, value):
