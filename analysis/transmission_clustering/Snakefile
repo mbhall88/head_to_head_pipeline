@@ -236,6 +236,7 @@ rule clustering:
         envs["clustering"]
     params:
         script=scripts["clustering"],
+        outdir=lambda wildcards, output: output[0].rpartition("/")[0],
         extras=" ".join(
             [
                 "-S compass,{caller}",
@@ -246,6 +247,6 @@ rule clustering:
         rule_log_dir / "clustering/{caller}/t{threshold}.log",
     shell:
         """
-        python {params.script} {params.extras} -T {wildcards.threshold} -o {output} \
-          {input.compass_dist} {input.query_dist} 2> {log}
+        python {params.script} {params.extras} -T {wildcards.threshold} \
+          -o {params.outdir} {input.compass_dist} {input.query_dist} 2> {log}
         """
