@@ -454,7 +454,9 @@ def main(
             name = samples[i]
             query_dists = mtx[keep_idx].to_list()
             query_threshold_converter = fit(expected_dists, query_dists)
-            query_threshold = int(round(query_threshold_converter(threshold[0])))
+            query_threshold = max(
+                0, int(round(query_threshold_converter(threshold[0])))
+            )
             if n_thresholds < n_matrices:
                 threshold.insert(i, query_threshold)
             else:
