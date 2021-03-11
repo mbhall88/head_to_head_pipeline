@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Union, Dict
+from itertools import product
 
 import pandas as pd
 
@@ -28,6 +29,11 @@ output_files.add(plot_dir / "dotplot.html")
 output_files.add(plot_dir / "close_dotplot.html")
 output_files.add(plot_dir / "alt_concordance.html")
 
+for caller, thresh in product(config["nanopore_callers"], config["thresholds"]):
+    output_files.add(plot_dir / f"clustering/{caller}/t{thresh}/{caller}.clusters.html")
+    output_files.add(
+        plot_dir / f"clustering/{caller}/t{thresh}/{caller}.confmatrix.png"
+    )
 
 # ======================================================
 # Sub Workflows
@@ -128,13 +134,13 @@ for idx, row in samplesheet.iterrows():
     sample = row["sample"]
 
     for caller in config["nanopore_callers"]:
-        if caller == "pandora":
-            directory = pandora_dir / "concordance/sparse"
+        if caller == "pandora_map":
+            caller_dir = pandora_dir / "concordance/sparse"
         elif caller == "bcftools":
-            directory = baseline_dir / "concordance"
+            caller_dir = baseline_dir / "concordance"
         else:
-            raise NotImplemented(f"Caller {caller} is not supported")
-        concordance_jsons.add(directory / f"{site}/{sample}.concordance.json")
+            continue
+        concordance_jsons.add(caller_dir / f"{site}/{sample}.concordance.json")
 
 
 rule plot_concordance:
@@ -193,3 +199,53 @@ rule plot_concordance:
         rule_log_dir / "plot_concordance.log",
     script:
         scripts["plot_concordance"]
+
+
+def infer_caller_dist_mtx(wildcards) -> str:
+    if wildcards.caller == "pandora_map":
+        p = pandora_dir / "distance/pandora.sparse.matrix.csv"
+    elif wildcards.caller == "pandora_compare":
+        p = pandora_dir / "distance/pandora.sparse.multisample.distance.csv"
+    elif wildcards.caller == "bcftools":
+        p = baseline_dir / "distance/bcftools.matrix.csv"
+    else:
+        raise NotImplementedError(f"Unrecognised caller {wildcards.caller}")
+    return str(p)
+
+
+rule clustering:
+    input:
+        compass_dist=rules.dotplot.input.x_matrix,
+        query_dist=infer_caller_dist_mtx,
+    output:
+        report(
+            plot_dir / "clustering/{caller}/t{threshold}/{caller}.clusters.html",
+            category="Clustering",
+            subcategory="Clusters",
+            caption=f"{report_dir}/clusters.rst",
+        ),
+        report(
+            plot_dir / "clustering/{caller}/t{threshold}/{caller}.confmatrix.png",
+            category="Clustering",
+            subcategory="Confusion Matrix",
+            caption=f"{report_dir}/confusion_matrix.rst",
+        ),
+    container:
+        containers["conda"]
+    conda:
+        envs["clustering"]
+    params:
+        script=scripts["clustering"],
+        extras=" ".join(
+            [
+                "-S compass,{caller}",
+                f"-A {config['adaptive_threshold']}",
+            ]
+        ),
+    log:
+        rule_log_dir / "clustering/{caller}/t{threshold}.log",
+    shell:
+        """
+        python {params.script} {params.extras} -T {wildcards.threshold} -o {output} \
+          {input.compass_dist} {input.query_dist} 2> {log}
+        """

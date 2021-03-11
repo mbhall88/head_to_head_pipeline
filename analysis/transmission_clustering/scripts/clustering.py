@@ -2,11 +2,13 @@ import logging
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Collection, Callable, Tuple
+from typing import List, Collection, Callable, Tuple, Set
 
 import click
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
 from bokeh.io import output_file, save
 from bokeh.models import (
@@ -168,6 +170,21 @@ def fit(xs: List[int], ys: List[int]) -> Callable:
     return threshold_converter
 
 
+def plot_confusion_matrix(
+    cm: ConfusionMatrix, name: str, figsize: Tuple[int, int] = (13, 8), dpi: int = 300
+):
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    sns.heatmap(cm.as_matrix(), annot=True, fmt="d", cmap="Blues")
+
+    # labels, title and ticks
+    ax.set_ylabel("True")
+    ax.set_xlabel("Predicted")
+    ax.set_title(f"{name} Clustering of Pairs - Confusion Matrix")
+    ax.xaxis.set_ticklabels(["Negative", "Positive"])
+    ax.yaxis.set_ticklabels(["Negative", "Positive"])
+    return fig
+
+
 def plot_graph(
     graph: nx.Graph, outfile: Path, threshold: int, height: int, width: int, name: str
 ) -> None:
@@ -267,6 +284,24 @@ def plot_graph(
     plot.add_layout(label_set)
 
     save(plot)
+
+
+def connected_components(G: nx.Graph, node: str) -> Set[str]:
+    if node not in G:
+        return set()
+    return nx.node_connected_component(G, node)
+
+
+def clustered_together(u: str, v: str, G: nx.Graph) -> bool:
+    ucc = connected_components(G, u)
+    if not ucc:
+        return False
+
+    vcc = connected_components(G, v)
+    if not vcc:
+        return False
+
+    return ucc == vcc
 
 
 def cluster_info(graph: nx.Graph, name: str, threshold: int) -> None:
@@ -431,12 +466,37 @@ def main(
     logging.info("Reducing graphs to only those nodes with edges <= threshold")
 
     target_graph = dist_matrix_to_graph(target_mtx, threshold=threshold[0])
+    target_mtx = target_mtx[keep_idx]
+    true_labels: List[bool] = [
+        clustered_together(u, v, target_graph) for u, v in target_mtx.index
+    ]
     cluster_info(target_graph, name=target_name, threshold=threshold[0])
     query_graphs = []
     for mx, t, name in zip(query_mtxs, threshold[1:], samples[1:]):
         query_graph = dist_matrix_to_graph(mx, threshold=t)
         cluster_info(query_graph, name=name, threshold=t)
         query_graphs.append(query_graph)
+        predicted_labels: List[bool] = [
+            clustered_together(u, v, query_graph) for u, v in target_mtx.index
+        ]
+        conf_mtx = ConfusionMatrix.from_predictions(predicted_labels, true_labels)
+        logging.info(f"Confusion matrix for {name}: {conf_mtx}")
+        precision = conf_mtx.precision()
+        logging.info(f"Precision: {precision}")
+        recall = conf_mtx.recall()
+        logging.info(f"Recall: {recall}")
+        fmi = conf_mtx.fowlkes_mallows_index()
+        logging.info(f"FMI: {fmi}")
+        mcc = conf_mtx.matthews_correlation_coefficient()
+        logging.info(f"MCC: {mcc}")
+        f_score = conf_mtx.f_score()
+        logging.info(f"F-score: {f_score}")
+        f_beta = conf_mtx.f_score(2.0)
+        logging.info(f"F-beta: {f_beta} weighing recall twice as much as precision")
+        f_beta = conf_mtx.f_score(0.5)
+        logging.info(f"F-beta: {f_beta} weighing precision twice as much as recall\n")
+        fig = plot_confusion_matrix(conf_mtx, name=name)
+        fig.savefig(outdir / f"{name}.confmatrix.png")
 
     for i, graph in enumerate([target_graph, *query_graphs]):
         name = samples[i]
