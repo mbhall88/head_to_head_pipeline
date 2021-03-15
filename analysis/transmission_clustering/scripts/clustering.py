@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import List, Collection, Callable, Tuple, Set
 
 import click
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
+import seaborn as sns
 from bokeh.io import output_file, save
+from bokeh.layouts import column
 from bokeh.models import (
     Range1d,
     Plot,
@@ -29,15 +30,16 @@ from bokeh.models import (
     ColumnDataSource,
     LabelSet,
 )
-from bokeh.palettes import inferno, Category20
 from bokeh.plotting import from_networkx
+from matplotlib import cm
+from matplotlib.colors import rgb2hex
 from scipy import stats
 
 WIDTH = 1280
 HEIGHT = 720
 DELIM = ","
 PAIR_IDX = ("sample1", "sample2")
-PALETTE = Category20[20] * 10  # effectively 10 cycles of 20 colours
+PALETTE = cm.coolwarm_r
 
 
 class AsymmetrixMatrixError(Exception):
@@ -185,70 +187,144 @@ def plot_confusion_matrix(
     return fig
 
 
+def tversky_index(
+    A: Set[str], B: Set[str], alpha: float = 1.0, beta: float = 1.0
+) -> float:
+    """If we set alpha and beta to 1 then we get the Jaccard Index.
+    If we set alpha to 1 and beta to 0 we get something like recall.
+    If we set alpha to 0 and beta to 1 we get something like precision.
+    """
+    size_of_intersection = len(A & B)
+    A_weight = alpha * len(A - B)
+    B_weight = beta * len(B - A)
+    denominator = size_of_intersection + A_weight + B_weight
+
+    try:
+        return round(size_of_intersection / denominator, 4)
+    except ZeroDivisionError:
+        return 0
+
+
+def set_precision(A: Set[str], B: Set[str]) -> float:
+    return tversky_index(A, B, alpha=0, beta=1)
+
+
+def set_recall(A: Set[str], B: Set[str]) -> float:
+    return tversky_index(A, B, alpha=1, beta=0)
+
+
+def cmap(f: float, palette=PALETTE) -> str:
+    rgba = palette(f)
+    return rgb2hex(rgba)
+
+
 def plot_graph(
-    graph: nx.Graph, outfile: Path, threshold: int, height: int, width: int, name: str
+    G_true: nx.Graph,
+    G_test: nx.Graph,
+    outfile: Path,
+    height: int,
+    width: int,
+    name: str,
+    bg_alpha: float = 0.2,
 ) -> None:
-    title = f"{name} clusters"
+    title = f"Individual sample (node) metrics for {name}"
     # inline effectively allows the plot to work offline
     output_file(str(outfile), title=title, mode="inline")
 
-    edge_attrs = {}
-    cmap = inferno(threshold + 1)
-
-    for u, v, d in graph.edges(data=True):
-        edge_colour = cmap[d["weight"]]
-        edge_attrs[(u, v)] = edge_colour
-
-    nx.set_edge_attributes(graph, edge_attrs, "edge_colour")
-
     node_attrs = {}
-    clusters = (graph.subgraph(c) for c in nx.connected_components(graph))
-    for i, cluster in enumerate(clusters):
-        colour = "#e5e9f0"
-        for v in cluster.nodes:
-            node_attrs[v] = colour
+    clusters = [c for c in nx.connected_components(G_true)]
+    tpr_vals = []
+    ppv_vals = []
+    for cluster in clusters:
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            tpr = set_recall(cluster, test_cluster)
+            node_attrs[node] = cmap(tpr)
 
-    nx.set_node_attributes(graph, node_attrs, "node_colour")
+    nx.set_node_attributes(G_true, node_attrs, "node_colour")
 
-    pos = nx.nx_agraph.graphviz_layout(graph, prog="neato")
+    for cluster in clusters:
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            ppv = set_precision(cluster, test_cluster)
+            node_attrs[node] = cmap(ppv)
+
+    nx.set_node_attributes(G_true, node_attrs, "line_colour")
+
+    for cluster in clusters:
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            tpr = set_recall(cluster, test_cluster)
+            node_attrs[node] = tpr
+            tpr_vals.append(tpr)
+
+    nx.set_node_attributes(G_true, node_attrs, "tpr")
+
+    for cluster in clusters:
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            ppv = set_precision(cluster, test_cluster)
+            node_attrs[node] = ppv
+            ppv_vals.append(ppv)
+
+    nx.set_node_attributes(G_true, node_attrs, "ppv")
+
+    logging.info(f"Average Recall: {np.mean(tpr_vals):.4f}")
+    logging.info(f"Average Precision: {np.mean(ppv_vals):.4f}")
+
+    pos = nx.nx_agraph.graphviz_layout(G_true, prog="neato")
     xmin = -5
     xmax = max((x for (x, _) in pos.values())) * 1.05
     xrange = Range1d(xmin, xmax)
-    ymin = -5
+    ymin = -20
     ymax = max((y for (_, y) in pos.values())) * 1.05
     yrange = Range1d(ymin, ymax)
 
-    plot = Plot(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
-    plot.title.align = "center"
+    p1 = Plot(
+        plot_width=width,
+        plot_height=height,
+        x_range=xrange,
+        y_range=yrange,
+        background_fill_color="gray",
+        background_fill_alpha=bg_alpha,
+    )
+    p1.title.align = "center"
+    p1.title.text = title
 
-    graph_renderer = from_networkx(graph, pos)
+    graph_renderer = from_networkx(G_true, pos)
     graph_renderer.node_renderer.glyph = Circle(
-        size=40, fill_color="node_colour", line_alpha=0.2
+        size=40, fill_color="node_colour", line_color="line_colour", line_width=12
     )
     graph_renderer.edge_renderer.glyph = MultiLine(
-        line_width=6, line_color="edge_colour", line_alpha=0.9
+        line_width=4,
+        line_alpha=0.5,
     )
-    plot.renderers.append(graph_renderer)
+    p1.renderers.append(graph_renderer)
 
-    cmapper = LinearColorMapper(palette="Inferno256", low=0, high=threshold)
+    xs = np.linspace(start=0, stop=1, num=256)
+    colors = [cmap(x) for x in xs]
+    cmapper = LinearColorMapper(palette=colors, low=0, high=1)
     color_bar = ColorBar(
         color_mapper=cmapper,
-        major_label_text_font_size="14px",
-        ticker=BasicTicker(desired_num_ticks=threshold),
-        label_standoff=6,
+        major_label_text_font_size="12px",
+        ticker=BasicTicker(desired_num_ticks=20),
+        label_standoff=2,
         major_label_text_baseline="middle",
+        major_label_text_align="left",
         border_line_color=None,
         location=(0, 0),
-        title="SNP distance",
+        title="",
         title_text_align="center",
         title_standoff=10,
+        major_label_text_font_style="bold",
+        major_tick_line_color="black",
     )
-    plot.add_layout(color_bar, "right")
+    p1.add_layout(color_bar, "right")
 
     node_hover_tool = HoverTool(
-        tooltips=[("sample", "@index")],
+        tooltips=[("sample", "@index"), ("TPR", "@tpr"), ("PPV", "@ppv")],
     )
-    plot.add_tools(
+    p1.add_tools(
         node_hover_tool,
         BoxZoomTool(),
         ResetTool(),
@@ -281,9 +357,162 @@ def plot_graph(
         text_color="black",
         text_font="monospace",
     )
-    plot.add_layout(label_set)
+    p1.add_layout(label_set)
 
-    save(plot)
+    title = f"Average cluster metrics for {name}"
+
+    node_attrs = {}
+    clusters = [c for c in nx.connected_components(G_true)]
+    for cluster in clusters:
+        cluster_tprs = []
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            tpr = set_recall(cluster, test_cluster)
+            cluster_tprs.append(tpr)
+        acr = np.mean(cluster_tprs)
+        for node in cluster:
+            node_attrs[node] = cmap(acr)
+
+    nx.set_node_attributes(G_true, node_attrs, "node_colour")
+
+    for cluster in clusters:
+        cluster_ppvs = []
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            ppv = round(set_precision(cluster, test_cluster), 2)
+            cluster_ppvs.append(ppv)
+        acp = np.mean(cluster_ppvs)
+        for node in cluster:
+            node_attrs[node] = cmap(acp)
+
+    nx.set_node_attributes(G_true, node_attrs, "line_colour")
+
+    for cluster in clusters:
+        cluster_tprs = []
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            tpr = set_recall(cluster, test_cluster)
+            cluster_tprs.append(tpr)
+        acr = np.mean(cluster_tprs)
+        for node in cluster:
+            node_attrs[node] = acr
+
+    nx.set_node_attributes(G_true, node_attrs, "tpr")
+
+    for cluster in clusters:
+        cluster_ppvs = []
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            ppv = set_precision(cluster, test_cluster)
+            cluster_ppvs.append(ppv)
+        acp = np.mean(cluster_ppvs)
+        for node in cluster:
+            node_attrs[node] = acp
+
+    nx.set_node_attributes(G_true, node_attrs, "ppv")
+
+    pos = nx.nx_agraph.graphviz_layout(G_true, prog="neato")
+    xmin = -5
+    xmax = max((x for (x, _) in pos.values())) * 1.05
+    xrange = Range1d(xmin, xmax)
+    ymin = -20
+    ymax = max((y for (_, y) in pos.values())) * 1.05
+    yrange = Range1d(ymin, ymax)
+
+    p2 = Plot(
+        plot_width=width,
+        plot_height=height,
+        x_range=xrange,
+        y_range=yrange,
+        background_fill_color="gray",
+        background_fill_alpha=bg_alpha,
+    )
+    p2.title.align = "center"
+    p2.title.text = title
+
+    graph_renderer = from_networkx(G_true, pos)
+    graph_renderer.node_renderer.glyph = Circle(
+        size=40, fill_color="node_colour", line_color="line_colour", line_width=12
+    )
+    graph_renderer.edge_renderer.glyph = MultiLine(
+        line_width=4,
+        line_alpha=0.5,
+    )
+    p2.renderers.append(graph_renderer)
+
+    color_bar = ColorBar(
+        color_mapper=cmapper,
+        major_label_text_font_size="12px",
+        ticker=BasicTicker(desired_num_ticks=20),
+        label_standoff=2,
+        major_label_text_baseline="middle",
+        major_label_text_align="left",
+        border_line_color=None,
+        location=(0, 0),
+        title="",
+        title_text_align="center",
+        title_standoff=10,
+        major_label_text_font_style="bold",
+        major_tick_line_color="black",
+    )
+    p2.add_layout(color_bar, "right")
+
+    node_hover_tool = HoverTool(
+        tooltips=[("sample", "@index"), ("TPR", "@tpr"), ("PPV", "@ppv")],
+    )
+    p2.add_tools(
+        node_hover_tool,
+        BoxZoomTool(),
+        ResetTool(),
+        PanTool(),
+        WheelZoomTool(),
+        UndoTool(),
+        SaveTool(),
+    )
+
+    labels = []
+    x_vals = []
+    y_vals = []
+    for lab, (x, y) in pos.items():
+        labels.append(lab)
+        x_vals.append(x)
+        y_vals.append(y)
+
+    d = {"labels": labels, "x_values": x_vals, "y_values": y_vals}
+    src = ColumnDataSource(d)
+
+    label_set = LabelSet(
+        source=src,
+        x="x_values",
+        y="y_values",
+        text="labels",
+        y_offset=-5,
+        text_align="center",
+        text_font_size="10px",
+        text_font_style="bold",
+        text_color="black",
+        text_font="monospace",
+    )
+    p2.add_layout(label_set)
+
+    for cluster in clusters:
+        cluster_tprs = []
+        cluster_ppvs = []
+        for node in cluster:
+            test_cluster = connected_components(G_test, node)
+            tpr = set_recall(cluster, test_cluster)
+            cluster_tprs.append(tpr)
+            ppv = set_precision(cluster, test_cluster)
+            cluster_ppvs.append(ppv)
+        acr = np.mean(cluster_tprs)
+        acp = np.mean(cluster_ppvs)
+        logging.info(f"Cluster size: {len(cluster)}")
+        logging.info(f"Members: {cluster}")
+        logging.info(f"Average Cluster Recall: {acr}")
+        logging.info(f"Average Cluster Precision: {acp}")
+        logging.info("---------------------------------")
+
+    save(column(p1, p2))
 
 
 def connected_components(G: nx.Graph, node: str) -> Set[str]:
@@ -472,11 +701,9 @@ def main(
     true_labels: List[bool] = [
         clustered_together(u, v, target_graph) for u, v in target_mtx.index
     ]
-    cluster_info(target_graph, name=target_name, threshold=threshold[0])
     query_graphs = []
     for mx, t, name in zip(query_mtxs, threshold[1:], samples[1:]):
         query_graph = dist_matrix_to_graph(mx, threshold=t)
-        cluster_info(query_graph, name=name, threshold=t)
         query_graphs.append(query_graph)
         predicted_labels: List[bool] = [
             clustered_together(u, v, query_graph) for u, v in target_mtx.index
@@ -500,17 +727,12 @@ def main(
         fig = plot_confusion_matrix(conf_mtx, name=name)
         fig.savefig(outdir / f"{name}.confmatrix.png")
 
-    for i, graph in enumerate([target_graph, *query_graphs]):
+    for i, graph in enumerate(query_graphs, start=1):
         name = samples[i]
         logging.info(f"Making cluster visualisation for {name}")
         plot_path = outdir / f"{name}.clusters.html"
         plot_graph(
-            graph,
-            outfile=plot_path,
-            threshold=threshold[i],
-            height=height,
-            width=width,
-            name=name,
+            target_graph, graph, plot_path, height=height, width=width, name=name
         )
         logging.info(f"Cluster plot saved to {plot_path}")
 
