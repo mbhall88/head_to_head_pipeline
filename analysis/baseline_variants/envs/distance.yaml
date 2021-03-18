@@ -1,0 +1,8 @@
+name: distance
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - pyfastx=0.8.2
+  - numpy=1.18.1

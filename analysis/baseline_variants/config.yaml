@@ -20,11 +20,13 @@ envs:
   dotplot:              "envs/dotplot.yaml"
   plot_concordance:     "envs/plot_concordance.yaml"
   plot_truth_eval:      "envs/plot_truth_eval.yaml"
+  distance:             "envs/distance.yaml"
   plot_distance_matrix: "envs/plot_distance_matrix.yaml"
 scripts:
   filter:               "scripts/apply_filters.py"
   concordance:          "scripts/concordance.py"
   consensus:            "scripts/consensus.py"
+  distance:             "scripts/distance.py"
   dotplot:              "scripts/distance_dot_plot.py"
   plot_concordance:     "scripts/plot_concordance.py"
   plot_truth_eval:      "scripts/plot_truth_eval.py"
