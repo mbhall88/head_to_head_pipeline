@@ -140,7 +140,7 @@ rule pileup_nanopore:
             3: int(100 * GB),
         }[attempt],
     params:
-        options="--ignore-overlaps -O b",
+        options="--ignore-overlaps --skip-indels -O b",
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
