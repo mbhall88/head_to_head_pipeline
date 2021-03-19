@@ -144,9 +144,9 @@ rule pileup_nanopore:
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
-        containers["conda"]
-    wrapper:
-        "0.64.0/bio/bcftools/mpileup"
+        containers["bcftools"]
+    shell:
+        "bcftools mpileup {params.options} -f {input.ref} -o {output.pileup} --threads {threads} {output.pileup} 2> {log}"
 
 
 rule call_snps_nanopore:
