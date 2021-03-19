@@ -10,6 +10,7 @@ from typing import Collection
 
 import numpy as np
 import pyfastx
+from tqdm import tqdm
 
 N = "N"
 DELIM = ","
@@ -56,7 +57,7 @@ def main():
 
     mtx = np.zeros(shape=(n_seqs, n_seqs), dtype=np.int)
 
-    for i, j in product(range(n_seqs), range(n_seqs)):
+    for i, j in tqdm(product(range(n_seqs), range(n_seqs)), total=n_seqs * n_seqs):
         dist = hamming(fa1[ids[i]].seq, fa2[ids[j]].seq)
         mtx[i][j] = dist
 

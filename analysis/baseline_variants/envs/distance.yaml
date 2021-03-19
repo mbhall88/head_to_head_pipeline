@@ -5,4 +5,5 @@ channels:
   - defaults
 dependencies:
   - pyfastx=0.8.2
+  - tqdm=4.59.0
   - numpy=1.18.1
