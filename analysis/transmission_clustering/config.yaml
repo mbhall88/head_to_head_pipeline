@@ -2,7 +2,7 @@ samplesheet:        "../../docs/samplesheet.csv"
 baseline_dir:       "../baseline_variants"
 pandora_dir:        "../pandora_variants"
 qc_dir:             "../../data/QC"
-adaptive_threshold: 100
+adaptive_threshold: 60
 thresholds:
   - 0
   - 2
