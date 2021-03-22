@@ -217,6 +217,8 @@ def infer_threshold(wildcards) -> str:
     opt = f"-T {wildcards.threshold}"
     if wildcards.caller == "bcftools":
         opt += f",{config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
+    else:
+        opt += f" -A {config['adaptive_threshold']}"
     return opt
 
 
@@ -247,7 +249,6 @@ rule clustering:
         extras=" ".join(
             [
                 "-S compass,{caller}",
-                f"-A {config['adaptive_threshold']}",
             ]
         ),
         threshold=infer_threshold,
