@@ -105,14 +105,14 @@ rule dotplot:
         ),
         y_names=generate_y_names,
         script=scripts["dotplot"],
-        threshold=100,
+        threshold=config["adaptive_threshold"],
         options=" ".join(
             [
                 "--title 'Pairwise SNP distances for COMPASS and Nanopore calls'",
                 "--delim ,",
             ]
         ),
-        close_alpha=0.75,
+        close_alpha=0.8,
         full_alpha=0.2,
     log:
         rule_log_dir / "dotplot.log",
