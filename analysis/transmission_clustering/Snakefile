@@ -213,6 +213,13 @@ def infer_caller_dist_mtx(wildcards) -> str:
     return str(p)
 
 
+def infer_threshold(wildcards) -> str:
+    opt = f"-T {wildcards.threshold}"
+    if wildcards.caller == "bcftools":
+        opt += f" {config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
+    return opt
+
+
 rule clustering:
     input:
         compass_dist=rules.dotplot.input.x_matrix,
@@ -243,10 +250,11 @@ rule clustering:
                 f"-A {config['adaptive_threshold']}",
             ]
         ),
+        threshold=infer_threshold,
     log:
         rule_log_dir / "clustering/{caller}/t{threshold}.log",
     shell:
         """
-        python {params.script} {params.extras} -T {wildcards.threshold} \
+        python {params.script} {params.extras} {params.threshold} \
           -o {params.outdir} {input.compass_dist} {input.query_dist} 2> {log}
         """
