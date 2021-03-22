@@ -216,7 +216,7 @@ def infer_caller_dist_mtx(wildcards) -> str:
 def infer_threshold(wildcards) -> str:
     opt = f"-T {wildcards.threshold}"
     if wildcards.caller == "bcftools":
-        opt += f" {config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
+        opt += f",{config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
     return opt
 
 
