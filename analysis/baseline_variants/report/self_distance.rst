@@ -1,0 +1,1 @@
+This plot shows the distance between each sample's COMPASS and ``bcftools`` VCF calls. Theoretically, the distance should be 0 for every sample.

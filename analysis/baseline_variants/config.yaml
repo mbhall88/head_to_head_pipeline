@@ -22,6 +22,7 @@ envs:
   plot_truth_eval:      "envs/plot_truth_eval.yaml"
   distance:             "envs/distance.yaml"
   plot_distance_matrix: "envs/plot_distance_matrix.yaml"
+  mixed_self_distance:  "envs/mixed_self_distance.yaml"
 scripts:
   filter:               "scripts/apply_filters.py"
   concordance:          "scripts/concordance.py"
@@ -31,6 +32,7 @@ scripts:
   plot_concordance:     "scripts/plot_concordance.py"
   plot_truth_eval:      "scripts/plot_truth_eval.py"
   plot_distance_matrix: "scripts/plot_distance_matrix.py"
+  mixed_self_distance:  "scripts/mixed_self_distance.py"
 
 # filters for nanopore bcftools calls
 filters:

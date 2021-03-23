@@ -64,6 +64,7 @@ output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
 output_files.add(distance_dir / "dotplot.html")
 output_files.add(distance_dir / "close_dotplot.html")
 output_files.add(distance_dir / "mixed.matrix.csv")
+output_files.add(distance_dir / "mixed_self_distance.png")
 for caller in ["bcftools", "compass"]:
     output_files.add(distance_dir / f"{caller}.heatmap.html")
 
@@ -510,3 +511,26 @@ rule mixed_snp_distance:
         rule_log_dir / "mixed_snp_distance.log",
     shell:
         "python {params.script} {input.a} {input.b} > {output.matrix} 2> {log}"
+
+
+rule mixed_self_distances:
+    input:
+        matrix=rules.mixed_snp_distance.output.matrix,
+    output:
+        plot=report(
+            distance_dir / "mixed_self_distance.png",
+            category="Mixed Tech",
+            subcategory="Self",
+            caption=report_dir / "self_distance.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["mixed_self_distance"]
+    log:
+        rule_log_dir / "mixed_self_distance.log",
+    script:
+        scripts["mixed_self_distance"]
