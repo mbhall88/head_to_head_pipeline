@@ -217,6 +217,8 @@ def infer_threshold(wildcards) -> str:
     opt = f"-T {wildcards.threshold}"
     if wildcards.caller == "bcftools":
         opt += f",{config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
+    elif wildcards.caller == "pandora_compare":
+        opt += f",{config['compare_clustering_thresholds'][int(wildcards.threshold)]}"
     else:
         opt += f" -A {config['adaptive_threshold']}"
     return opt

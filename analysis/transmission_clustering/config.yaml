@@ -28,7 +28,13 @@ scripts:
   clustering:       "scripts/clustering.py"
 
 bcftools_clustering_thresholds:
-  0: 0
-  2: 2
-  5: 5
+  0:  0
+  2:  2
+  5:  5
   12: 11
+
+compare_clustering_thresholds:
+  0:  0
+  2:  1
+  5:  3
+  12: 7
