@@ -129,4 +129,4 @@ for spine in axins.spines.values():
 
 axins.legend(loc=snakemake.params.inset_legend_loc)
 
-fig.figsave(snakemake.output.plot)
+fig.savefig(snakemake.output.plot)
