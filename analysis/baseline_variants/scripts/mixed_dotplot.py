@@ -95,7 +95,7 @@ axins = ax.inset_axes(bounds=snakemake.params.inset_bounds)
 # sub region of the original image
 threshold = snakemake.params.inset_threshold
 inset_data = data.query(f"{XCOL} <= @threshold")
-kwargs = snakemake.params.scatter_kws
+kwargs["alpha"] *= 2
 axins = sns.scatterplot(data=inset_data, x=XCOL, y=YCOL, ax=axins, **kwargs)
 
 # plot line of best fit as defined by the model
