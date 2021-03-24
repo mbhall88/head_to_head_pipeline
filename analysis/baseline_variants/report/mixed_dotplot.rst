@@ -3,3 +3,4 @@ The black, dashed line indicates the relationship we would expect if the distanc
 The blue line indicates the line of best fit based on fitting a robust linear regression model to the data. The inset gives a closer look at the
 relationship for all sample pairs where the COMPASS distance is less than or equal to {{ snakemake.params.inset_threshold }} SNPs. The legend
 indicates the linear equations for the lines.
+*Note: to prevent model skew, we do not include self-distance pairs.*
