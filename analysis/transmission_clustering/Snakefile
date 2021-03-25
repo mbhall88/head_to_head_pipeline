@@ -28,6 +28,8 @@ output_files = set()
 output_files.add(plot_dir / "dotplot.html")
 output_files.add(plot_dir / "close_dotplot.html")
 output_files.add(plot_dir / "alt_concordance.html")
+output_files.add(report_dir / "mixed_simulations.summary.html")
+output_files.add(plot_dir / "mixed_simulations.png")
 
 for caller, thresh in product(config["nanopore_callers"], config["thresholds"]):
     output_files.add(plot_dir / f"clustering/{caller}/t{thresh}/{caller}.clusters.html")
@@ -261,3 +263,49 @@ rule clustering:
         python {params.script} {params.extras} {params.threshold} \
           -o {params.outdir} {input.compass_dist} {input.query_dist} 2> {log}
         """
+
+
+rule mixed_simulations:
+    input:
+        compass_matrix=rules.clustering.input.compass_dist,
+        bcftools_matrix=baseline_dir / "distance/bcftools.matrix.csv",
+        mixed_matrix=baseline_dir / "distance/mixed.matrix.csv",
+    output:
+        plot=report(
+            plot_dir / "mixed_simulations.png",
+            caption=report_dir / "mixed_simulations_plot.rst",
+            category="Mixed Tech",
+            subcategory="Simulations",
+        ),
+        summary=report(
+            report_dir / "mixed_simulations.summary.html",
+            caption=report_dir / "mixed_simulations_summary.rst",
+            category="Mixed Tech",
+            subcategory="Simulations",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(2 * GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["mixed_simulations"]
+    params:
+        seed=1988,
+        thresholds={
+            0: {
+                "ont": 0,
+                "mixed": 0,
+            },
+            2: {"ont": 2, "mixed": 2},
+            5: {"ont": 5, "mixed": 5},
+            12: {"ont": 11, "mixed": 12},
+        },
+        ratios=[0.1, 0.25, 0.5, 0.75, 0.9],
+        num_simulations=1000,
+        figsize=(13, 13),
+        dpi=300,
+    log:
+        rule_log_dir / "mixed_simulations.log",
+    script:
+        scripts["mixed_simulations"]

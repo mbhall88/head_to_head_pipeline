@@ -18,14 +18,16 @@ containers:
   conda: "docker://continuumio/miniconda3:4.7.12"
 
 envs:
-  dotplot:          "envs/dotplot.yaml"
-  plot_concordance: "envs/plot_concordance.yaml"
-  clustering:       "envs/clustering.yaml"
+  dotplot:           "envs/dotplot.yaml"
+  plot_concordance:  "envs/plot_concordance.yaml"
+  clustering:        "envs/clustering.yaml"
+  mixed_simulations: "envs/mixed_simulations.yaml"
 
 scripts:
-  dotplot:          "scripts/distance_dot_plot.py"
-  plot_concordance: "scripts/plot_concordance.py"
-  clustering:       "scripts/clustering.py"
+  dotplot:           "scripts/distance_dot_plot.py"
+  plot_concordance:  "scripts/plot_concordance.py"
+  clustering:        "scripts/clustering.py"
+  mixed_simulations: "scripts/mixed_simulations.py"
 
 bcftools_clustering_thresholds:
   0:  0
