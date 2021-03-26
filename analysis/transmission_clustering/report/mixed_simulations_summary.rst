@@ -1,0 +1,1 @@
+This table gives the summary statistics for the simulations presented in mixed_simulations.png_

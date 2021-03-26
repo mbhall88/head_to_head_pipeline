@@ -301,7 +301,7 @@ rule mixed_simulations:
             5: {"ont": 5, "mixed": 5},
             12: {"ont": 11, "mixed": 12},
         },
-        ratios=[0.1, 0.25, 0.5, 0.75, 0.9],
+        ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9],
         num_simulations=1000,
         figsize=(13, 13),
         dpi=300,

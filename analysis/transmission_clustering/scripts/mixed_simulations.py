@@ -111,18 +111,18 @@ def evaluate_clustering(
 ) -> Tuple[float, float, float]:
     """Returns the ACP, ACR, and cluster size ratio for the clustering"""
     true_clusters = [c for c in nx.connected_components(G_true)]
-    acp_vals = []
-    acr_vals = []
+    sacp_vals = []
+    sacr_vals = []
     for cluster in true_clusters:
         for node in cluster:
             test_cluster = connected_components(G_test, node)
-            acr_vals.append(set_recall(cluster, test_cluster))
-            acp_vals.append(set_precision(cluster, test_cluster))
+            sacr_vals.append(set_recall(cluster, test_cluster))
+            sacp_vals.append(set_precision(cluster, test_cluster))
 
-    cluster_size_ratio = nx.number_connected_components(
+    cluster_num_ratio = nx.number_connected_components(
         G_true
     ) / nx.number_connected_components(G_test)
-    return np.mean(acp_vals), np.mean(acr_vals), cluster_size_ratio
+    return np.mean(sacp_vals), np.mean(sacr_vals), cluster_num_ratio
 
 
 def run_simulation(ratio: float, threshold: int, G_true: nx.Graph, N: int):
@@ -156,7 +156,7 @@ def run_simulation(ratio: float, threshold: int, G_true: nx.Graph, N: int):
         eval_vals.append(evaluate_clustering(G_true, G_test))
     df = (
         pd.DataFrame(zip(*eval_vals))
-        .T.rename(columns={0: "ACP", 1: "ACR", 2: "CNR"})
+        .T.rename(columns={0: "SACP", 1: "SACR", 2: "CNR"})
         .melt(var_name="metric")
     )
     df["ratio"] = ratio
