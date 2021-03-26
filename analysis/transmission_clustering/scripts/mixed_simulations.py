@@ -166,7 +166,7 @@ def run_simulation(ratio: float, threshold: int, G_true: nx.Graph, N: int):
 ILLUMINA_DF = load_matrix(snakemake.input.compass_matrix, name="illumina")
 ONT_DF = load_matrix(snakemake.input.bcftools_matrix, name="ont")
 MIXED_DF = load_matrix(snakemake.input.mixed_matrix, name="mixed")
-RATIOS: List[int] = snakemake.paras.ratios
+RATIOS: List[int] = snakemake.params.ratios
 NUM_SIMULATIONS: int = snakemake.params.num_simulations
 THRESHOLDS: Dict[int, Dict[str, int]] = snakemake.params.thresholds
 

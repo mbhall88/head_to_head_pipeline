@@ -267,7 +267,7 @@ rule clustering:
 
 rule mixed_simulations:
     input:
-        compass_matrix=rules.clustering.input.compass_dist,
+        compass_matrix=rules.dotplot.input.x_matrix,
         bcftools_matrix=baseline_dir / "distance/bcftools.matrix.csv",
         mixed_matrix=baseline_dir / "distance/mixed.matrix.csv",
     output:
