@@ -60,7 +60,7 @@ for idx, row in samplesheet.iterrows():
         VARIFIER_JSONS.add(compass_truth_summary)
         VARIFIER_JSONS.add(bcftools_truth_summary)
 
-output_files.add(truth_eval_dir / "truth_snp_eval.recall.png")
+output_files.add(truth_eval_dir / "truth_snp_eval.png")
 output_files.add(distance_dir / "dotplot.html")
 output_files.add(distance_dir / "close_dotplot.html")
 output_files.add(distance_dir / "mixed.matrix.csv")
@@ -345,16 +345,9 @@ rule plot_truth_snp_concordance:
     input:
         json_files=VARIFIER_JSONS,
     output:
-        recall_plot=report(
-            truth_eval_dir / "truth_snp_eval.recall.png",
+        plot=report(
+            truth_eval_dir / "truth_snp_eval.png",
             category="Truth Evaluation",
-            subcategory="Recall",
-            caption=report_dir / "truth_snp_eval.rst",
-        ),
-        precision_plot=report(
-            truth_eval_dir / "truth_snp_eval.precision.png",
-            category="Truth Evaluation",
-            subcategory="Precision",
             caption=report_dir / "truth_snp_eval.rst",
         ),
     threads: 1

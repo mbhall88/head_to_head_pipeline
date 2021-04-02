@@ -27,20 +27,32 @@ df = pd.DataFrame(data, columns=columns)
 
 x = "tool"
 y = "recall"
-fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
-sns.boxenplot(x, y, data=df, ax=ax, palette="Set2")
+ax_idx = 0
+fig, axes = plt.subplots(ncols=2, figsize=FIGSIZE, dpi=DPI, sharex=True)
+sns.boxenplot(x, y, data=df, ax=axes[ax_idx])
 sns.stripplot(
-    x, y, dodge=True, data=df, ax=ax, color="black",
+    x,
+    y,
+    dodge=True,
+    data=df,
+    ax=axes[ax_idx],
+    color="black",
 )
-ax.set(title=f"{y.capitalize()} for different variant callers", xlabel="variant caller")
-fig.savefig(snakemake.output.recall_plot)
+axes[ax_idx].set(title=y.capitalize(), xlabel="variant caller")
+axes[ax_idx].label_outer()
 
 x = "tool"
 y = "precision"
-fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
-sns.boxenplot(x, y, data=df, ax=ax, palette="Set2")
+ax_idx = 1
+sns.boxenplot(x, y, data=df, ax=axes[ax_idx])
 sns.stripplot(
-    x, y, dodge=True, data=df, ax=ax, color="black",
+    x,
+    y,
+    dodge=True,
+    data=df,
+    ax=axes[ax_idx],
+    color="black",
 )
-ax.set(title=f"{y.capitalize()} for different variant callers", xlabel="variant caller")
-fig.savefig(snakemake.output.precision_plot)
+axes[ax_idx].set(title=y.capitalize(), xlabel="variant caller")
+axes[ax_idx].label_outer()
+fig.savefig(snakemake.output.plot)
