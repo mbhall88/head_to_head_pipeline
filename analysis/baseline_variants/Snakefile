@@ -287,7 +287,7 @@ rule evaluate_compass_snps_with_truth_assembly:
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
-        | varifier vcf_eval {params.options} \
+        | varifier vcf_eval {params.options} --cpus {threads}\
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
             --truth_mask {input.truth_mask} \
@@ -330,7 +330,7 @@ rule evaluate_bcftools_snps_with_truth_assembly:
     shell:
         """
         (bcftools view -O v {input.vcf_to_eval} \
-        | varifier vcf_eval {params.options} \
+        | varifier vcf_eval {params.options} --cpus {threads}\
             --flank_length {params.flank_length} \
             --ref_mask {input.ref_mask} \
             --truth_mask {input.truth_mask} \
