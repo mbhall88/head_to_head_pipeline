@@ -568,7 +568,7 @@ rule mixed_dotplot:
 rule bcftools_dotplot:
     input:
         compass_matrix=distance_dir / "compass.matrix.csv",
-        ont_matrix=rules.snp_distance.output.matrix,
+        ont_matrix=distance_dir / "bcftools.matrix.csv",
     output:
         plot=report(
             distance_dir / "bcftools.dotplot.png",
