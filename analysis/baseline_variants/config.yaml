@@ -24,6 +24,7 @@ envs:
   plot_distance_matrix: "envs/plot_distance_matrix.yaml"
   mixed_self_distance:  "envs/mixed_self_distance.yaml"
   mixed_dotplot:        "envs/mixed_dotplot.yaml"
+  bcftools_dotplot:     "envs/mixed_dotplot.yaml"
 scripts:
   filter:               "scripts/apply_filters.py"
   concordance:          "scripts/concordance.py"
@@ -35,6 +36,7 @@ scripts:
   plot_distance_matrix: "scripts/plot_distance_matrix.py"
   mixed_self_distance:  "scripts/mixed_self_distance.py"
   mixed_dotplot:        "scripts/mixed_dotplot.py"
+  bcftools_dotplot:     "scripts/bcftools_dotplot.py"
 
 # filters for nanopore bcftools calls
 filters:

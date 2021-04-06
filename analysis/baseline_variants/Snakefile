@@ -66,6 +66,7 @@ output_files.add(distance_dir / "close_dotplot.html")
 output_files.add(distance_dir / "mixed.matrix.csv")
 output_files.add(distance_dir / "mixed_self_distance.png")
 output_files.add(distance_dir / "mixed.dotplot.png")
+output_files.add(distance_dir / "bcftools.dotplot.png")
 for caller in ["bcftools", "compass"]:
     output_files.add(distance_dir / f"{caller}.heatmap.html")
 
@@ -562,3 +563,37 @@ rule mixed_dotplot:
         inset_legend_loc="lower right",
     script:
         scripts["mixed_dotplot"]
+
+
+rule bcftools_dotplot:
+    input:
+        compass_matrix=distance_dir / "compass.matrix.csv",
+        ont_matrix=rules.snp_distance.output.matrix,
+    output:
+        plot=report(
+            distance_dir / "bcftools.dotplot.png",
+            category="Distance",
+            subcategory="Plot",
+            caption=report_dir / "bcftools_dotplot.rst",
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["conda"]
+    conda:
+        envs["bcftools_dotplot"]
+    log:
+        rule_log_dir / "bcftools_dotplot.log",
+    params:
+        figsize=(13, 8),
+        dpi=300,
+        xlabel="COMPASS SNP distance",
+        ylabel="bcftools SNP distance",
+        scatter_kws=dict(alpha=0.75, linewidth=0.25),
+        inset_bounds=[0.1, 0.6, 0.45, 0.45],
+        inset_threshold=100,
+        legend_loc="lower right",
+        inset_legend_loc="lower right",
+    script:
+        scripts["bcftools_dotplot"]

@@ -15,7 +15,7 @@ PAIR_IDX = ("sample1", "sample2")
 BLACK = "#4c566a"
 BLUE = "#5e81ac"
 XCOL = "COMPASS_dist"
-YCOL = "mixed_dist"
+YCOL = "ont_dist"
 
 
 def robust_regression(x: List[float], y: List[float]) -> List[float]:
@@ -30,13 +30,17 @@ def robust_regression(x: List[float], y: List[float]) -> List[float]:
 
 
 def fit_model(
-    x: List[float], y_pred: List[float]
+        x: List[float], y_pred: List[float]
 ) -> Tuple[float, float, float, float, float]:
     """Returns: gradient, intercept, r_value, p_value, std_err"""
     return stats.linregress(x, y_pred)
 
 
-def load_matrix(fpath: str, delim: str = DELIM, name: str = "") -> pd.DataFrame:
+class AsymmetrixMatrixError(Exception):
+    pass
+
+
+def load_matrix(fpath, delim: str = DELIM, name: str = "") -> pd.DataFrame:
     matrix = []
     with open(fpath) as instream:
         header = next(instream).rstrip()
@@ -48,22 +52,30 @@ def load_matrix(fpath: str, delim: str = DELIM, name: str = "") -> pd.DataFrame:
             sorted_row = np.array(row.split(delim)[1:], dtype=int)[idx]
             matrix.append(sorted_row)
 
-    m = np.array(matrix)[idx]
+    sorted_matrix = np.array(matrix)[idx]
+    n_samples = len(sorted_names)
+    diagonal_is_zero = all(sorted_matrix[i, i] == 0 for i in range(n_samples))
+    if not diagonal_is_zero:
+        raise AsymmetrixMatrixError("Distance matrix diagonal is not all zero")
 
-    df = pd.DataFrame(m, columns=sorted_names, index=sorted_names)
-    df = df.stack().rename(name).astype(int)
-    df = df.rename_axis(PAIR_IDX)
-    # remove the diagonal of the matrix
-    ix = [x != y for (x, y) in df.index]
-    df = df[ix]
-    return df
+    matrix_is_symmetric = np.allclose(sorted_matrix, sorted_matrix.T)
+    if not matrix_is_symmetric:
+        raise AsymmetrixMatrixError("Distance matrix is not symmetric")
+
+    mx = pd.DataFrame(sorted_matrix, columns=sorted_names, index=sorted_names)
+    # remove the lower triangle of the matrix and the middle diagonal
+    mx = mx.where(np.triu(np.ones(mx.shape), k=1).astype(bool))
+    mx = mx.stack().rename(name).astype(int)
+    mx = mx.rename_axis(PAIR_IDX)
+
+    return mx
 
 
 # load the data
 compass_df = load_matrix(snakemake.input.compass_matrix, name=XCOL)
-mixed_df = load_matrix(snakemake.input.mixed_matrix, name=YCOL)
+ont_df = load_matrix(snakemake.input.ont_matrix, name=YCOL)
 # merge the matrices
-data = pd.concat([compass_df, mixed_df], axis=1)
+data = pd.concat([compass_df, ont_df], axis=1)
 data = data.reset_index().rename(
     columns={"level_0": PAIR_IDX[0], "level_1": PAIR_IDX[1]}
 )
