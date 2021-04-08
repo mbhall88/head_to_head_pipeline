@@ -43,6 +43,10 @@ print(
 
 fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
 num_bins = max(self_dists) + 1
-sns.histplot(self_dists, bins=num_bins)
+sns.histplot(self_dists, bins=num_bins, discrete=True)
 ax.set_xlabel("SNP distance")
+xticks = np.append(ax.get_xticks(), range(10))
+xticks.sort()
+ax.set_xticks(xticks[1:])
+ax.set_xlim([-1, max(xticks)])
 fig.savefig(snakemake.output.plot)
