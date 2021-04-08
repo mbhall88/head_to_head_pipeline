@@ -205,7 +205,9 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
     data = pd.concat(frames)
     dfs.append(data)
     ax = sns.violinplot(data=data, ax=ax, **kwargs)
-    ax.set_title(f"threshold = {t}", fontdict={"fontsize": "small"})
+    np_t = THRESHOLDS[t]["ont"]
+    mix_t = THRESHOLDS[t]["mixed"]
+    ax.set_title(f"SNP threshold (Ill./NP/Mix) = {t}/{np_t}/{mix_t}", fontdict={"fontsize": "small"})
     ax.label_outer()
     # we only want one legend for the whole figure
     ax.get_legend().remove()

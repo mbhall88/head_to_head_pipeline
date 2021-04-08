@@ -225,9 +225,11 @@ def plot_graph(
     height: int,
     width: int,
     name: str,
+    truth_threshold: int,
+    query_threshold: int,
     bg_alpha: float = 0.2,
 ) -> None:
-    title = f"Individual sample (node) metrics for {name}"
+    title = f"SNP threshold (Ill./NP) = {truth_threshold}/{query_threshold}"
     # inline effectively allows the plot to work offline
     output_file(str(outfile), title=title, mode="inline")
 
@@ -732,7 +734,14 @@ def main(
         logging.info(f"Making cluster visualisation for {name}")
         plot_path = outdir / f"{name}.clusters.html"
         plot_graph(
-            target_graph, graph, plot_path, height=height, width=width, name=name
+            target_graph,
+            graph,
+            plot_path,
+            height=height,
+            width=width,
+            name=name,
+            truth_threshold=threshold[0],
+            query_threshold=threshold[i],
         )
         logging.info(f"Cluster plot saved to {plot_path}")
 
