@@ -361,8 +361,6 @@ def plot_graph(
     )
     p1.add_layout(label_set)
 
-    title = f"Average cluster metrics for {name}"
-
     node_attrs = {}
     clusters = [c for c in nx.connected_components(G_true)]
     for cluster in clusters:
