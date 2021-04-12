@@ -11,3 +11,5 @@ See subdirectories for more specific information about different pipelines.
 -   [Quality Control](data/QC)
 -   [Baseline variant analysis](analysis/baseline_variants)
 -   [Pandora variant analysis](analysis/pandora_variants)
+-   [Transmission clustering](analysis/transmission_clustering)
+-   [Drug Resistance Prediction](analysis/resistance_prediction)

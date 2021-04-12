@@ -1,0 +1,37 @@
+import pandas as pd
+from pathlib import Path
+
+
+configfile: "config/config.yaml"
+
+
+GB = 1_024
+inclusion_expr = "failed_qc == 0 and excluded == 0"
+samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
+RESULTS = Path("results").resolve()
+SCRIPTS = Path("workflow/scripts").resolve()
+ENVS = Path("workflow/envs").resolve()
+RULES = Path("workflow/rules").resolve()
+LOGS = Path("logs/rules").resolve()
+CONTAINERS = config["containers"]
+
+# generate required output files
+TECHS = ["illumina", "nanopore"]
+OUTPUT = set()
+for idx, row in samplesheet.iterrows():
+    site = row["site"]
+    sample = row["sample"]
+    for tech in TECHS:
+        OUTPUT.add(RESULTS / f"mykrobe/{tech}/{site}/{sample}.mykrobe.json")
+
+
+subworkflow QC:
+    workdir: "../../data/QC"
+
+
+rule all:
+    input:
+        OUTPUT,
+
+
+include: RULES / "mykrobe.smk"
