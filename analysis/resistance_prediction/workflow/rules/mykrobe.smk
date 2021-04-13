@@ -1,6 +1,20 @@
+def infer_reads(wildcards):
+    site = wildcards.site
+    sample = wildcards.sample
+    tech = wildcards.tech
+
+    if tech == "nanopore":
+        return f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.fastq.gz"
+    else:
+        return [
+            f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.R{i}.fastq.gz"
+            for i in [1, 2]
+        ]
+
+
 rule mykrobe:
     input:
-        reads=QC("subsampled/{site}/{tech}/{sample}/{sample}.subsampled.fastq.gz"),
+        reads=lambda wildcards: QC(infer_reads(wildcards)),
     output:
         report=RESULTS / "mykrobe/{tech}/{site}/{sample}.mykrobe.json",
     shadow:
