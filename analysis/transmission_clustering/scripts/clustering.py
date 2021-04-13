@@ -1,6 +1,7 @@
 import logging
 import math
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 from typing import List, Collection, Callable, Tuple, Set
 
@@ -211,6 +212,13 @@ def set_precision(A: Set[str], B: Set[str]) -> float:
 
 def set_recall(A: Set[str], B: Set[str]) -> float:
     return tversky_index(A, B, alpha=1, beta=0)
+
+
+def excess_clustering_rate(A: Set[str], B: Set[str]) -> float:
+    """What percentage of true singletons are clustered.
+    What percentage of A is not in B
+    """
+    return len(A - B) / len(A)
 
 
 def cmap(f: float, palette=PALETTE) -> str:
@@ -705,6 +713,15 @@ def main(
     for mx, t, name in zip(query_mtxs, threshold[1:], samples[1:]):
         query_graph = dist_matrix_to_graph(mx, threshold=t)
         query_graphs.append(query_graph)
+
+        target_samples = set(
+            np.unique(np.array(list(chain.from_iterable(target_mtx.index))))
+        )
+        target_singletons = target_samples - set(target_graph.nodes)
+        query_singletons = target_samples - set(query_graph.nodes)
+        xcr = excess_clustering_rate(target_singletons, query_singletons)
+        logging.info(f"Excess clustering rate (XCR) for {name}: {xcr}")
+
         predicted_labels: List[bool] = [
             clustered_together(u, v, query_graph) for u, v in target_mtx.index
         ]

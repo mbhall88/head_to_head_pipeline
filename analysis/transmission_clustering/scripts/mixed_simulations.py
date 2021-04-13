@@ -43,6 +43,13 @@ def set_recall(A: Set[str], B: Set[str]) -> float:
     return tversky_index(A, B, alpha=1, beta=0)
 
 
+def excess_clustering_rate(A: Set[str], B: Set[str]) -> float:
+    """What percentage of true singletons are clustered.
+    What percentage of A is not in B
+    """
+    return len(A - B) / len(A)
+
+
 def dist_matrix_to_graph(mx: pd.Series, threshold: int) -> nx.Graph:
     edges = [(s1, s2, dist) for (s1, s2), dist in mx.iteritems() if dist <= threshold]
     graph = nx.Graph()
@@ -153,10 +160,14 @@ def run_simulation(ratio: float, threshold: int, G_true: nx.Graph, N: int):
         )
         G_test = nx.Graph()
         G_test.add_weighted_edges_from(edges)
-        eval_vals.append(evaluate_clustering(G_true, G_test))
+        true_singletons = set(SAMPLES) - set(G_true.nodes)
+        test_singletons = set(SAMPLES) - set(G_test.nodes)
+        xcr = excess_clustering_rate(true_singletons, test_singletons)
+        acp, acr, _ = evaluate_clustering(G_true, G_test)
+        eval_vals.append((acp, acr, xcr))
     df = (
         pd.DataFrame(zip(*eval_vals))
-        .T.rename(columns={0: "SACP", 1: "SACR", 2: "CNR"})
+        .T.rename(columns={0: "SACP", 1: "SACR", 2: "1-XCR"})
         .melt(var_name="metric")
     )
     df["ratio"] = ratio
@@ -207,7 +218,10 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
     ax = sns.violinplot(data=data, ax=ax, **kwargs)
     np_t = THRESHOLDS[t]["ont"]
     mix_t = THRESHOLDS[t]["mixed"]
-    ax.set_title(f"SNP threshold (Ill./NP/Mix) = {t}/{np_t}/{mix_t}", fontdict={"fontsize": "small"})
+    ax.set_title(
+        f"SNP threshold (Ill./NP/Mix) = {t}/{np_t}/{mix_t}",
+        fontdict={"fontsize": "small"},
+    )
     ax.label_outer()
     # we only want one legend for the whole figure
     ax.get_legend().remove()
