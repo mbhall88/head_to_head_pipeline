@@ -31,6 +31,6 @@ rule mykrobe:
         tech_flag=lambda wildcards: "--ont" if wildcards.tech == "nanopore" else "",
     shell:
         """
-        mykrobe predict {params.flags} {params.tech_flag} --output {output.report} \
-           --seq {input.reads} {wildcards.sample} {params.species} > {log} 2>&1
+        mykrobe predict {params.tech_flag} --output {output.report} --seq {input.reads} \
+          {params.flags} {wildcards.sample} {params.species} > {log} 2>&1
         """
