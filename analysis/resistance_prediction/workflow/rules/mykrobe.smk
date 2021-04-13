@@ -32,5 +32,5 @@ rule mykrobe:
     shell:
         """
         mykrobe predict {params.flags} {params.tech_flag} --output {output.report} \
-          {wildcards.sample} {params.species} > {log} 2>&1
+           --seq {input.reads} {wildcards.sample} {params.species} > {log} 2>&1
         """
