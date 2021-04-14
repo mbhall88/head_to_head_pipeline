@@ -215,10 +215,12 @@ def set_recall(A: Set[str], B: Set[str]) -> float:
 
 
 def excess_clustering_rate(A: Set[str], B: Set[str]) -> float:
-    """What percentage of true singletons are clustered.
+    """What percentage of true singletons (A) are clustered in B.
     What percentage of A is not in B
     """
-    return len(A - B) / len(A)
+    num_clustered_singletons = len(A - B)
+    logging.debug(f"{num_clustered_singletons}/{len(A)} singletons are clustered")
+    return num_clustered_singletons / len(A)
 
 
 def cmap(f: float, palette=PALETTE) -> str:

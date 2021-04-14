@@ -250,11 +250,7 @@ rule clustering:
     params:
         script=scripts["clustering"],
         outdir=lambda wildcards, output: output[0].rpartition("/")[0],
-        extras=" ".join(
-            [
-                "-S compass,{caller}",
-            ]
-        ),
+        extras=" ".join(["-S compass,{caller}", "-v"]),
         threshold=infer_threshold,
     log:
         rule_log_dir / "clustering/{caller}/t{threshold}.log",
