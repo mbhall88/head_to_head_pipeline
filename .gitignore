@@ -394,3 +394,4 @@ analysis/pandora_variants/outliers
 analysis/pandora_variants/scripts/cleanup_truth_sample_filters.sh
 analysis/transmission_clustering/eda
 analysis/transmission_clustering/plots
+analysis/resistance_prediction
