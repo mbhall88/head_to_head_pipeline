@@ -301,7 +301,7 @@ rule mixed_simulations:
         num_simulations=1000,
         figsize=(13, 13),
         dpi=300,
-        legend_loc="lower right",
+        legend_loc=(0.91, 0.53),
     log:
         rule_log_dir / "mixed_simulations.log",
     script:
