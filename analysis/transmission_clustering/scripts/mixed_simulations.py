@@ -164,7 +164,7 @@ def run_simulation(ratio: float, threshold: int, G_true: nx.Graph, N: int):
         test_singletons = set(SAMPLES) - set(G_test.nodes)
         xcr = excess_clustering_rate(true_singletons, test_singletons)
         acp, acr, _ = evaluate_clustering(G_true, G_test)
-        eval_vals.append((acp, acr, xcr))
+        eval_vals.append((acp, acr, 1-xcr))
     df = (
         pd.DataFrame(zip(*eval_vals))
         .T.rename(columns={0: "SACP", 1: "SACR", 2: "1-XCR"})
