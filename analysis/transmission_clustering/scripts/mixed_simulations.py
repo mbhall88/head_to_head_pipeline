@@ -229,7 +229,7 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
 fig.tight_layout()
 # we only want one legend for the whole figure
 handles, labels = axes.flatten()[-1].get_legend_handles_labels()
-fig.legend(handles, labels)
+fig.legend(handles, labels, loc=snakemake.params.legend_loc)
 fig.savefig(snakemake.output.plot)
 # also save a HTML summary of the data
 summary = pd.concat(dfs).groupby(["ratio", "threshold", "metric"]).describe()
