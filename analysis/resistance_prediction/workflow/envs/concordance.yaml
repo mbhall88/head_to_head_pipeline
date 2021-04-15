@@ -1,0 +1,6 @@
+name: concordance
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - click=7.1.2

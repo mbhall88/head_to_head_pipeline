@@ -22,7 +22,7 @@ for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
     for tech in TECHS:
-        OUTPUT.add(RESULTS / f"mykrobe/{tech}/{site}/{sample}.mykrobe.json")
+        OUTPUT.add(RESULTS / f"concordance/{tool}/{site}/{sample}.{tool}.csv")
 
 
 subworkflow QC:
@@ -35,3 +35,4 @@ rule all:
 
 
 include: RULES / "mykrobe.smk"
+include: RULES / "concordance.smk"
