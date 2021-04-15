@@ -17,11 +17,12 @@ CONTAINERS = config["containers"]
 
 # generate required output files
 TECHS = ["illumina", "nanopore"]
+TOOLS = ["mykrobe"]
 OUTPUT = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
-    for tech in TECHS:
+    for tool in TOOLS:
         OUTPUT.add(RESULTS / f"concordance/{tool}/{site}/{sample}.{tool}.csv")
 
 
