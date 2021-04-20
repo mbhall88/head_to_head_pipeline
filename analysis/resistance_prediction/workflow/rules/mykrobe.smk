@@ -28,7 +28,7 @@ rule mykrobe:
     params:
         species="tb",
         flags="--force --report_all_calls --debug --format json",
-        tech_flag=lambda wildcards: "--ont" if wildcards.tech == "nanopore" else "",
+        tech_flag=lambda wildcards: "--expected_error_rate 0.08 --ploidy haploid" if wildcards.tech == "nanopore" else "",
     shell:
         """
         mykrobe predict {params.tech_flag} --output {output.report} --seq {input.reads} \

@@ -9,7 +9,7 @@ rule concordance:
     container:
         CONTAINERS["conda"]
     conda:
-        ENVS / "concordance.yaml"
+        str(ENVS / "concordance.yaml")
     params:
         opts="-r",
         script=SCRIPTS / "concordance.py",
