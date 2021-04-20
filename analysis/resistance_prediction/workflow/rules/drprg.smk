@@ -26,4 +26,4 @@ rule filter_panel:
     container:
         CONTAINERS["conda"]
     script:
-        SCRIPTS / "filter_panel.py"
+        str(SCRIPTS / "filter_panel.py")

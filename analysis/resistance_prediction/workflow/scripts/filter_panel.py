@@ -18,7 +18,7 @@ class Variant:
 
     @staticmethod
     def from_str(var: str) -> "Variant":
-        before, pos, after = re.split(r"(-?\d+)", maxsplit=1)
+        before, pos, after = re.split(r"(-?\d+)", var, maxsplit=1)
         return Variant(before=before, after=after, pos=int(pos))
 
     def is_frameshift(self) -> bool:
