@@ -24,6 +24,6 @@ rule filter_panel:
         exclude=["pncA", "katG"],
         frameshift_lengths=[1, 2],
     container:
-        CONTAINER["conda"]
+        CONTAINERS["conda"]
     script:
         SCRIPTS / "filter_panel.py"
