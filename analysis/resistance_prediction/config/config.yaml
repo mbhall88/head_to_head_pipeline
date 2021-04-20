@@ -1,4 +1,5 @@
-samplesheet: "../../docs/samplesheet.csv"
+samplesheet:       "../../docs/samplesheet.csv"
+mykrobe_panel_url: "https://ndownloader.figshare.com/files/14120198"
 
 containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"

@@ -25,9 +25,15 @@ for idx, row in samplesheet.iterrows():
     for tool in TOOLS:
         OUTPUT.add(RESULTS / f"concordance/{tool}/{site}/{sample}.{tool}.csv")
 
+OUTPUT.add(RESULTS / "drprg/panel/panel.filtered.tsv")
+
 
 subworkflow QC:
     workdir: "../../../data/QC"
+
+
+localrules:
+    download_panel,
 
 
 rule all:
@@ -37,3 +43,4 @@ rule all:
 
 include: RULES / "mykrobe.smk"
 include: RULES / "concordance.smk"
+include: RULES / "drprg.smk"
