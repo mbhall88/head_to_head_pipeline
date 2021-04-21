@@ -1,6 +1,6 @@
 rule download_panel:
     output:
-        panel=RESULTS / "drprg/panel/panel.tsv",
+        panel=RESULTS / "drprg/panel/panel.original.tsv",
     resources:
         mem_mb=int(0.5 * GB),
     log:
@@ -27,3 +27,20 @@ rule filter_panel:
         CONTAINERS["conda"]
     script:
         str(SCRIPTS / "filter_panel.py")
+
+
+rule add_drugs_to_panel:
+    input:
+        panel=rules.filter_panel.output.panel,
+    output:
+        panel=RESULTS / "drprg/panel/panel.tsv",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "add_drugs_to_panel.log",
+    container:
+        CONTAINERS["conda"]
+    params:
+        mapping_url="https://ndownloader.figshare.com/files/14120195",
+    script:
+        str(SCRIPTS / "add_drugs_to_panel.py")
