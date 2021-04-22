@@ -21,4 +21,4 @@ with open(snakemake.input.panel) as istream, open(
         if not drugs:
             raise KeyError(f"No drugs found for {var_key} in mapping")
         ostream.write(row)
-        print(f"\t{';'.join(drugs)}", file=ostream)
+        print(f"\t{snakemake.params.delim.join(drugs)}", file=ostream)

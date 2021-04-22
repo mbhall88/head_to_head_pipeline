@@ -42,5 +42,6 @@ rule add_drugs_to_panel:
         CONTAINERS["conda"]
     params:
         mapping_url="https://ndownloader.figshare.com/files/14120195",
+        delim=",",
     script:
         str(SCRIPTS / "add_drugs_to_panel.py")
