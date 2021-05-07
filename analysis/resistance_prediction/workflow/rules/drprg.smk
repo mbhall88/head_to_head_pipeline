@@ -45,3 +45,34 @@ rule add_drugs_to_panel:
         delim=",",
     script:
         str(SCRIPTS / "add_drugs_to_panel.py")
+
+
+rule drprg_build:
+    input:
+        panel=rules.add_drugs_to_panel.output.panel,
+        ref=RESOURCES / "h37rv.fa",
+        annotation=RESOURCES / "h37rv.gff3",
+    output:
+        outdir=directory(RESULTS / "drprg/index"),
+        prg=RESULTS / "drprg/index/dr.prg",
+    log:
+        LOGS / "drprg_build.log",
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * int(4 * GB),
+    threads: 8
+    container:
+        CONTAINERS["drprg"]
+    params:
+        " ".join(
+            [
+                "-v",
+                "--force",
+                f"--match-len {config['match_len']}",
+                f"--padding {config['padding']}",
+            ],
+        ),
+    shell:
+        """
+        drprg build {params} -a {input.annotation} -o {output.outdir} -i {input.panel} \
+          -f {input.ref} -t {threads} 2> {log}
+        """

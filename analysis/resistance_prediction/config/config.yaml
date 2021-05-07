@@ -1,6 +1,9 @@
 samplesheet:       "../../docs/samplesheet.csv"
 mykrobe_panel_url: "https://ndownloader.figshare.com/files/14120198"
+match_len:         5  # make_prg minimum match length used in drprg build
+padding:           100  # base padding to add to genes in drprg build
 
 containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"
   conda:   "docker://continuumio/miniconda3:4.9.2"
+  drprg:   "docker://quay.io/mbhall88/drprg:eb6a066"
