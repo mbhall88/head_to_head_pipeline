@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.8
+  - mamba
+  - snakemake>=6
+  - bcftools=1.12
+  - samtools=1.12
+  - snakefmt
+  - pandas=1.2
+  - ripgrep=12.1
