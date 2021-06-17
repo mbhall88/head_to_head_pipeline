@@ -24,6 +24,7 @@ bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -J "$JOB_NAME" \
 snakemake --profile "$PROFILE" \
     --local-cores "$THREADS" \
+    --conda-frontend conda \
     "$@" --singularity-args "$ARGS"
 
 exit 0
