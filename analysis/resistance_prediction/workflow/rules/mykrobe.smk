@@ -2,7 +2,7 @@ rule mykrobe:
     input:
         reads=lambda wildcards: QC(infer_reads(wildcards)),
     output:
-        report=RESULTS / "mykrobe/predict/{tech}/{site}/{sample}.mykrobe.json",
+        report=RESULTS / "mykrobe/predict/{tech}/{site}/{sample}/{sample}.mykrobe.json",
     shadow:
         "shallow"
     resources:
