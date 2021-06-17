@@ -76,3 +76,40 @@ rule drprg_build:
         drprg build {params} -a {input.annotation} -o {output.outdir} -i {input.panel} \
           -f {input.ref} -t {threads} 2> {log}
         """
+
+
+rule drprg_predict:
+    input:
+        index=rules.drprg_build.output.outdir,
+        reads=lambda wildcards: QC(infer_reads(wildcards)),
+    output:
+        outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
+        report=directory(
+            RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json"
+        ),
+    log:
+        LOGS / "drprg_predict/{tech}/{site}/{sample}.log",
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * int(4 * GB),
+    container:
+        CONTAINERS["drprg"]
+    params:
+        opts=" ".join(
+            [
+                "--verbose",
+                "--force",
+                "-s {sample}",
+                f"-d {config['filters']['min_covg']}",
+                f"-b {config['filters']['min_strand_bias']}",
+                f"-g {config['filters']['min_gt_conf']}",
+                f"-L {config['filters']['max_indel']}",
+                f"-K {config['filters']['min_frs']}",
+            ]
+        ),
+        tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
+    shell:
+        """
+        drprg predict {params.opts} {params.tech_flag} -o {output.outdir} 
+          -i {input.reads} -x {input.index} -t {threads} 2> {log}
+        """

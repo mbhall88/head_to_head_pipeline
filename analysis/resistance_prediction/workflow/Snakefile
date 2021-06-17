@@ -1,3 +1,5 @@
+from itertools import product
+
 import pandas as pd
 from pathlib import Path
 
@@ -19,15 +21,15 @@ H37Rv = Path("../../../data/H37Rv_PRG/resources/h37rv.fa").resolve()
 
 # generate required output files
 TECHS = ["illumina", "nanopore"]
-TOOLS = ["mykrobe"]
+TOOLS = ["mykrobe", "drprg"]
 OUTPUT = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
-    for tool in TOOLS:
-        OUTPUT.add(RESULTS / f"concordance/{tool}/{site}/{sample}.{tool}.csv")
+    for tool, tech in product(TOOLS, TECHS):
+        # OUTPUT.add(RESULTS / f"concordance/{tool}/{site}/{sample}.{tool}.csv")
+        OUTPUT.add(RESULTS / f"{tool}/predict/{tech}/{site}/{sample}/{sample}.{tool}.json")
 
-OUTPUT.add(RESULTS / "drprg/index/dr.prg")
 
 
 subworkflow QC:
@@ -44,6 +46,7 @@ rule all:
         OUTPUT,
 
 
+include: RULES / "common.smk"
 include: RULES / "mykrobe.smk"
 include: RULES / "concordance.smk"
 include: RULES / "drprg.smk"
