@@ -80,7 +80,7 @@ rule drprg_build:
 
 rule seqtk_mergepe:
     input:
-        reads=lambda wildcards: QC(infer_reads(wildcards)),
+        reads=lambda wildcards: infer_reads(wildcards),
     output:
         merged=(
             RESULTS / "drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
@@ -99,7 +99,7 @@ rule seqtk_mergepe:
 rule drprg_predict:
     input:
         index=rules.drprg_build.output.outdir,
-        reads=lambda wildcards: QC(infer_reads(wildcards, merged=True)),
+        reads=lambda wildcards: infer_reads(wildcards, merged=True),
     output:
         outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
         report=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json",

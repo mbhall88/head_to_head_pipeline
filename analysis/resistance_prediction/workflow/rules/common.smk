@@ -4,13 +4,13 @@ def infer_reads(wildcards, merged: bool = False):
     tech = wildcards.tech
 
     if tech == "nanopore":
-        return f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.fastq.gz"
+        return QC(f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.fastq.gz")
     elif merged:
         return (
             RESULTS / f"drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
         )
     else:
-        return [
+        return QC([
             f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.R{i}.fastq.gz"
             for i in [1, 2]
-        ]
+        ])
