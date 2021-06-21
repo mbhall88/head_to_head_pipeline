@@ -78,10 +78,27 @@ rule drprg_build:
         """
 
 
+rule seqtk_mergepe:
+    input:
+        r1=QC("subsampled/{site}/{tech}/{sample}/{sample}.subsampled.R1.fastq.gz"),
+        r2=QC("subsampled/{site}/{tech}/{sample}/{sample}.subsampled.R2.fastq.gz"),
+    output:
+        merged=(
+            RESULTS / "drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
+        ),
+    params:
+        compress_lvl=9,
+    log:
+        "logs/seqtk_mergepe/{tech}/{site}/{sample}.log",
+    threads: 2
+    wrapper:
+        "0.75.0-7-g05edf56/bio/seqtk/mergepe"
+
+
 rule drprg_predict:
     input:
         index=rules.drprg_build.output.outdir,
-        reads=lambda wildcards: QC(infer_reads(wildcards)),
+        reads=lambda wildcards: QC(infer_reads(wildcards, merged=True)),
     output:
         outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
         report=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json",
