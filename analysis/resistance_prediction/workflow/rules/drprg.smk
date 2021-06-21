@@ -80,7 +80,7 @@ rule drprg_build:
 
 rule seqtk_mergepe:
     input:
-        lambda wildcards: QC(infer_reads(wildcards)),
+        reads=lambda wildcards: QC(infer_reads(wildcards)),
     output:
         merged=(
             RESULTS / "drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
