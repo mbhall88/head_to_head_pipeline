@@ -7,7 +7,7 @@ def infer_reads(wildcards, merged: bool = False):
         return f"subsampled/{site}/{tech}/{sample}/{sample}.subsampled.fastq.gz"
     elif merged:
         return (
-            f"results/drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
+            RESULTS / f"drprg/mergepe/{tech}/{site}/{sample}/{sample}.merged.fastq.gz"
         )
     else:
         return [
