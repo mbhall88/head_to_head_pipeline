@@ -110,6 +110,6 @@ rule drprg_predict:
         tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
     shell:
         """
-        drprg predict {params.opts} {params.tech_flag} -o {output.outdir} 
+        drprg predict {params.opts} {params.tech_flag} -o {output.outdir} \
           -i {input.reads} -x {input.index} -t {threads} 2> {log}
         """
