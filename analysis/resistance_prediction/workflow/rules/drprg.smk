@@ -90,8 +90,6 @@ rule seqtk_mergepe:
     log:
         "logs/seqtk_mergepe/{tech}/{site}/{sample}.log",
     threads: 2
-    container:
-        CONTAINERS["conda"]
     wrapper:
         "0.75.0-7-g05edf56/bio/seqtk/mergepe"
 

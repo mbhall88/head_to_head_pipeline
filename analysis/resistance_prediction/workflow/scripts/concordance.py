@@ -51,7 +51,7 @@ def load_susceptibility(stream: TextIO) -> dict:
     data = json.load(stream)
     try:
         return data[next(iter(data.keys()))]["susceptibility"]
-    except KeyError:
+    except (KeyError, TypeError):
         return data["susceptibility"]
 
 

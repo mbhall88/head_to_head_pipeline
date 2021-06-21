@@ -6,8 +6,6 @@ rule concordance:
         RESULTS / "concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv",
     log:
         LOGS / "concordance/{tool}/{tech}/{site}/{sample}.log",
-    container:
-        CONTAINERS["conda"]
     conda:
         str(ENVS / "concordance.yaml")
     params:
