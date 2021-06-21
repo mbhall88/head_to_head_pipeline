@@ -1,11 +1,11 @@
 rule concordance:
     input:
-        true_pred=RESULTS / "{tool}/illumina/{site}/{sample}.{tool}.json",
-        test_pred=RESULTS / "{tool}/nanopore/{site}/{sample}.{tool}.json",
+        true_pred=RESULTS / "mykrobe/illumina/{site}/{sample}.{tool}.json",
+        test_pred=RESULTS / "{tool}/{tech}/{site}/{sample}.{tool}.json",
     output:
-        RESULTS / "concordance/{tool}/{site}/{sample}.{tool}.csv",
+        RESULTS / "concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv",
     log:
-        LOGS / "concordance/{tool}/{site}/{sample}.log",
+        LOGS / "concordance/{tool}/{tech}/{site}/{sample}.log",
     container:
         CONTAINERS["conda"]
     conda:

@@ -10,6 +10,8 @@ class Prediction(Enum):
     Resistant = "R"
     Susceptible = "S"
     MinorResistance = "r"
+    Unknown = "U"
+    Failed = "F"
 
     def __str__(self) -> str:
         return self.value
@@ -47,7 +49,10 @@ class Classifier(Enum):
 def load_susceptibility(stream: TextIO) -> dict:
     """Extract the susceptibility info from the JSON"""
     data = json.load(stream)
-    return data[next(iter(data.keys()))]["susceptibility"]
+    try:
+        return data[next(iter(data.keys()))]["susceptibility"]
+    except KeyError:
+        return data["susceptibility"]
 
 
 def extract_calls(data: dict, convert_minor: bool = False) -> Dict[str, Prediction]:
