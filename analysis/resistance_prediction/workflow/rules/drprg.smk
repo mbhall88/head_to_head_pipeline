@@ -84,9 +84,7 @@ rule drprg_predict:
         reads=lambda wildcards: QC(infer_reads(wildcards)),
     output:
         outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
-        report=directory(
-            RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json"
-        ),
+        report=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json",
     log:
         LOGS / "drprg_predict/{tech}/{site}/{sample}.log",
     threads: 4
