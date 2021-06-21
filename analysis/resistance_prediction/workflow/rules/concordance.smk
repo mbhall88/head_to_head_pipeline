@@ -1,7 +1,7 @@
 rule concordance:
     input:
-        true_pred=RESULTS / "mykrobe/illumina/{site}/{sample}.{tool}.json",
-        test_pred=RESULTS / "{tool}/{tech}/{site}/{sample}.{tool}.json",
+        true_pred=RESULTS / "mykrobe/predict/illumina/{site}/{sample}/{sample}.mykrobe.json",
+        test_pred=RESULTS / "{tool}/predict/{tech}/{site}/{sample}/{sample}.{tool}.json",
     output:
         RESULTS / "concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv",
     log:
