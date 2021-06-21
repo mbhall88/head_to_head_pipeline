@@ -12,16 +12,16 @@ fi
 MEMORY=4000
 THREADS=4
 PROFILE="lsf"
-BINDS="/tmp,/scratch,$HOME"
-case $HOST in
+BINDS="/tmp,$HOME"
+case $HOSTNAME in
     *noah*)
-        BINDS+="/hps/nobackup/research/zi,/nfs/research1/zi"
+        BINDS+=",/scratch,/hps/nobackup/research/zi,/nfs/research1/zi"
         ;;
     *codon*)
-        BINDS+="/hps/nobackup/iqbal,/nfs/research/zi"
+        BINDS+=",/hps/scratch,/hps/nobackup/iqbal,/nfs/research/zi,$FASTSW_DIR --scratch /hps/scratch"
         ;;
     *)
-        echo "ERROR: HOST $HOST not recognised"
+        echo "ERROR: HOSTNAME $HOSTNAME not recognised"
         exit 1
         ;;
 esac
@@ -36,7 +36,6 @@ bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -J "$JOB_NAME" \
     snakemake --profile "$PROFILE" \
     --local-cores "$THREADS" \
-    --conda-frontend conda \
     "$@" --singularity-args "$ARGS"
 
 exit 0
