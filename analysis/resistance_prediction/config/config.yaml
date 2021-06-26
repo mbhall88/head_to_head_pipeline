@@ -7,10 +7,10 @@ filters:
   min_covg:        3
   min_gt_conf:     5
   min_strand_bias: 0.01
-  min_frs:         0.9
+  min_frs:         -1.0
   max_indel:       20
 
 containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"
   conda:   "docker://continuumio/miniconda3:4.9.2"
-  drprg:   "docker://quay.io/mbhall88/drprg:16bfbbe"
+  drprg:   "docker://quay.io/mbhall88/drprg:e70dd83"
