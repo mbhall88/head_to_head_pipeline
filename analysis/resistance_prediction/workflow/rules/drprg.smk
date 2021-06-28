@@ -88,7 +88,7 @@ rule seqtk_mergepe:
     params:
         compress_lvl=9,
     log:
-        "logs/seqtk_mergepe/{tech}/{site}/{sample}.log",
+        LOGS / "seqtk_mergepe/{tech}/{site}/{sample}.log",
     threads: 2
     wrapper:
         "0.75.0-7-g05edf56/bio/seqtk/mergepe"

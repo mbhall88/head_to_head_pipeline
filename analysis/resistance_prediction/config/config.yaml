@@ -13,4 +13,4 @@ filters:
 containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"
   conda:   "docker://continuumio/miniconda3:4.9.2"
-  drprg:   "docker://quay.io/mbhall88/drprg:e70dd83"
+  drprg:   "docker://quay.io/mbhall88/drprg:7044f5f"
