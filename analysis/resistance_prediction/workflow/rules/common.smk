@@ -34,9 +34,9 @@ def drprg_filter_args(wildcards: Wildcards) -> str:
     ]:
         if key in filters:
             if key == "min_gt_conf":
-                val = filters[wildcards.tech][key]
+                val = filters[key][wildcards.tech]
             else:
                 val = filters[key]
             args += f"{flag} {val} "
 
-        return args
+    return args
