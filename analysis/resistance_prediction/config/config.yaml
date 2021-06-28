@@ -5,7 +5,9 @@ padding:           100  # base padding to add to genes in drprg build
 # filtering used on the pandora VCF in drprg
 filters:
   min_covg:        3
-  min_gt_conf:     5
+  min_gt_conf:
+    nanopore: 15
+    illumina: 30
   min_strand_bias: 0.01
   min_frs:         -1.0
   max_indel:       20

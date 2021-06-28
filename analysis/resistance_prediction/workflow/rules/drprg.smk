@@ -114,16 +114,12 @@ rule drprg_predict:
                 "--verbose",
                 "--force",
                 "-s {sample}",
-                f"-d {config['filters']['min_covg']}",
-                f"-b {config['filters']['min_strand_bias']}",
-                f"-g {config['filters']['min_gt_conf']}",
-                f"-L {config['filters']['max_indel']}",
-                f"-K {config['filters']['min_frs']}",
             ]
         ),
+        filters=lambda wildcards: drprg_filter_args(wildcards),
         tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
     shell:
         """
-        drprg predict {params.opts} {params.tech_flag} -o {output.outdir} \
-          -i {input.reads} -x {input.index} -t {threads} 2> {log}
+        drprg predict {params.opts} {params.filters} {params.tech_flag} \
+          -o {output.outdir} -i {input.reads} -x {input.index} -t {threads} 2> {log}
         """
