@@ -5,6 +5,8 @@ rule download_panel:
         mem_mb=int(0.5 * GB),
     log:
         LOGS / "download_panel.log",
+    container:
+        CONTAINERS["base"]
     params:
         url=config["mykrobe_panel_url"],
     shell:
@@ -33,7 +35,7 @@ rule add_drugs_to_panel:
     input:
         panel=rules.filter_panel.output.panel,
     output:
-        panel=RESULTS / "drprg/panel/panel.tsv",
+        panel=RESULTS / "drprg/panel/panel.resistant.tsv",
     resources:
         mem_mb=int(0.5 * GB),
     log:
@@ -47,9 +49,25 @@ rule add_drugs_to_panel:
         str(SCRIPTS / "add_drugs_to_panel.py")
 
 
-rule drprg_build:
+rule add_known_non_resistance_vars_to_panel:
     input:
         panel=rules.add_drugs_to_panel.output.panel,
+        known=RESOURCES / "non_resistant.tsv",
+    output:
+        panel=RESULTS / "drprg/panel/panel.tsv",
+    log:
+        LOGS / "add_known_non_resistance_vars_to_panel.log",
+    container:
+        CONTAINERS["base"]
+    resources:
+        mem_mb=int(0.3 * GB),
+    shell:
+        "awk 1 {input.panel} {input.known} > {output.panel} 2> {log}"
+
+
+rule drprg_build:
+    input:
+        panel=rules.add_known_non_resistance_vars_to_panel.output.panel,
         ref=RESOURCES / "h37rv.fa",
         annotation=RESOURCES / "h37rv.gff3",
     output:
