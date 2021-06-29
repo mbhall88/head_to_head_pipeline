@@ -9,8 +9,8 @@ filters:
   min_frs:         -1.0
   max_indel:       20
   min_gt_conf:
-    nanopore: 15
-    illumina: 30
+    nanopore: 5
+    illumina: 5
 
 containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"
