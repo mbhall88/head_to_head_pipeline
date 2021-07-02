@@ -7,8 +7,6 @@ from loguru import logger
 from intervaltree import IntervalTree
 from cyvcf2 import VCF, Writer
 
-logger.add(sys.stderr, level="DEBUG")
-
 
 def extract_genes_from_panel(stream: TextIO) -> Set[str]:
     genes = set()
@@ -33,10 +31,11 @@ def extract_intervals_for_genes_from_gff(
             continue
 
         attributes = attributes_dict_from_str(fields[8])
-        if "gene" not in attributes:
-            raise KeyError(f"No gene attribute for ID {attributes['ID']}")
+        name = attributes.get("gene", attributes.get("Name", None))
+        if name is None:
+            logger.warning(f"No gene/Name attribute for ID {attributes['ID']}")
+            continue
 
-        name = attributes["gene"]
         if name not in genes:
             continue
 
