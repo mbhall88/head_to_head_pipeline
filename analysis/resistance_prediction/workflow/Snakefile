@@ -29,10 +29,17 @@ for idx, row in samplesheet.iterrows():
     for tool, tech in product(TOOLS, TECHS):
         OUTPUT.add(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
 
+OUTPUT.add(RESULTS / "drprg/popn_prg/popn.bcf")
+
 
 subworkflow QC:
     workdir:
         "../../../data/QC"
+
+
+subworkflow BuildPrg:
+    workdir:
+        "../../../data/H37Rv_PRG"
 
 
 localrules:
@@ -45,6 +52,7 @@ rule all:
 
 
 include: RULES / "common.smk"
+include: RULES / "prg.smk"
 include: RULES / "mykrobe.smk"
 include: RULES / "concordance.smk"
 include: RULES / "drprg.smk"
