@@ -8,4 +8,4 @@ dependencies:
   - python>=3.8
   - intervaltree=3.1.0
   - cyvcf2=0.30.8
-  - bcftools=1.12
+  - bcftools=1.10
