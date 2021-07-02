@@ -1,11 +1,14 @@
 import sys
+from pathlib import Path
 
 sys.stderr = open(snakemake.log[0], "w")
 from typing import TextIO, Set, Dict
+from tempfile import TemporaryDirectory
 
 from loguru import logger
 from intervaltree import IntervalTree
 from cyvcf2 import VCF, Writer
+import subprocess
 
 
 def extract_genes_from_panel(stream: TextIO) -> Set[str]:
@@ -83,24 +86,44 @@ for iv in ivtree:
     vcf_reader.add_to_header(f"##contig=<ID={iv.data},length={iv.end-iv.begin}>")
 logger.debug("Genes added to header")
 
-vcf_writer = Writer(snakemake.output.vcf, tmpl=vcf_reader)
+with TemporaryDirectory() as tmpdirname:
+    tmpvcf = str(Path(tmpdirname) / "tmp.vcf")
+    vcf_writer = Writer(tmpvcf, tmpl=vcf_reader)
 
-for record in vcf_reader:
-    iv = ivtree[record.start]
-    if len(iv) > 1:
-        raise IndexError(
-            f"VCF record at POS {record.POS} overlaps with more than 1 gene: {iv}"
-        )
-    if len(iv) == 0:
-        continue
-    iv = list(iv)[0]
-    chrom = iv.data
-    norm_pos = record.start - iv.begin
-    record.set_pos(norm_pos)
-    record.CHROM = chrom
-    vcf_writer.write_record(record)
+    for record in vcf_reader:
+        ivs = ivtree[record.start]
+        if len(ivs) > 1:
+            logger.warning(
+                f"VCF record at POS {record.POS} overlaps with more than 1 gene: {ivs}. "
+                f"Duplicating record - one for each gene..."
+            )
+        original_record_start = record.start
+        for iv in ivs:
+            chrom = iv.data
+            norm_pos = original_record_start - iv.begin
+            record.set_pos(norm_pos)
+            record.CHROM = chrom
+            vcf_writer.write_record(record)
 
-vcf_writer.close()
+    vcf_writer.close()
+    outfmt = "b" if snakemake.output.vcf.split(".")[-1] == "bcf" else "v"
+    subprocess.run(
+        [
+            "bcftools",
+            "sort",
+            "-T",
+            tmpdirname,
+            "-o",
+            snakemake.output.vcf,
+            "-O",
+            outfmt,
+            tmpvcf,
+        ],
+        check=True,
+        stderr=sys.stderr,
+    )
+
+
 vcf_reader.close()
 
 logger.success("Done!")
