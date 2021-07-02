@@ -13,17 +13,17 @@ TRANSLATE = str.maketrans("ATGC", "TACG")
 
 
 def revcomp(s: str) -> str:
-    return s.upper().translate(TRANSLATE)
+    return s.upper().translate(TRANSLATE)[::-1]
 
 
 #############
 # MAIN
 ############
-fasta_ref = snakemake.input.references
+fasta_ref = str(snakemake.input.references)
 faidx = FastaFile(fasta_ref)
 outdir = Path(snakemake.output[0]).absolute()
 outdir.mkdir(exist_ok=True)
-vcf_fname = snakemake.input.vcf
+vcf_fname = str(snakemake.input.vcf)
 vcf_rdr = VCF(vcf_fname)
 samples_fname = snakemake.input.get("samples")
 samples = set(vcf_rdr.samples)
