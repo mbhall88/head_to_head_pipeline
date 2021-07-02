@@ -43,7 +43,7 @@ def extract_intervals_for_genes_from_gff(
             continue
 
         start = (int(fields[3]) - 1) - padding  # GFF start is 1-based inclusive
-        end = (int(fields[4]) - 1) + padding  # GFF end is 1-based exclusive
+        end = int(fields[4]) + padding  # GFF end is 1-based inclusive
         intervals.append((start, end, name))
 
     return IntervalTree.from_tuples(intervals)

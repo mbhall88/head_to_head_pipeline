@@ -63,7 +63,7 @@ with open(snakemake.input.annotation) as istream, open(
         strand = fields[6]
         chrom = fields[0]
         start = (int(fields[3]) - 1) - padding  # GFF start is 1-based inclusive
-        end = (int(fields[4]) - 1) + padding  # GFF end is 1-based exclusive
+        end = int(fields[4]) + padding  # GFF end is 1-based inclusive
         seq = faidx.fetch(reference=chrom, start=start, end=end)
         header = f">{name} strand={strand} chrom={chrom} start={start} end={end}"
         print(f"{header}\n{seq}", file=ostream)
