@@ -69,7 +69,7 @@ with open(snakemake.input.panel) as istream:
 logger.success(f"Extracted {len(genes)} genes from the panel")
 
 logger.info("Extracting intervals for genes from GFF...")
-with open(snakemake.annotation) as istream:
+with open(snakemake.input.annotation) as istream:
     ivtree = extract_intervals_for_genes_from_gff(genes, istream, padding)
 logger.success(f"Intervals extracted for {len(ivtree)} genes")
 

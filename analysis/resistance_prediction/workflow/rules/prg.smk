@@ -3,7 +3,7 @@ rule extract_panel_genes_from_vcf:
         annotation=RESOURCES / "h37rv.gff3",
         vcf=BuildPrg("vcfs/filtered/sparse.filtered.vcf.gz"),
         index=BuildPrg("vcfs/filtered/sparse.filtered.vcf.gz.csi"),
-        oanel=RESULTS / "drprg/panel/panel.tsv",
+        panel=RESULTS / "drprg/panel/panel.tsv",
     output:
         vcf=RESULTS / "drprg/popn_prg/popn.bcf",
     log:
