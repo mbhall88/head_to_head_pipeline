@@ -30,6 +30,7 @@ for idx, row in samplesheet.iterrows():
         OUTPUT.add(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
 
 OUTPUT.add(RESULTS / "drprg/popn_prg/popn.bcf")
+OUTPUT.add(RESULTS / "drprg/popn_prg/genes.fa")
 
 
 subworkflow QC:

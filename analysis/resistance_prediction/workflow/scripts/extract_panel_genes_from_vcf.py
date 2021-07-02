@@ -107,6 +107,8 @@ with TemporaryDirectory() as tmpdirname:
 
     vcf_writer.close()
     outfmt = "b" if snakemake.output.vcf.split(".")[-1] == "bcf" else "v"
+
+    logger.info("Sorting VCF...")
     subprocess.run(
         [
             "bcftools",
