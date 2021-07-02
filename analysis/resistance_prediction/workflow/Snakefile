@@ -29,8 +29,7 @@ for idx, row in samplesheet.iterrows():
     for tool, tech in product(TOOLS, TECHS):
         OUTPUT.add(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
 
-OUTPUT.add(RESULTS / "drprg/popn_prg/popn.bcf")
-OUTPUT.add(RESULTS / "drprg/popn_prg/genes.fa")
+OUTPUT.add(RESULTS / "drprg/popn_prg/pre_msas")
 
 
 subworkflow QC:
