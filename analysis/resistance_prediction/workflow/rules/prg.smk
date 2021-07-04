@@ -59,3 +59,25 @@ rule create_popn_pre_msas:
         str(ENVS / "create_popn_pre_msas.yaml")
     script:
         str(SCRIPTS / "create_popn_pre_msas.py")
+
+
+rule create_popn_msas:
+    input:
+        pre_msas=rules.create_popn_pre_msas.output[0],
+    output:
+        directory(RESULTS / "drprg/popn_prg/msas"),
+    log:
+        LOGS / "create_popn_msas.log",
+    container:
+        CONTAINERS["mafft"]
+    threads: 16
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * int(8 * GB),
+    shell:
+        """
+        for f in {input.pre_msas}/*.fa
+        do
+            outname={output[0]}/$(basename "$f")
+            mafft --auto --thread {threads} "$f" > "$outname"
+        done 2> {log}
+        """

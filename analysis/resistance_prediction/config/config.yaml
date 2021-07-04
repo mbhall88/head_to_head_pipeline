@@ -17,3 +17,4 @@ containers:
   mykrobe: "docker://quay.io/biocontainers/mykrobe:0.9.0--py38h8e3bb3f_3"
   conda:   "docker://continuumio/miniconda3:4.9.2"
   drprg:   "docker://quay.io/mbhall88/drprg:05fe0ba"
+  mafft:   "docker://quay.io/biocontainers/mafft:7.475--h516909a_0"
