@@ -128,4 +128,4 @@ rule index_popn_prg:
         options="-v -k 15 -w 14",
     threads: 4
     wrapper:
-        "0.75.0-17-g80baaba/bio/pandora/index"
+        "https://github.com/mbhall88/snakemake-wrappers/raw/e3428c3/bio/pandora/index"
