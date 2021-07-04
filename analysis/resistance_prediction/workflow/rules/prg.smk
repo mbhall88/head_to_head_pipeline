@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 rule extract_panel_genes_from_vcf:
     input:
         annotation=RESOURCES / "h37rv.gff3",
@@ -70,9 +73,9 @@ rule create_popn_msas:
         LOGS / "create_popn_msas.log",
     container:
         CONTAINERS["mafft"]
-    threads: 16
+    threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * int(8 * GB),
+        mem_mb=lambda wildcards, attempt: attempt * int(4 * GB),
     shell:
         """
         mkdir -p {output[0]} 2> {log}
@@ -81,4 +84,31 @@ rule create_popn_msas:
             outname={output[0]}/$(basename "$f")
             mafft --auto --thread {threads} "$f" > "$outname"
         done 2>> {log}
+        """
+
+
+rule make_popn_prgs:
+    input:
+        msas=rules.create_popn_msas.output[0],
+    output:
+        prg=RESULTS / "drprg/popn_prg/prgs/dr.prg",
+        update_ds=RESULTS / "drprg/popn_prg/prgs/dr.update_DS",
+        prgs=RESULTS / "drprg/popn_prg/prgs/dr_prgs",
+    log:
+        LOGS / "make_popn_prgs.log",
+    shadow:
+        "shallow"
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * int(2 * GB),
+    container:
+        CONTAINERS["drprg"]
+    params:
+        match_len=config.get("match_len", 7),
+        prefix=lambda wildcards, output: Path(output.prg).with_suffix(""),
+    shell:
+        """
+        make_prg from_msa -t {threads} --min_match_len {params.match_len} -v \
+          -o {params.prefix} -i {input.msas} 2>&1 {log}
+        mv {output.prg}.fa} {output.prg} 2>> {log}
         """
