@@ -75,9 +75,10 @@ rule create_popn_msas:
         mem_mb=lambda wildcards, attempt: attempt * int(8 * GB),
     shell:
         """
+        mkdir -p {output[0]} 2> {log}
         for f in {input.pre_msas}/*.fa
         do
             outname={output[0]}/$(basename "$f")
             mafft --auto --thread {threads} "$f" > "$outname"
-        done 2> {log}
+        done 2>> {log}
         """
