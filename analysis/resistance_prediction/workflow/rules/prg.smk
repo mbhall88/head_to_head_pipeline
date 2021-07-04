@@ -93,7 +93,7 @@ rule make_popn_prgs:
     output:
         prg=RESULTS / "drprg/popn_prg/prgs/dr.prg",
         update_ds=RESULTS / "drprg/popn_prg/prgs/dr.update_DS",
-        prgs=RESULTS / "drprg/popn_prg/prgs/dr_prgs",
+        prgs=directory(RESULTS / "drprg/popn_prg/prgs/dr_prgs"),
     log:
         LOGS / "make_popn_prgs.log",
     shadow:
@@ -108,7 +108,7 @@ rule make_popn_prgs:
         prefix=lambda wildcards, output: Path(output.prg).with_suffix(""),
     shell:
         """
-        make_prg from_msa -t {threads} --min_match_len {params.match_len} -v \
-          -o {params.prefix} -i {input.msas} 2>&1 {log}
-        mv {output.prg}.fa} {output.prg} 2>> {log}
+        make_prg from_msa -t {threads} --min_match_len {params.match_len} \
+          -o {params.prefix} -i {input.msas} > {log} 2>&1 
+        mv {output.prg}.fa {output.prg} 2>> {log}
         """
