@@ -112,3 +112,20 @@ rule make_popn_prgs:
           -o {params.prefix} -i {input.msas} > {log} 2>&1 
         mv {output.prg}.fa {output.prg} 2>> {log}
         """
+
+
+rule index_popn_prg:
+    input:
+        rules.make_popn_prgs.output.prg,
+    output:
+        index=RESULTS / "drprg/popn_prg/prgs/dr.prg.k15.w14.idx",
+        kmer_prgs=directory(
+            RESULTS / "drprg/popn_prg/prgs/kmer_prgs",
+        ),
+    log:
+        LOGS / "index_popn_prg.log",
+    params:
+        options="-v -k 15 -w 14",
+    threads: 4
+    wrapper:
+        "0.75.0-17-g80baaba/bio/pandora/index"
