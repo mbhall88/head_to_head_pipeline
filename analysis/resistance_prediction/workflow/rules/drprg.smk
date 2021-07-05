@@ -1,3 +1,5 @@
+from pathlib import Path
+
 rule download_panel:
     output:
         panel=RESULTS / "drprg/panel/panel.original.tsv",
@@ -70,6 +72,7 @@ rule drprg_build:
         panel=rules.add_known_non_resistance_vars_to_panel.output.panel,
         ref=RESOURCES / "h37rv.fa",
         annotation=RESOURCES / "h37rv.gff3",
+        prg_index=rules.index_popn_prg.output.index,
     output:
         outdir=directory(RESULTS / "drprg/index"),
         prg=RESULTS / "drprg/index/dr.prg",
@@ -81,18 +84,18 @@ rule drprg_build:
     container:
         CONTAINERS["drprg"]
     params:
-        " ".join(
+        options=" ".join(
             [
                 "-v",
-                "--force",
                 f"--match-len {config['match_len']}",
                 f"--padding {config['padding']}",
             ],
         ),
+        prebuilt_dir=lambda wildcards, input: Path(input.prg_index).parent
     shell:
         """
-        drprg build {params} -a {input.annotation} -o {output.outdir} -i {input.panel} \
-          -f {input.ref} -t {threads} 2> {log}
+        drprg build {params.options} -a {input.annotation} -o {output.outdir} -i {input.panel} \
+          -f {input.ref} -t {threads}  -d {params.prebuilt_dir} 2> {log}
         """
 
 
@@ -130,8 +133,8 @@ rule drprg_predict:
         opts=" ".join(
             [
                 "--verbose",
-                "--force",
                 "-s {sample}",
+                "-u"
             ]
         ),
         filters=lambda wildcards: drprg_filter_args(wildcards),
