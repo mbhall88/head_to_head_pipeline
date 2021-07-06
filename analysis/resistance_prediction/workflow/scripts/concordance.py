@@ -34,7 +34,7 @@ class Classifier(Enum):
                 if y_pred is Prediction.Susceptible
                 else Classifier.FalsePositive
             )
-        elif y_true is Prediction.Resistant:
+        elif y_true in (Prediction.Resistant, Prediction.MinorResistance):
             return (
                 Classifier.TruePositive
                 if y_pred in (Prediction.Resistant, Prediction.MinorResistance)
@@ -42,7 +42,7 @@ class Classifier(Enum):
             )
         else:
             raise NotImplementedError(
-                "Don't know how to classify minor resistant calls yet"
+                f"Don't know how to classify {y_true} calls yet"
             )
 
 
