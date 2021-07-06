@@ -9,7 +9,7 @@ rule concordance:
     conda:
         str(ENVS / "concordance.yaml")
     params:
-        opts="-r",
+        opts="",
         script=SCRIPTS / "concordance.py",
     shell:
         """

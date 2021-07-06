@@ -37,7 +37,7 @@ class Classifier(Enum):
         elif y_true is Prediction.Resistant:
             return (
                 Classifier.TruePositive
-                if y_pred is Prediction.Resistant
+                if y_pred in (Prediction.Resistant, Prediction.MinorResistance)
                 else Classifier.FalseNegative
             )
         else:
