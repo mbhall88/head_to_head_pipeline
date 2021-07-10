@@ -13,6 +13,7 @@ samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
 RESULTS = Path("results").resolve()
 RESOURCES = Path("resources").resolve()
 SCRIPTS = Path("workflow/scripts").resolve()
+NOTEBOOKS = Path("workflow/notebooks").resolve()
 ENVS = Path("workflow/envs").resolve()
 RULES = Path("workflow/rules").resolve()
 LOGS = Path("logs/rules").resolve()
@@ -30,6 +31,7 @@ for idx, row in samplesheet.iterrows():
         OUTPUT.add(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
 
 OUTPUT.add(RESULTS / "drprg/popn_prg/prgs/dr.prg.k15.w14.idx")
+OUTPUT.add(RESULTS / "figures/analysis.processed.ipynb")
 
 
 subworkflow QC:
