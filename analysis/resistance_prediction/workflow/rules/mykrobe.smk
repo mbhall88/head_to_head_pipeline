@@ -17,9 +17,9 @@ rule mykrobe:
         species="tb",
         flags="--force -A --debug --format json",
         tech_flag=(
-            lambda wildcards: "--expected_error_rate 0.08"
+            lambda wildcards: "-e 0.08 --ploidy haploid"
             if wildcards.tech == "nanopore"
-            else ""
+            else "-e 0.001"
         ),
     threads: 4
     shell:
