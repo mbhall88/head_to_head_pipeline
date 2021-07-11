@@ -12,3 +12,4 @@ dependencies:
   - python>=3.8
   - scipy=1.4.1
   - upsetplot=0.5.0
+  - tabulate
