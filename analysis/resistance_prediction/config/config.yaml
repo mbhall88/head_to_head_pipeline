@@ -1,5 +1,5 @@
 samplesheet:       "../../docs/samplesheet.csv"
-phenosheet:        "../../docs/phenosheet.csv"
+phenosheet:        "../../docs/phenotypes.csv"
 mykrobe_panel_url: "https://ndownloader.figshare.com/files/14120198"
 match_len:         5  # make_prg minimum match length used in drprg build
 padding:           100  # base padding to add to genes in drprg build
