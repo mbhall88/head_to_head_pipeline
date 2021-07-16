@@ -1,9 +1,10 @@
 name: distance
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
+  - python=3.8
   - pyfastx=0.8.2
   - tqdm=4.59.0
   - numpy=1.18.1
