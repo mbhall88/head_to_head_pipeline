@@ -4,5 +4,5 @@ channels:
   - defaults
 dependencies:
   - click=7.1.2
-  - pandas=1.0.3
+  - pandas=1
   - numpy=1.18.1

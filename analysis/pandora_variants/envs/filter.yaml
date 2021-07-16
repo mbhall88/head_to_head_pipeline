@@ -1,9 +1,10 @@
 name: filter
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
+  - python=3.8
   - click=7.1.2
   - bioconda::cyvcf2=0.30.4
   - numpy>=1.18.1

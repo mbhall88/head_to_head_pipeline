@@ -1,2 +1,2 @@
 __default__:
-  - "-E '~/Scripts/singularity_preexec_test/singularity_test.sh -t 20s /'"
+  - "-E '${SOFTWAREDIR}/singularity_preexec_test/singularity_test.sh -t 20s /'"
