@@ -3,5 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - python=3.8
   - pandas=1.0.3
   - bokeh=2.2.3

@@ -97,8 +97,6 @@ rule dotplot:
     threads: 1
     resources:
         mem_mb=int(2 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["dotplot"]
     params:
@@ -193,8 +191,6 @@ rule plot_concordance:
         colour_by="caller",
         index="sample",
         log_scale=False,
-    container:
-        containers["conda"]
     conda:
         envs["plot_concordance"]
     log:
@@ -243,8 +239,6 @@ rule clustering:
             subcategory="Confusion Matrix",
             caption=f"{report_dir}/confusion_matrix.rst",
         ),
-    container:
-        containers["conda"]
     conda:
         envs["clustering"]
     params:
@@ -282,8 +276,6 @@ rule mixed_simulations:
     threads: 1
     resources:
         mem_mb=int(2 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["mixed_simulations"]
     params:
