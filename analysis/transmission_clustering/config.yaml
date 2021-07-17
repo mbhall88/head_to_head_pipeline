@@ -40,3 +40,9 @@ compare_clustering_thresholds:
   2:  1
   5:  3
   12: 7
+
+map_clustering_thresholds:
+  0: 16
+  2: 18
+  5: 18
+  12: 27

@@ -222,7 +222,7 @@ def infer_threshold(wildcards) -> str:
     elif wildcards.caller == "pandora_compare":
         opt += f",{config['compare_clustering_thresholds'][int(wildcards.threshold)]}"
     else:
-        opt += f" -A {config['adaptive_threshold']}"
+        opt += f",{config['map_clustering_thresholds'][int(wildcards.threshold)]}"
     return opt
 
 
