@@ -85,8 +85,6 @@ rule build_decontamination_db:
     params:
         script=scripts["download_decontam"],
         outdir=lambda wildcards, output: Path(output.fasta).parent,
-    container:
-        containers["conda"]
     conda:
         envs["decontam_db"]
     log:
@@ -109,8 +107,6 @@ rule index_decontam_db:
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: attempt * int(32 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["aln_tools"]
     params:
@@ -143,8 +139,6 @@ rule map_illumina_to_decontam_db:
         mem_mb=lambda wildcards, attempt: attempt * int(12 * GB),
     params:
         map_extras="-M",
-    container:
-        containers["conda"]
     conda:
         envs["aln_tools"]
     log:
@@ -172,8 +166,6 @@ rule map_nanopore_to_decontam_db:
     params:
         map_extras="-aL2",
         preset=MM2_PRESET,
-    container:
-        containers["conda"]
     conda:
         envs["aln_tools"]
     log:
@@ -200,9 +192,7 @@ rule filter_contamination:
         ),
     threads: 1
     resources:
-        mem_mb=GB,
-    container:
-        containers["conda"]
+        mem_mb=lambda wildcards, attempt: attempt * GB,
     conda:
         envs["filter"]
     params:
@@ -242,7 +232,7 @@ rule extract_decontaminated_illumina_reads:
         ),
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(25 * GB) * attempt,
     log:
         rule_log_dir / "extract_decontaminated_illumina_reads" / "{site}" / "{sample}.log",
     shell:
@@ -266,7 +256,7 @@ rule extract_decontaminated_nanopore_reads:
         ),
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
     log:
         rule_log_dir / "extract_decontaminated_nanopore_reads" / "{site}" / "{sample}.log",
     shell:
@@ -284,8 +274,6 @@ rule generate_krona_input:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["generate_krona_input"]
     params:
@@ -331,8 +319,6 @@ rule assign_lineages:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["conda"]
     conda:
         envs["assign_lineages"]
     params:
@@ -372,8 +358,6 @@ rule composition_report:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["conda"]
     conda:
         envs["composition_report"]
     params:
@@ -493,8 +477,6 @@ rule coverage_report:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["conda"]
     conda:
         envs["coverage_report"]
     params:

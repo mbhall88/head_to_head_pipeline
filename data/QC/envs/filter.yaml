@@ -1,9 +1,10 @@
 name: filter
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
+  - python=3.8
   - pandas=1.0.3
   - click=7.1.2
   - bioconda::pysam=0.16.0.1
