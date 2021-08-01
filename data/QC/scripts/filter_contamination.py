@@ -135,6 +135,7 @@ def main(
             all_read_ids.add(read_id)
             if record.is_secondary and ignore_secondary:
                 logging.debug(f"{read_id} has secondary alignment. Skipping...")
+                continue
 
             classification = classifier.classify(record)
             if classification is Classification.Unmaped:
