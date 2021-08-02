@@ -10,3 +10,7 @@ dependencies:
   - snakefmt
   - pandas=1.2
   - ripgrep=12.1
+  - jupyter
+  - seaborn=0.11
+  - matplotlib-base=3
+  - upsetplot=0.5

@@ -38,6 +38,8 @@ rule analyse_results:
         pheno_coverage_plot=RESULTS / "figures/phenotype_coverage.png",
     params:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
+        unknown_is_resistant=False,
+        minor_is_susceptible=False
     conda:
         str(ENVS / "analyse_results.yaml")
     log:
