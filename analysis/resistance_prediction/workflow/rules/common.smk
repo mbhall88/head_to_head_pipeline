@@ -1,3 +1,6 @@
+from itertools import product
+from typing import List
+
 from snakemake.io import Wildcards
 
 
@@ -40,3 +43,14 @@ def drprg_filter_args(wildcards: Wildcards) -> str:
             args += f"{flag} {val} "
 
     return args
+
+
+def all_concordance_files(wildcards: Wildcards) -> List[str]:
+    files = []
+    for site, sample in zip(samplesheet["site"], samplesheet["sample"]):
+        for tech, tool in product(TECHS, TOOLS):
+            files.append(
+                str(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
+            )
+
+    return files

@@ -26,12 +26,7 @@ rule analyse_results:
     input:
         coverage=QC("report/coverage.csv"),
         phenosheet=config["phenosheet"],
-        concordance=[
-            RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv"
-            for site, sample, tool, tech in zip(
-                samplesheet["site"], samplesheet["sample"], TOOLS, TECHS
-            )
-        ],
+        concordance=all_concordance_files,
     output:
         dst_data=RESULTS / "figures/available_dst.png",
         pheno_concordance_plot=RESULTS / "figures/phenotype_concordance.png",
