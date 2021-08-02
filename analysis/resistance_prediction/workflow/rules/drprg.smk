@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 rule download_panel:
     output:
         panel=RESULTS / "drprg/panel/panel.original.tsv",
@@ -15,27 +16,9 @@ rule download_panel:
         "wget -O {output.panel} {params.url} 2> {log}"
 
 
-rule filter_panel:
-    input:
-        panel=rules.download_panel.output.panel,
-    output:
-        panel=RESULTS / "drprg/panel/panel.filtered.tsv",
-    log:
-        LOGS / "filter_panel.log",
-    resources:
-        mem_mb=int(0.5 * GB),
-    params:
-        exclude=["pncA", "katG"],
-        frameshift_lengths=[1, 2],
-    container:
-        CONTAINERS["conda"]
-    script:
-        str(SCRIPTS / "filter_panel.py")
-
-
 rule add_drugs_to_panel:
     input:
-        panel=rules.filter_panel.output.panel,
+        panel=rules.download_panel.output.panel,
     output:
         panel=RESULTS / "drprg/panel/panel.resistant.tsv",
     resources:
@@ -67,6 +50,24 @@ rule add_known_non_resistance_vars_to_panel:
         "awk 1 {input.panel} {input.known} > {output.panel} 2> {log}"
 
 
+rule filter_panel:
+    input:
+        panel=rules.download_panel.output.panel,
+    output:
+        panel=RESULTS / "drprg/panel/panel.filtered.tsv",
+    log:
+        LOGS / "filter_panel.log",
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        exclude=["pncA", "katG"],
+        frameshift_lengths=[1, 2],
+    container:
+        CONTAINERS["conda"]
+    script:
+        str(SCRIPTS / "filter_panel.py")
+
+
 rule drprg_build:
     input:
         panel=rules.add_known_non_resistance_vars_to_panel.output.panel,
@@ -91,7 +92,7 @@ rule drprg_build:
                 f"--padding {config['padding']}",
             ],
         ),
-        prebuilt_dir=lambda wildcards, input: Path(input.prg_index).parent
+        prebuilt_dir=lambda wildcards, input: Path(input.prg_index).parent,
     shell:
         """
         drprg build {params.options} -a {input.annotation} -o {output.outdir} -i {input.panel} \
@@ -130,13 +131,7 @@ rule drprg_predict:
     container:
         CONTAINERS["drprg"]
     params:
-        opts=" ".join(
-            [
-                "--verbose",
-                "-s {sample}",
-                "-u"
-            ]
-        ),
+        opts=" ".join(["--verbose", "-s {sample}", "-u"]),
         filters=lambda wildcards: drprg_filter_args(wildcards),
         tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
     shell:
