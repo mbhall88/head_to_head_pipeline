@@ -27,8 +27,10 @@ rule analyse_results:
         coverage=QC("report/coverage.csv"),
         phenosheet=config["phenosheet"],
         concordance=[
-            RESULTS / f"concordance/mykrobe/nanopore/{site}/{sample}.mykrobe.csv"
-            for site, sample in zip(samplesheet["site"], samplesheet["sample"])
+            RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv"
+            for site, sample, tool, tech in zip(
+                samplesheet["site"], samplesheet["sample"], TOOLS, TECHS
+            )
         ],
     output:
         dst_data=RESULTS / "figures/available_dst.png",
@@ -39,7 +41,7 @@ rule analyse_results:
     params:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
         unknown_is_resistant=False,
-        minor_is_susceptible=False
+        minor_is_susceptible=False,
     conda:
         str(ENVS / "analyse_results.yaml")
     log:
