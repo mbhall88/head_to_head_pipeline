@@ -97,7 +97,7 @@ with TemporaryDirectory() as tmpdirname:
                 ref_header = f">{chrom}_reference"
                 seq = refseq if is_fwd_strand else revcomp(refseq)
                 fh = open(outdir / f"{chrom}.fa", "w")
-                files[fh] = fh
+                files[chrom] = fh
                 print(f"{ref_header}\n{seq}", file=fh)
             else:
                 fh = files[chrom]
