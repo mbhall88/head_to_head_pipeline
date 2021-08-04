@@ -30,6 +30,7 @@ rule analyse_results:
     output:
         dst_data=RESULTS / "figures/available_dst.png",
         pheno_concordance_plot=RESULTS / "figures/phenotype_concordance.png",
+        geno_concordance_plot=RESULTS / "figures/illumina_concordance.png",
         pheno_concordance_csv=RESULTS / "figures/phenotype_concordance.csv",
         illumina_concordance_csv=RESULTS / "figures/illumina_concordance.csv",
         pheno_coverage_plot=RESULTS / "figures/phenotype_coverage.png",
