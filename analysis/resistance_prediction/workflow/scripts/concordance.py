@@ -29,10 +29,14 @@ class Classification(Enum):
 
 class Classifier:
     def __init__(
-        self, minor_is_susceptible: bool = False, unknown_is_resistant: bool = False
+        self,
+        minor_is_susceptible: bool = False,
+        unknown_is_resistant: bool = False,
+        failed_is_resistant: bool = False,
     ):
         self.minor_is_susceptible = minor_is_susceptible
         self.unknown_is_resistant = unknown_is_resistant
+        self.failed_is_resistant = failed_is_resistant
         self.susceptible = {Prediction.Susceptible}
         self.resistant = {Prediction.Resistant}
         if self.minor_is_susceptible:
@@ -44,6 +48,11 @@ class Classifier:
             self.resistant.add(Prediction.Unknown)
         else:
             self.susceptible.add(Prediction.Unknown)
+
+        if self.failed_is_resistant:
+            self.resistant.add(Prediction.Failed)
+        else:
+            self.susceptible.add(Prediction.Failed)
 
     def from_predictions(
         self, y_true: Prediction, y_pred: Prediction
@@ -128,6 +137,12 @@ def extract_calls(data: dict) -> Dict[str, Prediction]:
     help="Unknown calls are considered resistant. By default they're considered susceptible",
     is_flag=True,
 )
+@click.option(
+    "-F",
+    "--failed-is-resistant",
+    help="Failed calls are considered resistant. By default they're considered susceptible",
+    is_flag=True,
+)
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
 def main(
     truth_istream: TextIO,
@@ -157,6 +172,7 @@ def main(
     classifier = Classifier(
         unknown_is_resistant=unknown_is_resistant,
         minor_is_susceptible=minor_is_susceptible,
+        failed_is_resistant=failed_is_resistant,
     )
     for drug, y_true in true_calls.items():
         y_pred = test_calls[drug]

@@ -131,7 +131,7 @@ rule drprg_predict:
     container:
         CONTAINERS["drprg"]
     params:
-        opts=" ".join(["--verbose", "-s {sample}", "-u"]),
+        opts=" ".join(["--verbose", "-s {sample}", "-u", "--failed"]),
         filters=lambda wildcards: drprg_filter_args(wildcards),
         tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
     shell:
