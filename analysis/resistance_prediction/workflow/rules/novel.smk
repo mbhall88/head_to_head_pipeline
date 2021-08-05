@@ -26,3 +26,20 @@ rule bcftools_index:
         extra="",
     wrapper:
         "0.77.0/bio/bcftools/index"
+
+
+rule subtract_panel_variants:
+    input:
+        panel=rules.drprg_build.output.vcf,
+        query_idx=rules.bcftools_index.output[0],
+        query=rules.extract_panel_genes_from_compass_vcf.output.vcf,
+    output:
+        vcf=RESULTS / "novel/filtered_vcfs/{sample}.novel.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "subtract_panel_variants/{sample}.log",
+    conda:
+        str(ENVS / "subtract_variants.yaml")
+    script:
+        str(SCRIPTS / "subtract_variants.py")

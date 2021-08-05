@@ -77,6 +77,8 @@ rule drprg_build:
     output:
         outdir=directory(RESULTS / "drprg/index"),
         prg=RESULTS / "drprg/index/dr.prg",
+        vcf=RESULTS / "drprg/index/panel.bcf",
+        vcf_idx=RESULTS / "drprg/index/panel.bcf.csi",
     log:
         LOGS / "drprg_build.log",
     resources:
