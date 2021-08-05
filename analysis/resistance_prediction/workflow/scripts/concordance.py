@@ -151,6 +151,7 @@ def main(
     verbose: bool,
     minor_is_susceptible: bool,
     unknown_is_resistant: bool,
+    failed_is_resistant: bool,
 ):
     """Concordance of drug resistant predictions"""
     log_level = logging.DEBUG if verbose else logging.INFO
