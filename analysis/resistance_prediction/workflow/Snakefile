@@ -19,7 +19,7 @@ RULES = Path("workflow/rules").resolve()
 LOGS = Path("logs/rules").resolve()
 CONTAINERS = config["containers"]
 H37Rv = Path("../../../data/H37Rv_PRG/resources/h37rv.fa").resolve()
-COMPASS_DIR = Path("../../../analysis/baseline_variants/illumina/gvcfs").resolve()
+COMPASS_DIR = Path("../baseline_variants/illumina/gvcfs").resolve()
 
 # generate required output files
 TECHS = ["illumina", "nanopore"]
