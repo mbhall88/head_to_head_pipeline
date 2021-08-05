@@ -38,6 +38,7 @@ rule analyse_results:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
         unknown_is_resistant=False,
         minor_is_susceptible=False,
+        failed_is_resistant=False,
     conda:
         str(ENVS / "analyse_results.yaml")
     log:
