@@ -15,3 +15,14 @@ rule extract_panel_genes_from_compass_vcf:
         str(ENVS / "extract_panel_genes_from_vcf.yaml")
     script:
         str(SCRIPTS / "extract_panel_genes_from_vcf.py")
+
+
+rule bcftools_index:
+    input:
+        rules.extract_panel_genes_from_compass_vcf.output.vcf,
+    output:
+        RESULTS / "novel/vcfs/{sample}.res_genes.bcf.csi",
+    params:
+        extra="",
+    wrapper:
+        "0.77.0/bio/bcftools/index"
