@@ -19,6 +19,7 @@ RULES = Path("workflow/rules").resolve()
 LOGS = Path("logs/rules").resolve()
 CONTAINERS = config["containers"]
 H37Rv = Path("../../../data/H37Rv_PRG/resources/h37rv.fa").resolve()
+COMPASS_DIR = Path("../../../analysis/baseline_variants/illumina/gvcfs").resolve()
 
 # generate required output files
 TECHS = ["illumina", "nanopore"]
@@ -27,6 +28,7 @@ OUTPUT = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
+    OUTPUT.add(RESULTS / f"novel/vcfs/{sample}.res_genes.bcf")
     for tool, tech in product(TOOLS, TECHS):
         OUTPUT.add(RESULTS / f"concordance/{tool}/{tech}/{site}/{sample}.{tool}.csv")
 
@@ -58,3 +60,4 @@ include: RULES / "prg.smk"
 include: RULES / "mykrobe.smk"
 include: RULES / "concordance.smk"
 include: RULES / "drprg.smk"
+include: RULES / "novel.smk"

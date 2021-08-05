@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 sys.stderr = open(snakemake.log[0], "w")
-from typing import TextIO, Set, Dict
+from typing import TextIO, Set, Dict, NamedTuple, Optional, List
 from tempfile import TemporaryDirectory
 
 from loguru import logger
@@ -10,6 +10,57 @@ from intervaltree import IntervalTree
 from cyvcf2 import VCF, Writer
 import subprocess
 
+class Genotype(NamedTuple):
+    allele1: int
+    allele2: int
+
+    def is_null(self) -> bool:
+        """Is the genotype null. i.e. ./."""
+        return self.allele1 == -1 and self.allele2 == -1
+
+    def is_hom(self) -> bool:
+        """Is the genotype homozygous"""
+        if self.is_null():
+            return False
+        if self.allele1 == -1 or self.allele2 == -1:
+            return True
+        return self.allele1 == self.allele2
+
+    def is_het(self) -> bool:
+        """Is the genotype heterozyhous"""
+        return not self.is_null() and not self.is_hom()
+
+    def is_hom_ref(self) -> bool:
+        """Is genotype homozygous reference?"""
+        return self.is_hom() and (self.allele1 == 0 or self.allele2 == 0)
+
+    def is_hom_alt(self) -> bool:
+        """Is genotype homozygous alternate?"""
+        return self.is_hom() and (self.allele1 > 0 or self.allele2 > 0)
+
+    def alt_index(self) -> Optional[int]:
+        """If the genotype is homozygous alternate, returns the 0-based index of the
+        alt allele in the alternate allele array.
+        """
+        if not self.is_hom_alt():
+            return None
+        return max(self.allele1, self.allele2) - 1
+
+    def allele_index(self) -> Optional[int]:
+        """The index of the called allele"""
+        if self.is_hom_ref() or self.is_null():
+            return 0
+        elif self.is_hom_alt():
+            return self.alt_index() + 1
+        else:
+            raise NotImplementedError(f"Het Genotype is unexpected: {self}")
+
+    @staticmethod
+    def from_arr(arr: List[int]) -> "Genotype":
+        alleles = [a for a in arr if type(a) is int]
+        if len(alleles) < 2:
+            alleles.append(-1)
+        return Genotype(*alleles)
 
 def extract_genes_from_panel(stream: TextIO) -> Set[str]:
     genes = set()
@@ -63,6 +114,8 @@ def attributes_dict_from_str(s: str) -> Dict[str, str]:
 # MAIN
 ##########################################################
 padding: int = snakemake.params.padding
+apply_filters: bool = snakemake.params.get("apply_filters", False)
+only_alt: bool = snakemake.params.get("only_alt", False)
 
 logger.info("Extracting gene names from panel...")
 with open(snakemake.input.panel) as istream:
@@ -91,6 +144,13 @@ with TemporaryDirectory() as tmpdirname:
     vcf_writer = Writer(tmpvcf, tmpl=vcf_reader)
 
     for record in vcf_reader:
+        if apply_filters and record.FILTER is not None:
+            continue
+
+        gt = Genotype.from_arr(record.genotypes[0])
+        if only_alt and not gt.is_hom_alt():
+            continue
+
         ivs = ivtree[record.start]
         if len(ivs) > 1:
             logger.warning(
