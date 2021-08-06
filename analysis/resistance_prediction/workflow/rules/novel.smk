@@ -66,12 +66,12 @@ rule assess_drprg_novel_calls:
         str(ENVS / "varifier.yaml")
     shell:
         """
-        (bcftools view -O v {input.vcf_to_eval} \
-        | varifier vcf_eval {params.options} \
+        rm -rf {params.outdir}
+        varifier vcf_eval {params.options} \
             --flank_length {params.flank_length} \
             --truth_vcf {input.truth_vcf} \
             {input.truth_asm} \
             {input.vcf_ref} \
-            - \
-            {params.outdir}) 2> {log}
+            {input.vcf_to_eval} \
+            {params.outdir} 2> {log}
         """

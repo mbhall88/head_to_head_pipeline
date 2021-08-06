@@ -103,6 +103,8 @@ for qrecord in query_vcf:
     else:
         output_vcf.write_record(qrecord)
 
+output_vcf.close()
+
 
 """Tests for overlaps_match
 q = "ATC"
