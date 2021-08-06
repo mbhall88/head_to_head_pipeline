@@ -34,7 +34,7 @@ rule subtract_panel_variants:
         query_idx=rules.bcftools_index.output[0],
         query=rules.extract_panel_genes_from_compass_vcf.output.vcf,
     output:
-        vcf=RESULTS / "novel/filtered_vcfs/{sample}.novel.bcf",
+        vcf=RESULTS / "novel/filtered_vcfs/{sample}.novel.vcf",
     resources:
         mem_mb=int(0.5 * GB),
     log:
@@ -43,3 +43,35 @@ rule subtract_panel_variants:
         str(ENVS / "subtract_variants.yaml")
     script:
         str(SCRIPTS / "subtract_variants.py")
+
+
+rule assess_drprg_novel_calls:
+    input:
+        truth_asm=rules.drprg_build.output.ref,
+        vcf_ref=rules.drprg_build.output.ref,
+        vcf_to_eval=rules.drprg_predict.output.vcf,
+        truth_vcf=rules.subtract_panel_variants.output.vcf,
+    output:
+        summary=RESULTS / "novel/assessment/{tech}/{site}/{sample}/summary_stats.json",
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+    params:
+        options="--force --filter_pass PASS,.",
+        flank_length=100,
+        outdir=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        LOGS / "assess_drprg_novel_calls/{tech}/{site}/{sample}.log",
+    conda:
+        str(ENVS / "varifier.yaml")
+    shell:
+        """
+        (bcftools view -O v {input.vcf_to_eval} \
+        | varifier vcf_eval {params.options} \
+            --flank_length {params.flank_length} \
+            --truth_vcf {input.truth_vcf} \
+            {input.truth_asm} \
+            {input.vcf_ref} \
+            - \
+            {params.outdir}) 2> {log}
+        """

@@ -79,6 +79,7 @@ rule drprg_build:
         prg=RESULTS / "drprg/index/dr.prg",
         vcf=RESULTS / "drprg/index/panel.bcf",
         vcf_idx=RESULTS / "drprg/index/panel.bcf.csi",
+        ref=RESULTS / "drprg/index/genes.fa",
     log:
         LOGS / "drprg_build.log",
     resources:
@@ -125,6 +126,7 @@ rule drprg_predict:
     output:
         outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
         report=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json",
+        vcf=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.bcf",
     log:
         LOGS / "drprg_predict/{tech}/{site}/{sample}.log",
     threads: 4
