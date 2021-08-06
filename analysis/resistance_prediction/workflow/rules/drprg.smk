@@ -143,3 +143,19 @@ rule drprg_predict:
         drprg predict {params.opts} {params.filters} {params.tech_flag} \
           -o {output.outdir} -i {input.reads} -x {input.index} -t {threads} 2> {log}
         """
+
+
+rule subtract_panel_variants_from_drprg:
+    input:
+        panel=rules.drprg_build.output.vcf,
+        query=rules.drprg_predict.output.vcf,
+    output:
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.vcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "subtract_panel_variants_from_drprg/{tech}/{site}/{sample}.log",
+    conda:
+        str(ENVS / "subtract_variants.yaml")
+    script:
+        str(SCRIPTS / "subtract_variants.py")

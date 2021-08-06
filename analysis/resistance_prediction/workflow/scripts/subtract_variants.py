@@ -76,6 +76,8 @@ query_vcf = VCF(snakemake.input.query)
 output_vcf = Writer(snakemake.output.vcf, tmpl=query_vcf)
 
 for qrecord in query_vcf:
+    if qrecord.FILTER is not None:
+        continue
     gt = Genotype.from_arr(qrecord.genotypes[0])
     alt_idx = gt.alt_index()
     if alt_idx is None:

@@ -28,7 +28,7 @@ rule bcftools_index:
         "0.77.0/bio/bcftools/index"
 
 
-rule subtract_panel_variants:
+rule subtract_panel_variants_from_compass:
     input:
         panel=rules.drprg_build.output.vcf,
         query_idx=rules.bcftools_index.output[0],
@@ -38,7 +38,7 @@ rule subtract_panel_variants:
     resources:
         mem_mb=int(0.5 * GB),
     log:
-        LOGS / "subtract_panel_variants/{sample}.log",
+        LOGS / "subtract_panel_variants_from_compass/{sample}.log",
     conda:
         str(ENVS / "subtract_variants.yaml")
     script:
@@ -49,8 +49,8 @@ rule assess_drprg_novel_calls:
     input:
         truth_asm=rules.drprg_build.output.ref,
         vcf_ref=rules.drprg_build.output.ref,
-        vcf_to_eval=rules.drprg_predict.output.vcf,
-        truth_vcf=rules.subtract_panel_variants.output.vcf,
+        vcf_to_eval=rules.subtract_panel_variants_from_drprg.output.vcf,
+        truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
     output:
         summary=RESULTS / "novel/assessment/{tech}/{site}/{sample}/summary_stats.json",
     threads: 4
