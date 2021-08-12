@@ -149,7 +149,7 @@ rule pileup_nanopore:
     container:
         containers["bcftools"]
     shell:
-        "bcftools mpileup {params.options} -f {input.ref} -o {output.pileup} --threads {threads} {output.pileup} 2> {log}"
+        "bcftools mpileup {params.options} -f {input.ref} -o {output.pileup} --threads {threads} {input.alignments} 2> {log}"
 
 
 rule call_snps_nanopore:
