@@ -165,7 +165,7 @@ rule index_novel_drprg_vcf:
     input:
         rules.subtract_panel_variants_from_drprg.output.vcf,
     output:
-        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
+        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf.csi",
     params:
         extra="-f",
     wrapper:

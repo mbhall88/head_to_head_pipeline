@@ -78,3 +78,18 @@ rule assess_drprg_novel_calls:
         str(ENVS / "subtract_variants.yaml")
     script:
         str(SCRIPTS / "classify_novel.py")
+
+
+rule index_drprg_ref_genes:
+    input:
+        rules.drprg_build.output.ref,
+    output:
+        RESULTS / "drprg/index/genes.fa.faidx",
+    log:
+        LOGS / "index_drprg_ref_genes.log",
+    resources:
+        mem_mb=int(0.3 * GB),
+    params:
+        "",
+    wrapper:
+        "0.77.0/bio/samtools/faidx"
