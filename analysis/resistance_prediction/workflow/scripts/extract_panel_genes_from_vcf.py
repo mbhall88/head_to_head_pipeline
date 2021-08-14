@@ -183,7 +183,7 @@ with TemporaryDirectory() as tmpdirname:
             record.set_pos(norm_pos)
             record.CHROM = chrom
             record.REF = ref
-            record.ALT - alts
+            record.ALT = alts
             vcf_writer.write_record(record)
 
     vcf_writer.close()
