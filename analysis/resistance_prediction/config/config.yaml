@@ -19,3 +19,4 @@ containers:
   conda:   "docker://continuumio/miniconda3:4.9.2"
   drprg:   "docker://quay.io/mbhall88/drprg:cb4f9b8"
   mafft:   "docker://quay.io/biocontainers/mafft:7.475--h516909a_0"
+  happy:   "docker://quay.io/biocontainers/hap.py:0.3.14--py27h5c5a3ab_0"

@@ -57,29 +57,6 @@ rule index_final_compass_panel_vcf:
         "0.77.0/bio/bcftools/index"
 
 
-rule assess_drprg_novel_calls:
-    input:
-        truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
-        truth_idx=rules.index_final_compass_panel_vcf.output[0],
-        query_vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
-        query_idx=rules.index_novel_drprg_vcf.output[0],
-    output:
-        annotated_truth_vcf=(
-            RESULTS / "novel/annotated_vcfs/{tech}/{site}/{sample}.truth.bcf"
-        ),
-        annotated_query_vcf=(
-            RESULTS / "novel/annotated_vcfs/{tech}/{site}/{sample}.query.bcf"
-        ),
-    resources:
-        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
-    log:
-        LOGS / "assess_drprg_novel_calls/{tech}/{site}/{sample}.log",
-    conda:
-        str(ENVS / "subtract_variants.yaml")
-    script:
-        str(SCRIPTS / "classify_novel.py")
-
-
 rule index_drprg_ref_genes:
     input:
         rules.drprg_build.output.ref,
@@ -93,3 +70,53 @@ rule index_drprg_ref_genes:
         "",
     wrapper:
         "0.77.0/bio/samtools/faidx"
+
+
+happy_exts = [
+    ".runinfo.json",
+    ".vcf.gz",
+    ".summary.csv",
+    ".extended.csv",
+    ".metrics.json.gz",
+    ".roc.all.csv.gz",
+    ".roc.Locations.INDEL.csv.gz",
+    ".roc.Locations.INDEL.PASS.csv.gz",
+    ".roc.Locations.SNP.csv.gz",
+    ".roc.tsv",
+]
+
+
+rule assess_drprg_novel_calls:
+    input:
+        truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
+        truth_idx=rules.index_final_compass_panel_vcf.output[0],
+        query_vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
+        query_idx=rules.index_novel_drprg_vcf.output[0],
+        ref=rules.index_drprg_ref_genes.input[0],
+        ref_idx=rules.index_drprg_ref_genes.output[0],
+    output:
+        multiext(
+            str(RESULTS / "novel/assessment/{tech}/{site}/{sample}/{sample}"),
+            *happy_exts
+        ),
+    resources:
+        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+    log:
+        LOGS / "assess_drprg_novel_calls/{tech}/{site}/{sample}.log",
+    container:
+        CONTAINERS["happy"]
+    params:
+        opts=" ".join(
+            (
+                "--set-gt hom",
+                "--pass-only",
+                "--write-vcf",
+                "--engine vcfeval",
+                "--leftshift",
+            )
+        ),
+        prefix=lambda wc, output: output[0].split(".")[0],
+    shell:
+        """
+        hap.py {params.opts} -o {params.prefix} -r {input.ref} {input.truth_vcf} {input.query_vcf} 2> {log}
+        """
