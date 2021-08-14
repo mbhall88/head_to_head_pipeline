@@ -150,7 +150,7 @@ rule subtract_panel_variants_from_drprg:
         panel=rules.drprg_build.output.vcf,
         query=rules.drprg_predict.output.vcf,
     output:
-        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.vcf",
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
     resources:
         mem_mb=int(0.5 * GB),
     log:
@@ -159,3 +159,14 @@ rule subtract_panel_variants_from_drprg:
         str(ENVS / "subtract_variants.yaml")
     script:
         str(SCRIPTS / "subtract_variants.py")
+
+
+rule index_novel_drprg_vcf:
+    input:
+        rules.subtract_panel_variants_from_drprg.output.vcf,
+    output:
+        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
+    params:
+        extra="-f",
+    wrapper:
+        "0.77.0/bio/bcftools/index"

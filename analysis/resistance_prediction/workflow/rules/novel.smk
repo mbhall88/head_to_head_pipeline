@@ -62,6 +62,7 @@ rule assess_drprg_novel_calls:
         truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
         truth_idx=rules.index_final_compass_panel_vcf.output[0],
         query_vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
+        query_idx=rules.index_novel_drprg_vcf.output[0],
     output:
         annotated_truth_vcf=(
             RESULTS / "novel/annotated_vcfs/{tech}/{site}/{sample}.truth.bcf"
