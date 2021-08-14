@@ -77,8 +77,8 @@ def overlaps_match(q: str, qpos: int, p: str, ppos: int) -> bool:
 
 
 TAG = "CLF"
-truth_rdr = VCF(snakemake.input.truth)
-query_rdr = VCF(snakemake.input.query)
+truth_rdr = VCF(snakemake.input.truth_vcf)
+query_rdr = VCF(snakemake.input.query_vcf)
 query_rdr.add_info_to_header(
     {
         "ID": TAG,
@@ -151,8 +151,8 @@ for query_record in query_rdr:
 
 query_wtr.close()
 
-truth_rdr = VCF(snakemake.input.truth)
-query_rdr = VCF(snakemake.input.query)
+truth_rdr = VCF(snakemake.input.truth_vcf)
+query_rdr = VCF(snakemake.input.query_vcf)
 truth_rdr.add_info_to_header(
     {
         "ID": TAG,
