@@ -48,7 +48,7 @@ rule subtract_panel_variants_from_compass:
 
 rule index_final_compass_panel_vcf:
     input:
-        rules.extract_panel_genes_from_compass_vcf.output.vcf,
+        rules.subtract_panel_variants_from_compass.output.vcf,
     output:
         RESULTS / "novel/filtered_vcfs/{sample}.novel.bcf.csi",
     params:
