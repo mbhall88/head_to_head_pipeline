@@ -72,18 +72,6 @@ rule index_drprg_ref_genes:
         "0.77.0/bio/samtools/faidx"
 
 
-happy_exts = [
-    ".runinfo.json",
-    ".bcf",
-    ".bcf.csi",
-    ".summary.csv",
-    ".extended.csv",
-    ".metrics.json.gz",
-    ".roc.all.csv.gz",
-    ".roc.tsv",
-]
-
-
 rule assess_drprg_novel_calls:
     input:
         truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
@@ -93,10 +81,7 @@ rule assess_drprg_novel_calls:
         ref=rules.index_drprg_ref_genes.input[0],
         ref_idx=rules.index_drprg_ref_genes.output[0],
     output:
-        multiext(
-            str(RESULTS / "novel/assessment/{tech}/{site}/{sample}/{sample}"),
-            *happy_exts
-        ),
+        summary=RESULTS / "novel/assessment/{tech}/{site}/{sample}/{sample}.summary.csv"
     resources:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
     log:
@@ -112,7 +97,7 @@ rule assess_drprg_novel_calls:
                 "--leftshift",
             )
         ),
-        prefix=lambda wc, output: output[0].split(".")[0],
+        prefix=lambda wc, output: output.summary.split(".")[0],
     shell:
         """
         hap.py {params.opts} -o {params.prefix} -r {input.ref} {input.truth_vcf} {input.query_vcf} 2> {log}
