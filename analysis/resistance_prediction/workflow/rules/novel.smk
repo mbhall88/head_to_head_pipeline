@@ -52,7 +52,7 @@ rule index_final_compass_panel_vcf:
     output:
         RESULTS / "novel/filtered_vcfs/{sample}.novel.bcf.csi",
     params:
-        extra="",
+        extra="-f",
     wrapper:
         "0.77.0/bio/bcftools/index"
 
