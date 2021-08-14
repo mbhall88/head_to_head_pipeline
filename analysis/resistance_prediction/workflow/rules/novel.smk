@@ -74,14 +74,12 @@ rule index_drprg_ref_genes:
 
 happy_exts = [
     ".runinfo.json",
-    ".vcf.gz",
+    ".bcf",
+    ".bcf.csi",
     ".summary.csv",
     ".extended.csv",
     ".metrics.json.gz",
     ".roc.all.csv.gz",
-    ".roc.Locations.INDEL.csv.gz",
-    ".roc.Locations.INDEL.PASS.csv.gz",
-    ".roc.Locations.SNP.csv.gz",
     ".roc.tsv",
 ]
 
