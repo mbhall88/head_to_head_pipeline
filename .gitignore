@@ -397,3 +397,4 @@ analysis/transmission_clustering/plots
 analysis/resistance_prediction/results
 analysis/thesis/data/variant_call_logs
 analysis/assembly
+analysis/thesis/data

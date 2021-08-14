@@ -10,6 +10,7 @@ from intervaltree import IntervalTree
 from cyvcf2 import VCF, Writer
 import subprocess
 
+
 class Genotype(NamedTuple):
     allele1: int
     allele2: int
@@ -62,6 +63,7 @@ class Genotype(NamedTuple):
             alleles.append(-1)
         return Genotype(*alleles)
 
+
 def extract_genes_from_panel(stream: TextIO) -> Set[str]:
     genes = set()
     for line in map(str.rstrip, stream):
@@ -95,7 +97,8 @@ def extract_intervals_for_genes_from_gff(
 
         start = (int(fields[3]) - 1) - padding  # GFF start is 1-based inclusive
         end = int(fields[4]) + padding  # GFF end is 1-based inclusive
-        intervals.append((start, end, name))
+        strand = fields[6]
+        intervals.append((start, end, (name, strand)))
 
     return IntervalTree.from_tuples(intervals)
 
@@ -116,6 +119,7 @@ def attributes_dict_from_str(s: str) -> Dict[str, str]:
 padding: int = snakemake.params.padding
 apply_filters: bool = snakemake.params.get("apply_filters", False)
 only_alt: bool = snakemake.params.get("only_alt", False)
+adjust_pos: bool = snakemake.params.get("adjust_params", False)
 
 logger.info("Extracting gene names from panel...")
 with open(snakemake.input.panel) as istream:
@@ -136,7 +140,7 @@ vcf_reader = VCF(snakemake.input.vcf)
 
 logger.debug("Adding genes to header...")
 for iv in ivtree:
-    vcf_reader.add_to_header(f"##contig=<ID={iv.data},length={iv.end-iv.begin}>")
+    vcf_reader.add_to_header(f"##contig=<ID={iv.data[0]},length={iv.end-iv.begin}>")
 logger.debug("Genes added to header")
 
 with TemporaryDirectory() as tmpdirname:
@@ -159,8 +163,11 @@ with TemporaryDirectory() as tmpdirname:
             )
         original_record_start = record.start
         for iv in ivs:
-            chrom = iv.data
-            norm_pos = original_record_start - iv.begin
+            chrom, strand = iv.data
+            if adjust_pos and strand == "-":
+                norm_pos = iv.end - original_record_start
+            else:
+                norm_pos = original_record_start - iv.begin
             record.set_pos(norm_pos)
             record.CHROM = chrom
             vcf_writer.write_record(record)

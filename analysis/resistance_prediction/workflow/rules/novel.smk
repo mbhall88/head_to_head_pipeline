@@ -11,6 +11,7 @@ rule extract_panel_genes_from_compass_vcf:
         padding=config.get("padding", 100),
         apply_filters=True,
         only_alt=True,
+        adjust_pos=True,
     conda:
         str(ENVS / "extract_panel_genes_from_vcf.yaml")
     script:
