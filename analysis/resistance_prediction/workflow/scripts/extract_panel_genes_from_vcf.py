@@ -10,6 +10,12 @@ from intervaltree import IntervalTree
 from cyvcf2 import VCF, Writer
 import subprocess
 
+TRANSLATE = str.maketrans("ATGC", "TACG")
+
+
+def revcomp(s: str) -> str:
+    return s.upper().translate(TRANSLATE)[::-1]
+
 
 class Genotype(NamedTuple):
     allele1: int
@@ -162,14 +168,22 @@ with TemporaryDirectory() as tmpdirname:
                 f"Duplicating record - one for each gene..."
             )
         original_record_start = record.start
+        original_ref = record.REF
+        original_alts = record.ALT
         for iv in ivs:
             chrom, strand = iv.data
             if adjust_pos and strand == "-":
                 norm_pos = (iv.end - original_record_start) - 1
+                ref = revcomp(original_ref)
+                alts = [revcomp(s) for s in original_alts]
             else:
                 norm_pos = original_record_start - iv.begin
+                ref = original_ref
+                alts = original_alts
             record.set_pos(norm_pos)
             record.CHROM = chrom
+            record.REF = ref
+            record.ALT - alts
             vcf_writer.write_record(record)
 
     vcf_writer.close()
