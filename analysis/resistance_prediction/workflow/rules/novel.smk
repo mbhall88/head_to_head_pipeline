@@ -111,7 +111,6 @@ rule assess_drprg_novel_calls:
                 "--set-gt hom",
                 "--pass-only",
                 "--write-vcf",
-                "--engine vcfeval",
                 "--leftshift",
             )
         ),
