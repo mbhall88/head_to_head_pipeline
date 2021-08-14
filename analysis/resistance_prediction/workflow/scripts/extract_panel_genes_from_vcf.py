@@ -119,7 +119,7 @@ def attributes_dict_from_str(s: str) -> Dict[str, str]:
 padding: int = snakemake.params.padding
 apply_filters: bool = snakemake.params.get("apply_filters", False)
 only_alt: bool = snakemake.params.get("only_alt", False)
-adjust_pos: bool = snakemake.params.get("adjust_params", False)
+adjust_pos: bool = snakemake.params.get("adjust_pos", False)
 
 logger.info("Extracting gene names from panel...")
 with open(snakemake.input.panel) as istream:
@@ -165,7 +165,7 @@ with TemporaryDirectory() as tmpdirname:
         for iv in ivs:
             chrom, strand = iv.data
             if adjust_pos and strand == "-":
-                norm_pos = iv.end - original_record_start
+                norm_pos = (iv.end - original_record_start) - 1
             else:
                 norm_pos = original_record_start - iv.begin
             record.set_pos(norm_pos)
