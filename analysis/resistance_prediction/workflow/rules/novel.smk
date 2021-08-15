@@ -100,10 +100,11 @@ rule assess_drprg_novel_calls:
             )
         ),
         prefix=lambda wc, output: output.summary.split(".")[0],
+        bcftools_opts="-H -f PASS,."
     shell:
         """
-        truth_count=$(bcftools view -f -H {input.truth_vcf} | wc -l)
-        query_count=$(bcftools view -f -H {input.query_vcf} | wc -l)
+        truth_count=$(bcftools view {params.bcftools_opts} {input.truth_vcf} | wc -l)
+        query_count=$(bcftools view {params.bcftools_opts} {input.query_vcf} | wc -l)
 
         if [ "$truth_count" -eq 0 ] || [ "$query_count" -eq 0 ]; then
           printf 'TP,FN,FP\n0,%d,%d\n' "$truth_count" "$query_count" > {output.summary} 2> {log}
