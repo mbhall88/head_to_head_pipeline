@@ -145,28 +145,12 @@ rule drprg_predict:
         """
 
 
-rule subtract_panel_variants_from_drprg:
+rule trim_drprg_vcf:
     input:
-        panel=rules.drprg_build.output.vcf,
-        query=rules.drprg_predict.output.vcf,
-    output:
-        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
-    resources:
-        mem_mb=int(0.5 * GB),
-    log:
-        LOGS / "subtract_panel_variants_from_drprg/{tech}/{site}/{sample}.log",
-    conda:
-        str(ENVS / "subtract_variants.yaml")
-    script:
-        str(SCRIPTS / "subtract_variants.py")
-
-
-rule trim_novel_drprg_vcf:
-    input:
-        vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
+        vcf=rules.drprg_predict.output.vcf,
         ref=rules.drprg_build.output.ref,
     output:
-        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.novel.bcf",
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.bcf",
     resources:
         mem_mb=int(0.5 * GB),
     log:
@@ -180,11 +164,27 @@ rule trim_novel_drprg_vcf:
         """
 
 
+rule subtract_panel_variants_from_drprg:
+    input:
+        panel=rules.drprg_build.output.vcf,
+        query=rules.trim_drprg_vcf.output.vcf,
+    output:
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "subtract_panel_variants_from_drprg/{tech}/{site}/{sample}.log",
+    conda:
+        str(ENVS / "subtract_variants.yaml")
+    script:
+        str(SCRIPTS / "subtract_variants.py")
+
+
 rule index_novel_drprg_vcf:
     input:
-        rules.trim_novel_drprg_vcf.output.vcf,
+        rules.subtract_panel_variants_from_drprg.output.vcf,
     output:
-        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.novel.bcf.csi",
+        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf.csi",
     resources:
         mem_mb=int(0.5 * GB),
     params:
