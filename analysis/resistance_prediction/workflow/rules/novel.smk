@@ -46,11 +46,27 @@ rule subtract_panel_variants_from_compass:
         str(SCRIPTS / "subtract_variants.py")
 
 
+rule trim_compass_vcf:
+    input:
+        vcf=rules.subtract_panel_variants_from_compass.output.vcf,
+        ref=rules.drprg_build.output.ref,
+    output:
+        vcf=RESULTS / "novel/filtered_vcfs/{sample}.trimmed.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "trim_compass_vcf/{sample}.log",
+    container:
+        CONTAINERS["bcftools"]
+    shell:
+        "bcftools view -a -f .,PASS -O b -o {output.vcf} {input.vcf} 2> {log}"
+
+
 rule index_final_compass_panel_vcf:
     input:
-        rules.subtract_panel_variants_from_compass.output.vcf,
+        rules.trim_compass_vcf.output.vcf,
     output:
-        RESULTS / "novel/filtered_vcfs/{sample}.novel.bcf.csi",
+        RESULTS / "novel/filtered_vcfs/{sample}.trimmed.bcf.csi",
     params:
         extra="-f",
     wrapper:
@@ -74,7 +90,7 @@ rule index_drprg_ref_genes:
 
 rule assess_drprg_novel_calls:
     input:
-        truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
+        truth_vcf=rules.index_final_compass_panel_vcf.input[0],
         truth_idx=rules.index_final_compass_panel_vcf.output[0],
         query_vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
         query_idx=rules.index_novel_drprg_vcf.output[0],
