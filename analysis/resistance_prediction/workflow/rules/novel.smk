@@ -76,7 +76,7 @@ rule assess_drprg_novel_calls:
     input:
         truth_vcf=rules.subtract_panel_variants_from_compass.output.vcf,
         truth_idx=rules.index_final_compass_panel_vcf.output[0],
-        query_vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
+        query_vcf=rules.trim_novel_drprg_vcf.output.vcf,
         query_idx=rules.index_novel_drprg_vcf.output[0],
         ref=rules.index_drprg_ref_genes.input[0],
         ref_idx=rules.index_drprg_ref_genes.output[0],

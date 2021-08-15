@@ -160,12 +160,26 @@ rule subtract_panel_variants_from_drprg:
     script:
         str(SCRIPTS / "subtract_variants.py")
 
+rule trim_novel_drprg_vcf:
+    input:
+        vcf=rules.subtract_panel_variants_from_drprg.output.vcf,
+    output:
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.novel.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "trim_novel_drprg_vcf/{tech}/{site}/{sample}.log",
+    container:
+        CONTAINERS["bcftools"]
+    shell:
+        "bcftools view -O b -a -f .,PASS -o {output.vcf} {input.vcf} 2> {log}"
+
 
 rule index_novel_drprg_vcf:
     input:
-        rules.subtract_panel_variants_from_drprg.output.vcf,
+        rules.trim_novel_drprg_vcf.output.vcf,
     output:
-        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf.csi",
+        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.novel.bcf.csi",
     params:
         extra="-f",
     wrapper:
