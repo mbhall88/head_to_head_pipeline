@@ -109,8 +109,6 @@ rule map_nanopore:
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["aln_tools"]
     params:
@@ -166,9 +164,12 @@ rule call_snps_nanopore:
     log:
         rule_log_dir / "call_snps_nanopore/{site}/{sample}.log",
     container:
-        containers["conda"]
-    wrapper:
-        "0.64.0/bio/bcftools/call"
+        containers["bcftools"]
+    shell:
+        """
+        bcftools call {params.options} {params.caller} --threads {threads} \
+          -o {output.calls} {input.pileup} 2> {log}
+        """
 
 
 rule filter_nanopore_snps:
@@ -200,8 +201,6 @@ rule filter_nanopore_snps:
         script=scripts["filter"],
     log:
         rule_log_dir / "filter_nanopore_snps/{site}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["filter"]
     shell:
@@ -233,8 +232,6 @@ rule calculate_concordance:
         script=scripts["concordance"],
     log:
         rule_log_dir / "calculate_concordance/{site}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["concordance"]
     shell:
@@ -281,8 +278,6 @@ rule evaluate_compass_snps_with_truth_assembly:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_compass_with_truth_assembly/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["varifier"]
     shell:
@@ -324,8 +319,6 @@ rule evaluate_bcftools_snps_with_truth_assembly:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_bcftools_with_truth_assembly/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["varifier"]
     shell:
@@ -354,8 +347,6 @@ rule plot_truth_snp_concordance:
     threads: 1
     resources:
         mem_mb=int(GB * 0.5),
-    container:
-        containers["conda"]
     conda:
         envs["plot_truth_eval"]
     params:
@@ -389,8 +380,6 @@ rule generate_consensus:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["consensus"]
     params:
@@ -477,8 +466,6 @@ rule plot_distance_matrix:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["plot_distance_matrix"]
     log:
@@ -496,8 +483,6 @@ rule mixed_snp_distance:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["distance"]
     params:
@@ -521,8 +506,6 @@ rule mixed_self_distances:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["mixed_self_distance"]
     log:
@@ -545,8 +528,6 @@ rule mixed_dotplot:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["mixed_dotplot"]
     log:
@@ -579,8 +560,6 @@ rule bcftools_dotplot:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["bcftools_dotplot"]
     log:
