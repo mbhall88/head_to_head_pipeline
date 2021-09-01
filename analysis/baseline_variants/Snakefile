@@ -182,7 +182,7 @@ rule filter_nanopore_snps:
     params:
         options=" ".join(
             [
-                "--hist",
+                "-P",
                 "--verbose",
                 "--overwrite",
                 f"-d {filters['min_depth']}",
