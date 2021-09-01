@@ -623,9 +623,6 @@ def main(
     median_depth = np.median(depths)
     logging.info(f"Expected depth: {median_depth}")
 
-    median_qual = np.median(quals)
-    logging.info(f"Median QUAL: {median_qual}")
-
     if hist:
         import histoprint
 
