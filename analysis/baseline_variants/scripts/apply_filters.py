@@ -219,7 +219,7 @@ class Filter:
         return variant_depth > self.max_depth if self.max_depth else False
 
     def _is_low_qual(self, variant: Variant) -> bool:
-        return variant.QUAL < self.min_qual
+        return (variant.QUAL or 0) < self.min_qual
 
     def _is_low_bqb(self, variant: Variant) -> bool:
         bqb = variant.INFO.get(str(Tags.BaseQualBias))
@@ -619,7 +619,7 @@ def main(
     quals = []
     for v in vcf_reader:
         depths.append(get_depth(v))
-        quals.append(v.QUAL)
+        quals.append(v.QUAL or 0)
 
     median_depth = np.median(depths)
     logging.info(f"Expected depth: {median_depth}")
