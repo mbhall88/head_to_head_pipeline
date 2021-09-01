@@ -6,6 +6,7 @@ from typing import Optional, NamedTuple, List, Tuple
 
 import click
 import numpy as np
+from pathlib import Path
 from cyvcf2 import Variant, VCF, Writer
 
 HIST_BINS = 40
@@ -661,6 +662,10 @@ def main(
 
     vcf_reader = VCF(in_vcf)
     assessor.add_filters_to_header(vcf_reader)
+
+    if not Path(out_vcf).parent.exists():
+        Path(out_vcf).parent.mkdir(exist_ok=True, parents=True)
+
     vcf_writer = Writer(out_vcf, tmpl=vcf_reader)
 
     stats = Counter()
