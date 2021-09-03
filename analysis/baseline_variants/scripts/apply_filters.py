@@ -412,6 +412,7 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for min. mapping quality bias: {header}")
+
         if self.min_rpb > 0:
             header = {
                 "ID": str(Tags.LowReadPosBias),
@@ -422,6 +423,39 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for min. read position bias: {header}")
+
+        if self.min_rpbz is not None:
+            header = {
+                "ID": str(Tags.LowReadPosBiasZ),
+                "Description": (
+                    f"Read Position Bias z-test score ({Tags.ReadPosBiasZ}) is less than "
+                    f"{self.min_rpbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. read position bias z-test: {header}")
+
+        if self.max_rpbz is not None:
+            header = {
+                "ID": str(Tags.HighReadPosBiasZ),
+                "Description": (
+                    f"Read Position Bias z-test score ({Tags.ReadPosBiasZ}) is more than "
+                    f"{self.max_rpbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. read position bias z-test: {header}")
+
+        if self.max_scbz is not None:
+            header = {
+                "ID": str(Tags.HighSoftClipBiasZ),
+                "Description": (
+                    f"Soft-Clip Length Bias z-test score ({Tags.SoftClipBiasZ}) is more than "
+                    f"{self.max_scbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. soft-clip length bias z-test: {header}")
 
         if self.max_sgb != 0:
             header = {
