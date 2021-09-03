@@ -33,7 +33,10 @@ class Tags(Enum):
     MapQualBias = "MQB"
     LowMapQualBias = "lmqb"
     ReadPosBias = "RPB"
+    ReadPosBiasZ = "RPBZ"
     LowReadPosBias = "lrpb"
+    LowReadPosBiasZ = "lrpbz"
+    HighReadPosBiasZ = "hrpbz"
     SegregationBias = "SGB"
     HighSegBias = "hsgb"
     VariantDistanceBias = "VDB"
@@ -53,6 +56,8 @@ class FilterStatus:
     low_bqb: bool = False
     low_mqb: bool = False
     low_rpb: bool = False
+    low_rpbz: bool = False
+    high_rpbz: bool = False
     high_sgb: bool = False
     low_vdb: bool = False
     low_support: bool = False
@@ -74,6 +79,10 @@ class FilterStatus:
             status.append(str(Tags.LowMapQualBias))
         if self.low_rpb:
             status.append(str(Tags.LowReadPosBias))
+        if self.low_rpbz:
+            status.append(str(Tags.LowReadPosBiasZ))
+        if self.high_rpbz:
+            status.append(str(Tags.HighReadPosBiasZ))
         if self.high_sgb:
             status.append(str(Tags.HighSegBias))
         if self.low_vdb:
@@ -189,6 +198,8 @@ class Filter:
         max_sgb: float = 0,
         min_vdb: float = 0,
         min_frs: float = 0,
+        min_rpbz: Optional[float] = None,
+        max_rpbz: Optional[float] = None,
     ):
         self.expected_depth = expected_depth
         self.min_depth = min_depth
@@ -201,6 +212,8 @@ class Filter:
         self.max_sgb = max_sgb
         self.min_vdb = min_vdb
         self.min_frs = min_frs
+        self.min_rpbz = min_rpbz or -float("inf")
+        self.max_rpbz = max_rpbz or float("inf")
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
@@ -243,6 +256,14 @@ class Filter:
         frs = fraction_read_support(variant)
         return frs < self.min_frs if self.min_frs else False
 
+    def _is_low_rpbz(self, variant: Variant) -> bool:
+        rpbz = variant.INFO.get(str(Tags.ReadPosBiasZ))
+        return rpbz is not None and rpbz < self.min_rpbz
+
+    def _is_high_rpbz(self, variant: Variant) -> bool:
+        rpbz = variant.INFO.get(str(Tags.ReadPosBiasZ))
+        return rpbz is not None and rpbz > self.max_rpbz
+
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
         if self.min_depth or self.max_depth:
@@ -283,6 +304,12 @@ class Filter:
 
         if self.min_rpb:
             status.low_rpb = self._is_low_rpb(variant)
+
+        if self.min_rpbz:
+            status.low_rpbz = self._is_low_rpbz(variant)
+
+        if self.max_rpbz:
+            status.high_rpbz = self._is_high_rpbz(variant)
 
         if self.max_sgb != 0:
             status.high_sgb = self._is_high_sgb(variant)
@@ -533,6 +560,24 @@ def get_strand_depths(
     show_default=True,
 )
 @click.option(
+    "-w",
+    "--min-rpbz",
+    help=(
+        f"Filter a variant if read position bias z-test score ({Tags.ReadPosBiasZ.value}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowReadPosBiasZ.value}."
+    ),
+    default=None,
+)
+@click.option(
+    "-W",
+    "--max-rpbz",
+    help=(
+        f"Filter a variant if read position bias z-test score ({Tags.ReadPosBiasZ.value}) is "
+        f"more than FLOAT. This filter has ID: {Tags.HighReadPosBiasZ.value}."
+    ),
+    default=None,
+)
+@click.option(
     "-G",
     "--max-sgb",
     help=(
@@ -581,6 +626,8 @@ def main(
     min_bqb: float,
     min_mqb: float,
     min_rpb: float,
+    min_rpbz: Optional[float],
+    max_rpbz: Optional[float],
     max_sgb: float,
     min_vdb: float,
     hist: bool,
@@ -652,6 +699,8 @@ def main(
         max_sgb=max_sgb,
         min_vdb=min_vdb,
         min_frs=min_frs,
+        min_rpbz=min_rpbz,
+        max_rpbz=max_rpbz,
     )
 
     vcf_reader = VCF(in_vcf)

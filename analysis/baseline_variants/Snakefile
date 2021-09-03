@@ -172,6 +172,28 @@ rule call_snps_nanopore:
         """
 
 
+def bcftools_filter_opts() -> str:
+    opts = [
+        ("d", "min_depth"),
+        ("D", "max_depth"),
+        ("q", "min_qual"),
+        ("s", "min_strand_bias"),
+        ("b", "min_bqb"),
+        ("m", "min_mqb"),
+        ("r", "min_rpb"),
+        ("V", "min_vdb"),
+        ("G", "max_sgb"),
+        ("K", "min_frs"),
+        ("w", "min_rpbz"),
+        ("W", "max_rpbz"),
+    ]
+    flags = []
+    for op, key in opts:
+        if key in filters:
+            flags.append(f"-{op} {filters[key]}")
+    return " ".join(flags)
+
+
 rule filter_nanopore_snps:
     input:
         vcf=rules.call_snps_nanopore.output.calls,
@@ -181,23 +203,7 @@ rule filter_nanopore_snps:
     resources:
         mem_mb=int(GB),
     params:
-        options=" ".join(
-            [
-                "-P",
-                "--verbose",
-                "--overwrite",
-                f"-d {filters['min_depth']}",
-                f"-D {filters['max_depth']}",
-                f"-q {filters['min_qual']}",
-                f"-s {filters['min_strand_bias']}",
-                f"-b {filters['min_bqb']}",
-                f"-m {filters['min_mqb']}",
-                f"-r {filters['min_rpb']}",
-                f"-V {filters['min_vdb']}",
-                f"-G {filters['max_sgb']}",
-                f"-K {filters['min_frs']}",
-            ]
-        ),
+        options=" ".join(["-P", "--verbose", "--overwrite", bcftools_filter_opts()]),
         script=scripts["filter"],
     log:
         rule_log_dir / "filter_nanopore_snps/{site}/{sample}.log",
