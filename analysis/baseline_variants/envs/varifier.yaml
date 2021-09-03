@@ -4,5 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconda::varifier=0.2.0
+  - bioconda::varifier=0.3.1
   - bioconda::bcftools=1

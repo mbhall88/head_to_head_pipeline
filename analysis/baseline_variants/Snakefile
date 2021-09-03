@@ -105,7 +105,7 @@ rule map_nanopore:
         target=H37RV["genome"],
         query=data_dir / "{site}/nanopore/{sample}/{sample}.subsampled.fastq.gz",
     output:
-        sam=temp(nanopore_dir / "mapped/{site}/{sample}.sorted.sam"),
+        sam=nanopore_dir / "mapped/{site}/{sample}.sorted.sam",
     threads: 8
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
@@ -141,7 +141,7 @@ rule pileup_nanopore:
             3: int(100 * GB),
         }[attempt],
     params:
-        options="--ignore-overlaps --skip-indels -O b",
+        options="--ignore-overlaps --skip-indels -O b -X ont",
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
@@ -160,7 +160,7 @@ rule call_snps_nanopore:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
     params:
         caller="-m",
-        options=" ".join(["--ploidy 1", "-O b", "--skip-variants indels"]),
+        options=" ".join(["--ploidy 1", "-O b", "--skip-variants indels", "-P0.01"]),
     log:
         rule_log_dir / "call_snps_nanopore/{site}/{sample}.log",
     container:
