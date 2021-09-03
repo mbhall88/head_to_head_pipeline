@@ -218,9 +218,15 @@ class Filter:
         self.max_sgb = max_sgb
         self.min_vdb = min_vdb
         self.min_frs = min_frs
-        self.min_rpbz = min_rpbz or -float("inf")
-        self.max_rpbz = max_rpbz or float("inf")
-        self.max_scbz = max_scbz or float("inf")
+        if min_rpbz is None:
+            min_rpbz = -float("inf")
+        self.min_rpbz = min_rpbz
+        if max_rpbz is None:
+            max_rpbz = float("inf")
+        self.max_rpbz = max_rpbz
+        if max_scbz is None:
+            max_scbz or float("inf")
+        self.max_scbz = max_scbz
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
