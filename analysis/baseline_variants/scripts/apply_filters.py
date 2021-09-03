@@ -179,8 +179,8 @@ class Filter:
     def __init__(
         self,
         expected_depth: int = 0,
-        min_depth: float = 0,
-        max_depth: float = 0,
+        min_depth: int = 0,
+        max_depth: int = 0,
         min_strand_bias: int = 0,
         min_qual: float = 0,
         min_bqb: float = 0,
@@ -191,10 +191,8 @@ class Filter:
         min_frs: float = 0,
     ):
         self.expected_depth = expected_depth
-        self.min_depth_frac = min_depth
-        self.min_depth = self.expected_depth * self.min_depth_frac
-        self.max_depth_frac = max_depth
-        self.max_depth = self.expected_depth * self.max_depth_frac
+        self.min_depth = min_depth
+        self.max_depth = max_depth
         self.min_strand_bias = min_strand_bias / 100
         self.min_qual = min_qual
         self.min_bqb = min_bqb
@@ -302,9 +300,7 @@ class Filter:
             header = {
                 "ID": str(Tags.LowDepth),
                 "Description": (
-                    f"Depth ({Tags.Depth}) less than {self.min_depth_frac:.1%} the "
-                    f"expected depth of {self.expected_depth:.1f}. "
-                    f"{Tags.Depth}<{self.min_depth:.1f}"
+                    f"Depth ({Tags.Depth}) less than {self.min_depth} - i.e., {Tags.Depth}<{self.min_depth:.1f}"
                 ),
             }
             vcf.add_filter_to_header(header)
@@ -314,9 +310,7 @@ class Filter:
             header = {
                 "ID": str(Tags.HighDepth),
                 "Description": (
-                    f"Depth ({Tags.Depth}) more than {self.max_depth_frac:.1%} the "
-                    f"expected depth of {self.expected_depth:.1f}. "
-                    f"{Tags.Depth}>{self.max_depth:.1f}"
+                    f"Depth ({Tags.Depth}) more than {self.max_depth} - i.e., {Tags.Depth}>{self.max_depth:.1f}"
                 ),
             }
             vcf.add_filter_to_header(header)
@@ -454,20 +448,20 @@ def get_strand_depths(
     "-d",
     "--min-depth",
     help=(
-        "Minimum depth as a percentage of the expected (median) depth. This filter "
+        "Minimum read depth. This filter "
         f"has ID: {Tags.LowDepth.value}. Set to 0 to disable"
     ),
-    default=0.2,
+    default=0,
     show_default=True,
 )
 @click.option(
     "-D",
     "--max-depth",
     help=(
-        "Maximum depth as a fraction of the expected (median) depth. This filter "
+        "Maximum depth. This filter "
         f"has ID: {Tags.HighDepth.value}. Set to 0 to disable"
     ),
-    default=2.0,
+    default=0,
     show_default=True,
 )
 @click.option(
@@ -581,8 +575,8 @@ def main(
     overwrite: bool,
     verbose: bool,
     min_qual: float,
-    min_depth: float,
-    max_depth: float,
+    min_depth: int,
+    max_depth: int,
     min_strand_bias: int,
     min_bqb: float,
     min_mqb: float,
