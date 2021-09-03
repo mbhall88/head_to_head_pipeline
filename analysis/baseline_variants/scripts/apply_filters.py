@@ -39,6 +39,8 @@ class Tags(Enum):
     HighReadPosBiasZ = "hrpbz"
     SegregationBias = "SGB"
     HighSegBias = "hsgb"
+    SoftClipBiasZ = "SCBZ"
+    HighSoftClipBiasZ = "hscbz"
     VariantDistanceBias = "VDB"
     LowVarDistBias = "lvdb"
     LowSupport = "frs"
@@ -58,6 +60,7 @@ class FilterStatus:
     low_rpb: bool = False
     low_rpbz: bool = False
     high_rpbz: bool = False
+    high_scbz: bool = False
     high_sgb: bool = False
     low_vdb: bool = False
     low_support: bool = False
@@ -83,6 +86,8 @@ class FilterStatus:
             status.append(str(Tags.LowReadPosBiasZ))
         if self.high_rpbz:
             status.append(str(Tags.HighReadPosBiasZ))
+        if self.high_scbz:
+            status.append(str(Tags.HighSoftClipBiasZ))
         if self.high_sgb:
             status.append(str(Tags.HighSegBias))
         if self.low_vdb:
@@ -200,6 +205,7 @@ class Filter:
         min_frs: float = 0,
         min_rpbz: Optional[float] = None,
         max_rpbz: Optional[float] = None,
+        max_scbz: Optional[float] = None,
     ):
         self.expected_depth = expected_depth
         self.min_depth = min_depth
@@ -214,6 +220,7 @@ class Filter:
         self.min_frs = min_frs
         self.min_rpbz = min_rpbz or -float("inf")
         self.max_rpbz = max_rpbz or float("inf")
+        self.max_scbz = max_scbz or float("inf")
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
@@ -264,6 +271,10 @@ class Filter:
         rpbz = variant.INFO.get(str(Tags.ReadPosBiasZ))
         return rpbz is not None and rpbz > self.max_rpbz
 
+    def _is_high_scbz(self, variant: Variant) -> bool:
+        scbz = variant.INFO.get(str(Tags.SoftClipBiasZ))
+        return scbz is not None and scbz > self.max_scbz
+
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
         if self.min_depth or self.max_depth:
@@ -310,6 +321,9 @@ class Filter:
 
         if self.max_rpbz:
             status.high_rpbz = self._is_high_rpbz(variant)
+
+        if self.max_scbz:
+            status.high_scbz = self._is_high_scbz(variant)
 
         if self.max_sgb != 0:
             status.high_sgb = self._is_high_sgb(variant)
@@ -578,6 +592,15 @@ def get_strand_depths(
     default=None,
 )
 @click.option(
+    "-C",
+    "--max-scbz",
+    help=(
+        f"Filter a variant if soft-clip length bias z-test score ({Tags.SoftClipBiasZ.value}) is "
+        f"more than FLOAT. This filter has ID: {Tags.HighSoftClipBiasZ.value}."
+    ),
+    default=None,
+)
+@click.option(
     "-G",
     "--max-sgb",
     help=(
@@ -628,6 +651,7 @@ def main(
     min_rpb: float,
     min_rpbz: Optional[float],
     max_rpbz: Optional[float],
+    max_scbz: Optional[float],
     max_sgb: float,
     min_vdb: float,
     hist: bool,
@@ -701,6 +725,7 @@ def main(
         min_frs=min_frs,
         min_rpbz=min_rpbz,
         max_rpbz=max_rpbz,
+        max_scbz=max_scbz,
     )
 
     vcf_reader = VCF(in_vcf)

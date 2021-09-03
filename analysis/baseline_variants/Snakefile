@@ -186,6 +186,7 @@ def bcftools_filter_opts() -> str:
         ("K", "min_frs"),
         ("w", "min_rpbz"),
         ("W", "max_rpbz"),
+        ("C", "max_scbz")
     ]
     flags = []
     for op, key in opts:
