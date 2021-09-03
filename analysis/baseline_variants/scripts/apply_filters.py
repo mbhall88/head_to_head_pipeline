@@ -581,6 +581,7 @@ def get_strand_depths(
         f"less than FLOAT. This filter has ID: {Tags.LowReadPosBiasZ.value}."
     ),
     default=None,
+    type=float,
 )
 @click.option(
     "-W",
@@ -590,6 +591,7 @@ def get_strand_depths(
         f"more than FLOAT. This filter has ID: {Tags.HighReadPosBiasZ.value}."
     ),
     default=None,
+    type=float,
 )
 @click.option(
     "-C",
@@ -599,6 +601,7 @@ def get_strand_depths(
         f"more than FLOAT. This filter has ID: {Tags.HighSoftClipBiasZ.value}."
     ),
     default=None,
+    type=float,
 )
 @click.option(
     "-G",
