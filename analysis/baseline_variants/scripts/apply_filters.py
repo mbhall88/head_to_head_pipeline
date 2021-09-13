@@ -44,6 +44,8 @@ class Tags(Enum):
     VariantDistanceBias = "VDB"
     LowVarDistBias = "lvdb"
     LowSupport = "frs"
+    LowMapQual = "lmq"
+    MapQual = "MQ"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -61,6 +63,7 @@ class FilterStatus:
     low_rpbz: bool = False
     high_rpbz: bool = False
     high_scbz: bool = False
+    low_mapq: bool = False
     high_sgb: bool = False
     low_vdb: bool = False
     low_support: bool = False
@@ -80,6 +83,8 @@ class FilterStatus:
             status.append(str(Tags.LowBaseQualBias))
         if self.low_mqb:
             status.append(str(Tags.LowMapQualBias))
+        if self.low_mapq:
+            status.append(str(Tags.LowMapQual))
         if self.low_rpb:
             status.append(str(Tags.LowReadPosBias))
         if self.low_rpbz:
@@ -203,6 +208,7 @@ class Filter:
         max_sgb: float = 0,
         min_vdb: float = 0,
         min_frs: float = 0,
+        min_mq: int = 0,
         min_rpbz: Optional[float] = None,
         max_rpbz: Optional[float] = None,
         max_scbz: Optional[float] = None,
@@ -214,6 +220,7 @@ class Filter:
         self.min_qual = min_qual
         self.min_bqb = min_bqb
         self.min_mqb = min_mqb
+        self.min_mq = min_mq
         self.min_rpb = min_rpb
         self.max_sgb = max_sgb
         self.min_vdb = min_vdb
@@ -244,6 +251,10 @@ class Filter:
 
     def _is_low_qual(self, variant: Variant) -> bool:
         return (variant.QUAL or 0) < self.min_qual
+
+    def _is_low_mapq(self, variant: Variant) -> bool:
+        variant_mapq = get_mapq(variant)
+        return variant_mapq < self.min_mq if self.min_mq else False
 
     def _is_low_bqb(self, variant: Variant) -> bool:
         bqb = variant.INFO.get(str(Tags.BaseQualBias))
@@ -286,6 +297,9 @@ class Filter:
         if self.min_depth or self.max_depth:
             status.low_depth = self._is_low_depth(variant)
             status.high_depth = self._is_high_depth(variant)
+
+        if self.min_mq:
+            status.low_mapq = self._is_low_mapq(variant)
 
         if self.min_qual:
             status.low_qual = self._is_low_qual(variant)
@@ -348,6 +362,16 @@ class Filter:
                 "ID": str(Tags.LowDepth),
                 "Description": (
                     f"Depth ({Tags.Depth}) less than {self.min_depth} - i.e., {Tags.Depth}<{self.min_depth:.1f}"
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. depth: {header}")
+
+        if self.min_mq > 0:
+            header = {
+                "ID": str(Tags.LowMapQual),
+                "Description": (
+                    f"Mapping quality ({Tags.MapQual.value}) less than {self.min_mq} - i.e., {Tags.MapQual.value}<{self.min_mq:.0f}"
                 ),
             }
             vcf.add_filter_to_header(header)
@@ -500,6 +524,10 @@ def get_depth(variant: Variant, default: int = 0) -> int:
     return variant.INFO.get(str(Tags.Depth), default)
 
 
+def get_mapq(variant: Variant, default: int = 0) -> int:
+    return variant.INFO.get(str(Tags.MapQual), default)
+
+
 def get_strand_depths(
     variant: Variant, default: Optional[StrandDepths] = None
 ) -> Optional[StrandDepths]:
@@ -579,6 +607,17 @@ def get_strand_depths(
     type=float,
     show_default=True,
     callback=validate_fraction,
+)
+@click.option(
+    "-M",
+    "--min-mq",
+    help=(
+        f"Minimum mapping quality ({Tags.MapQual.value}) score. "
+        f"This filter has ID: {Tags.LowMapQual.value}. Set to 0 to disable"
+    ),
+    default=0,
+    type=int,
+    show_default=True,
 )
 @click.option(
     "-b",
@@ -699,6 +738,7 @@ def main(
     min_vdb: float,
     hist: bool,
     min_frs: float,
+    min_mq: int,
 ):
     """Apply the following filters to a VCF:\n
     - Minimum proportion of the expected (median) depth\n
@@ -766,6 +806,7 @@ def main(
         max_sgb=max_sgb,
         min_vdb=min_vdb,
         min_frs=min_frs,
+        min_mq=min_mq,
         min_rpbz=min_rpbz,
         max_rpbz=max_rpbz,
         max_scbz=max_scbz,
