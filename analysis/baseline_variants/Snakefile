@@ -141,7 +141,7 @@ rule pileup_nanopore:
             3: int(100 * GB),
         }[attempt],
     params:
-        options="--ignore-overlaps --skip-indels -O b -X ont",
+        options="-x -O b -I -M 500000 --indel-bias 0.75 -h50 -m1 -F0.002"
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
@@ -160,7 +160,7 @@ rule call_snps_nanopore:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
     params:
         caller="-m",
-        options=" ".join(["--ploidy 1", "-O b", "--skip-variants indels", "-P0.01"]),
+        options="--ploidy 1 -O b -V indels",
     log:
         rule_log_dir / "call_snps_nanopore/{site}/{sample}.log",
     container:

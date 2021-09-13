@@ -525,7 +525,10 @@ def get_depth(variant: Variant, default: int = 0) -> int:
 
 
 def get_mapq(variant: Variant, default: int = 0) -> int:
-    return variant.INFO.get(str(Tags.MapQual), default)
+    mq = variant.INFO.get(str(Tags.MapQual), default)
+    if mq is None:  # even though we gave a default it can still return none
+        mq = default
+    return mq
 
 
 def get_strand_depths(
