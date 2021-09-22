@@ -141,7 +141,7 @@ rule pileup_nanopore:
             3: int(100 * GB),
         }[attempt],
     params:
-        options="-x -O b -I -M 500000 --indel-bias 0.75 -h50 -m1 -F0.002"
+        options="-x -O b -I"
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
