@@ -285,7 +285,7 @@ rule mixed_simulations:
                 "ont": 0,
                 "mixed": 0,
             },
-            2: {"ont": 2, "mixed": 2},
+            2: {"ont": 3, "mixed": 2},
             5: {"ont": 5, "mixed": 5},
             12: {"ont": 11, "mixed": 12},
         },

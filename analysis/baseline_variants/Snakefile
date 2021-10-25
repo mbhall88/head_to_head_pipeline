@@ -136,12 +136,12 @@ rule pileup_nanopore:
     threads: 2
     resources:
         mem_mb=lambda wildcards, attempt: {
-            1: int(64 * GB),
-            2: int(80 * GB),
-            3: int(100 * GB),
+            1: int(8 * GB),
+            2: int(16 * GB),
+            3: int(60 * GB),
         }[attempt],
     params:
-        options="-x -O b -I"
+        options="-x -O b -I -Q 13 -a 'INFO/SCR,FORMAT/SP,INFO/ADR,INFO/ADF' -h100 -M100000"
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:

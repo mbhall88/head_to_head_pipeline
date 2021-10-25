@@ -8,7 +8,7 @@ h37rv:
   mask:   "resources/compass-mask.bed"
 containers:
   conda:     "docker://continuumio/miniconda3:4.7.12"
-  bcftools:  "docker://quay.io/biocontainers/bcftools:1.12--h45bccc9_1"
+  bcftools:  "docker://quay.io/biocontainers/bcftools:1.13--h3a49de5_0"
   varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
 envs:
@@ -42,13 +42,13 @@ scripts:
 filters:
   min_depth:       0
   max_depth:       0
-  min_qual:        60
+  min_qual:        70
   min_strand_bias: 0
   min_bqb:         0
   min_mqb:         0
-  min_rpb:         0.05
-  max_sgb:         -0.5
-  min_vdb:         0.002
+  min_rpb:         0
+  max_sgb:         0
+  min_vdb:         0.00000001
   min_mq:          0
   min_frs:         0.9
   # min_rqbz:        -2.6
