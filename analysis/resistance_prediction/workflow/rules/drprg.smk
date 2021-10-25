@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 rule download_panel:
     output:
         panel=RESULTS / "drprg/panel/panel.original.tsv",
@@ -15,27 +16,9 @@ rule download_panel:
         "wget -O {output.panel} {params.url} 2> {log}"
 
 
-rule filter_panel:
-    input:
-        panel=rules.download_panel.output.panel,
-    output:
-        panel=RESULTS / "drprg/panel/panel.filtered.tsv",
-    log:
-        LOGS / "filter_panel.log",
-    resources:
-        mem_mb=int(0.5 * GB),
-    params:
-        exclude=["pncA", "katG"],
-        frameshift_lengths=[1, 2],
-    container:
-        CONTAINERS["conda"]
-    script:
-        str(SCRIPTS / "filter_panel.py")
-
-
 rule add_drugs_to_panel:
     input:
-        panel=rules.filter_panel.output.panel,
+        panel=rules.download_panel.output.panel,
     output:
         panel=RESULTS / "drprg/panel/panel.resistant.tsv",
     resources:
@@ -67,6 +50,24 @@ rule add_known_non_resistance_vars_to_panel:
         "awk 1 {input.panel} {input.known} > {output.panel} 2> {log}"
 
 
+rule filter_panel:
+    input:
+        panel=rules.download_panel.output.panel,
+    output:
+        panel=RESULTS / "drprg/panel/panel.filtered.tsv",
+    log:
+        LOGS / "filter_panel.log",
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        exclude=["pncA", "katG"],
+        frameshift_lengths=[1, 2],
+    container:
+        CONTAINERS["conda"]
+    script:
+        str(SCRIPTS / "filter_panel.py")
+
+
 rule drprg_build:
     input:
         panel=rules.add_known_non_resistance_vars_to_panel.output.panel,
@@ -76,6 +77,9 @@ rule drprg_build:
     output:
         outdir=directory(RESULTS / "drprg/index"),
         prg=RESULTS / "drprg/index/dr.prg",
+        vcf=RESULTS / "drprg/index/panel.bcf",
+        vcf_idx=RESULTS / "drprg/index/panel.bcf.csi",
+        ref=RESULTS / "drprg/index/genes.fa",
     log:
         LOGS / "drprg_build.log",
     resources:
@@ -91,7 +95,7 @@ rule drprg_build:
                 f"--padding {config['padding']}",
             ],
         ),
-        prebuilt_dir=lambda wildcards, input: Path(input.prg_index).parent
+        prebuilt_dir=lambda wildcards, input: Path(input.prg_index).parent,
     shell:
         """
         drprg build {params.options} -a {input.annotation} -o {output.outdir} -i {input.panel} \
@@ -122,6 +126,7 @@ rule drprg_predict:
     output:
         outdir=directory(RESULTS / "drprg/predict/{tech}/{site}/{sample}"),
         report=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.json",
+        vcf=RESULTS / "drprg/predict/{tech}/{site}/{sample}/{sample}.drprg.bcf",
     log:
         LOGS / "drprg_predict/{tech}/{site}/{sample}.log",
     threads: 4
@@ -130,13 +135,7 @@ rule drprg_predict:
     container:
         CONTAINERS["drprg"]
     params:
-        opts=" ".join(
-            [
-                "--verbose",
-                "-s {sample}",
-                "-u"
-            ]
-        ),
+        opts=" ".join(["--verbose", "-s {sample}", "-u", "--failed"]),
         filters=lambda wildcards: drprg_filter_args(wildcards),
         tech_flag=lambda wildcards: "-I" if wildcards.tech == "illumina" else "",
     shell:
@@ -144,3 +143,51 @@ rule drprg_predict:
         drprg predict {params.opts} {params.filters} {params.tech_flag} \
           -o {output.outdir} -i {input.reads} -x {input.index} -t {threads} 2> {log}
         """
+
+
+rule trim_drprg_vcf:
+    input:
+        vcf=rules.drprg_predict.output.vcf,
+        ref=rules.drprg_build.output.ref,
+    output:
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.trimmed.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "trim_novel_drprg_vcf/{tech}/{site}/{sample}.log",
+    container:
+        CONTAINERS["bcftools"]
+    shell:
+        """
+        ( bcftools view -a -f .,PASS {input.vcf} \
+          | bcftools norm -O b -o {output.vcf} -f {input.ref} ) 2> {log}
+        """
+
+
+rule subtract_panel_variants_from_drprg:
+    input:
+        panel=rules.drprg_build.output.vcf,
+        query=rules.trim_drprg_vcf.output.vcf,
+    output:
+        vcf=RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf",
+    resources:
+        mem_mb=int(0.5 * GB),
+    log:
+        LOGS / "subtract_panel_variants_from_drprg/{tech}/{site}/{sample}.log",
+    conda:
+        str(ENVS / "subtract_variants.yaml")
+    script:
+        str(SCRIPTS / "subtract_variants.py")
+
+
+rule index_novel_drprg_vcf:
+    input:
+        rules.subtract_panel_variants_from_drprg.output.vcf,
+    output:
+        RESULTS / "drprg/filtered_vcfs/{tech}/{site}/{sample}.novel.bcf.csi",
+    resources:
+        mem_mb=int(0.5 * GB),
+    params:
+        extra="-f",
+    wrapper:
+        "0.77.0/bio/bcftools/index"

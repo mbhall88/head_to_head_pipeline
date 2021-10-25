@@ -6,6 +6,7 @@ from typing import Optional, NamedTuple, List, Tuple
 
 import click
 import numpy as np
+from pathlib import Path
 from cyvcf2 import Variant, VCF, Writer
 
 HIST_BINS = 40
@@ -32,12 +33,19 @@ class Tags(Enum):
     MapQualBias = "MQB"
     LowMapQualBias = "lmqb"
     ReadPosBias = "RPB"
+    ReadPosBiasZ = "RPBZ"
     LowReadPosBias = "lrpb"
+    LowReadPosBiasZ = "lrpbz"
+    HighReadPosBiasZ = "hrpbz"
     SegregationBias = "SGB"
     HighSegBias = "hsgb"
+    SoftClipBiasZ = "SCBZ"
+    HighSoftClipBiasZ = "hscbz"
     VariantDistanceBias = "VDB"
     LowVarDistBias = "lvdb"
     LowSupport = "frs"
+    LowMapQual = "lmq"
+    MapQual = "MQ"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -52,6 +60,10 @@ class FilterStatus:
     low_bqb: bool = False
     low_mqb: bool = False
     low_rpb: bool = False
+    low_rpbz: bool = False
+    high_rpbz: bool = False
+    high_scbz: bool = False
+    low_mapq: bool = False
     high_sgb: bool = False
     low_vdb: bool = False
     low_support: bool = False
@@ -71,8 +83,16 @@ class FilterStatus:
             status.append(str(Tags.LowBaseQualBias))
         if self.low_mqb:
             status.append(str(Tags.LowMapQualBias))
+        if self.low_mapq:
+            status.append(str(Tags.LowMapQual))
         if self.low_rpb:
             status.append(str(Tags.LowReadPosBias))
+        if self.low_rpbz:
+            status.append(str(Tags.LowReadPosBiasZ))
+        if self.high_rpbz:
+            status.append(str(Tags.HighReadPosBiasZ))
+        if self.high_scbz:
+            status.append(str(Tags.HighSoftClipBiasZ))
         if self.high_sgb:
             status.append(str(Tags.HighSegBias))
         if self.low_vdb:
@@ -178,8 +198,8 @@ class Filter:
     def __init__(
         self,
         expected_depth: int = 0,
-        min_depth: float = 0,
-        max_depth: float = 0,
+        min_depth: int = 0,
+        max_depth: int = 0,
         min_strand_bias: int = 0,
         min_qual: float = 0,
         min_bqb: float = 0,
@@ -188,20 +208,32 @@ class Filter:
         max_sgb: float = 0,
         min_vdb: float = 0,
         min_frs: float = 0,
+        min_mq: int = 0,
+        min_rpbz: Optional[float] = None,
+        max_rpbz: Optional[float] = None,
+        max_scbz: Optional[float] = None,
     ):
         self.expected_depth = expected_depth
-        self.min_depth_frac = min_depth
-        self.min_depth = self.expected_depth * self.min_depth_frac
-        self.max_depth_frac = max_depth
-        self.max_depth = self.expected_depth * self.max_depth_frac
+        self.min_depth = min_depth
+        self.max_depth = max_depth
         self.min_strand_bias = min_strand_bias / 100
         self.min_qual = min_qual
         self.min_bqb = min_bqb
         self.min_mqb = min_mqb
+        self.min_mq = min_mq
         self.min_rpb = min_rpb
         self.max_sgb = max_sgb
         self.min_vdb = min_vdb
         self.min_frs = min_frs
+        if min_rpbz is None:
+            min_rpbz = -float("inf")
+        self.min_rpbz = min_rpbz
+        if max_rpbz is None:
+            max_rpbz = float("inf")
+        self.max_rpbz = max_rpbz
+        if max_scbz is None:
+            max_scbz or float("inf")
+        self.max_scbz = max_scbz
 
         if self.min_depth and self.max_depth and self.min_depth > self.max_depth:
             raise ValueError(
@@ -218,7 +250,11 @@ class Filter:
         return variant_depth > self.max_depth if self.max_depth else False
 
     def _is_low_qual(self, variant: Variant) -> bool:
-        return variant.QUAL < self.min_qual
+        return (variant.QUAL or 0) < self.min_qual
+
+    def _is_low_mapq(self, variant: Variant) -> bool:
+        variant_mapq = get_mapq(variant)
+        return variant_mapq < self.min_mq if self.min_mq else False
 
     def _is_low_bqb(self, variant: Variant) -> bool:
         bqb = variant.INFO.get(str(Tags.BaseQualBias))
@@ -244,11 +280,26 @@ class Filter:
         frs = fraction_read_support(variant)
         return frs < self.min_frs if self.min_frs else False
 
+    def _is_low_rpbz(self, variant: Variant) -> bool:
+        rpbz = variant.INFO.get(str(Tags.ReadPosBiasZ))
+        return rpbz is not None and rpbz < self.min_rpbz
+
+    def _is_high_rpbz(self, variant: Variant) -> bool:
+        rpbz = variant.INFO.get(str(Tags.ReadPosBiasZ))
+        return rpbz is not None and rpbz > self.max_rpbz
+
+    def _is_high_scbz(self, variant: Variant) -> bool:
+        scbz = variant.INFO.get(str(Tags.SoftClipBiasZ))
+        return scbz is not None and scbz > self.max_scbz
+
     def filter_status(self, variant: Variant) -> str:
         status = FilterStatus()
         if self.min_depth or self.max_depth:
             status.low_depth = self._is_low_depth(variant)
             status.high_depth = self._is_high_depth(variant)
+
+        if self.min_mq:
+            status.low_mapq = self._is_low_mapq(variant)
 
         if self.min_qual:
             status.low_qual = self._is_low_qual(variant)
@@ -285,6 +336,15 @@ class Filter:
         if self.min_rpb:
             status.low_rpb = self._is_low_rpb(variant)
 
+        if self.min_rpbz:
+            status.low_rpbz = self._is_low_rpbz(variant)
+
+        if self.max_rpbz:
+            status.high_rpbz = self._is_high_rpbz(variant)
+
+        if self.max_scbz:
+            status.high_scbz = self._is_high_scbz(variant)
+
         if self.max_sgb != 0:
             status.high_sgb = self._is_high_sgb(variant)
 
@@ -301,9 +361,17 @@ class Filter:
             header = {
                 "ID": str(Tags.LowDepth),
                 "Description": (
-                    f"Depth ({Tags.Depth}) less than {self.min_depth_frac:.1%} the "
-                    f"expected depth of {self.expected_depth:.1f}. "
-                    f"{Tags.Depth}<{self.min_depth:.1f}"
+                    f"Depth ({Tags.Depth}) less than {self.min_depth} - i.e., {Tags.Depth}<{self.min_depth:.1f}"
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. depth: {header}")
+
+        if self.min_mq > 0:
+            header = {
+                "ID": str(Tags.LowMapQual),
+                "Description": (
+                    f"Mapping quality ({Tags.MapQual.value}) less than {self.min_mq} - i.e., {Tags.MapQual.value}<{self.min_mq:.0f}"
                 ),
             }
             vcf.add_filter_to_header(header)
@@ -313,9 +381,7 @@ class Filter:
             header = {
                 "ID": str(Tags.HighDepth),
                 "Description": (
-                    f"Depth ({Tags.Depth}) more than {self.max_depth_frac:.1%} the "
-                    f"expected depth of {self.expected_depth:.1f}. "
-                    f"{Tags.Depth}>{self.max_depth:.1f}"
+                    f"Depth ({Tags.Depth}) more than {self.max_depth} - i.e., {Tags.Depth}>{self.max_depth:.1f}"
                 ),
             }
             vcf.add_filter_to_header(header)
@@ -370,6 +436,7 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for min. mapping quality bias: {header}")
+
         if self.min_rpb > 0:
             header = {
                 "ID": str(Tags.LowReadPosBias),
@@ -380,6 +447,39 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for min. read position bias: {header}")
+
+        if self.min_rpbz is not None:
+            header = {
+                "ID": str(Tags.LowReadPosBiasZ),
+                "Description": (
+                    f"Read Position Bias z-test score ({Tags.ReadPosBiasZ}) is less than "
+                    f"{self.min_rpbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. read position bias z-test: {header}")
+
+        if self.max_rpbz is not None:
+            header = {
+                "ID": str(Tags.HighReadPosBiasZ),
+                "Description": (
+                    f"Read Position Bias z-test score ({Tags.ReadPosBiasZ}) is more than "
+                    f"{self.max_rpbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. read position bias z-test: {header}")
+
+        if self.max_scbz is not None:
+            header = {
+                "ID": str(Tags.HighSoftClipBiasZ),
+                "Description": (
+                    f"Soft-Clip Length Bias z-test score ({Tags.SoftClipBiasZ}) is more than "
+                    f"{self.max_scbz}."
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for max. soft-clip length bias z-test: {header}")
 
         if self.max_sgb != 0:
             header = {
@@ -424,6 +524,13 @@ def get_depth(variant: Variant, default: int = 0) -> int:
     return variant.INFO.get(str(Tags.Depth), default)
 
 
+def get_mapq(variant: Variant, default: int = 0) -> int:
+    mq = variant.INFO.get(str(Tags.MapQual), default)
+    if mq is None:  # even though we gave a default it can still return none
+        mq = default
+    return mq
+
+
 def get_strand_depths(
     variant: Variant, default: Optional[StrandDepths] = None
 ) -> Optional[StrandDepths]:
@@ -453,20 +560,20 @@ def get_strand_depths(
     "-d",
     "--min-depth",
     help=(
-        "Minimum depth as a percentage of the expected (median) depth. This filter "
+        "Minimum read depth. This filter "
         f"has ID: {Tags.LowDepth.value}. Set to 0 to disable"
     ),
-    default=0.2,
+    default=0,
     show_default=True,
 )
 @click.option(
     "-D",
     "--max-depth",
     help=(
-        "Maximum depth as a fraction of the expected (median) depth. This filter "
+        "Maximum depth. This filter "
         f"has ID: {Tags.HighDepth.value}. Set to 0 to disable"
     ),
-    default=2.0,
+    default=0,
     show_default=True,
 )
 @click.option(
@@ -505,6 +612,17 @@ def get_strand_depths(
     callback=validate_fraction,
 )
 @click.option(
+    "-M",
+    "--min-mq",
+    help=(
+        f"Minimum mapping quality ({Tags.MapQual.value}) score. "
+        f"This filter has ID: {Tags.LowMapQual.value}. Set to 0 to disable"
+    ),
+    default=0,
+    type=int,
+    show_default=True,
+)
+@click.option(
     "-b",
     "--min-bqb",
     help=(
@@ -536,6 +654,36 @@ def get_strand_depths(
     ),
     default=0.0,
     show_default=True,
+)
+@click.option(
+    "-w",
+    "--min-rpbz",
+    help=(
+        f"Filter a variant if read position bias z-test score ({Tags.ReadPosBiasZ.value}) is "
+        f"less than FLOAT. This filter has ID: {Tags.LowReadPosBiasZ.value}."
+    ),
+    default=None,
+    type=float,
+)
+@click.option(
+    "-W",
+    "--max-rpbz",
+    help=(
+        f"Filter a variant if read position bias z-test score ({Tags.ReadPosBiasZ.value}) is "
+        f"more than FLOAT. This filter has ID: {Tags.HighReadPosBiasZ.value}."
+    ),
+    default=None,
+    type=float,
+)
+@click.option(
+    "-C",
+    "--max-scbz",
+    help=(
+        f"Filter a variant if soft-clip length bias z-test score ({Tags.SoftClipBiasZ.value}) is "
+        f"more than FLOAT. This filter has ID: {Tags.HighSoftClipBiasZ.value}."
+    ),
+    default=None,
+    type=float,
 )
 @click.option(
     "-G",
@@ -580,16 +728,20 @@ def main(
     overwrite: bool,
     verbose: bool,
     min_qual: float,
-    min_depth: float,
-    max_depth: float,
+    min_depth: int,
+    max_depth: int,
     min_strand_bias: int,
     min_bqb: float,
     min_mqb: float,
     min_rpb: float,
+    min_rpbz: Optional[float],
+    max_rpbz: Optional[float],
+    max_scbz: Optional[float],
     max_sgb: float,
     min_vdb: float,
     hist: bool,
     min_frs: float,
+    min_mq: int,
 ):
     """Apply the following filters to a VCF:\n
     - Minimum proportion of the expected (median) depth\n
@@ -618,13 +770,10 @@ def main(
     quals = []
     for v in vcf_reader:
         depths.append(get_depth(v))
-        quals.append(v.QUAL)
+        quals.append(v.QUAL or 0)
 
     median_depth = np.median(depths)
     logging.info(f"Expected depth: {median_depth}")
-
-    median_qual = np.median(quals)
-    logging.info(f"Median QUAL: {median_qual}")
 
     if hist:
         import histoprint
@@ -660,10 +809,18 @@ def main(
         max_sgb=max_sgb,
         min_vdb=min_vdb,
         min_frs=min_frs,
+        min_mq=min_mq,
+        min_rpbz=min_rpbz,
+        max_rpbz=max_rpbz,
+        max_scbz=max_scbz,
     )
 
     vcf_reader = VCF(in_vcf)
     assessor.add_filters_to_header(vcf_reader)
+
+    if not Path(out_vcf).parent.exists():
+        Path(out_vcf).parent.mkdir(exist_ok=True, parents=True)
+
     vcf_writer = Writer(out_vcf, tmpl=vcf_reader)
 
     stats = Counter()

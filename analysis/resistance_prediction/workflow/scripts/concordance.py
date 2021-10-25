@@ -17,7 +17,7 @@ class Prediction(Enum):
         return self.value
 
 
-class Classifier(Enum):
+class Classification(Enum):
     TruePositive = "TP"
     FalsePositive = "FP"
     TrueNegative = "TN"
@@ -26,24 +26,59 @@ class Classifier(Enum):
     def __str__(self) -> str:
         return self.value
 
-    @staticmethod
-    def from_predictions(y_true: Prediction, y_pred: Prediction) -> "Classifier":
-        if y_true is Prediction.Susceptible:
-            return (
-                Classifier.TrueNegative
-                if y_pred is Prediction.Susceptible
-                else Classifier.FalsePositive
-            )
-        elif y_true in (Prediction.Resistant, Prediction.MinorResistance):
-            return (
-                Classifier.TruePositive
-                if y_pred in (Prediction.Resistant, Prediction.MinorResistance)
-                else Classifier.FalseNegative
-            )
+
+class Classifier:
+    def __init__(
+        self,
+        minor_is_susceptible: bool = False,
+        unknown_is_resistant: bool = False,
+        failed_is_resistant: bool = False,
+    ):
+        self.minor_is_susceptible = minor_is_susceptible
+        self.unknown_is_resistant = unknown_is_resistant
+        self.failed_is_resistant = failed_is_resistant
+        self.susceptible = {Prediction.Susceptible}
+        self.resistant = {Prediction.Resistant}
+        if self.minor_is_susceptible:
+            self.susceptible.add(Prediction.MinorResistance)
         else:
-            raise NotImplementedError(
-                f"Don't know how to classify {y_true} calls yet"
-            )
+            self.resistant.add(Prediction.MinorResistance)
+
+        if self.unknown_is_resistant:
+            self.resistant.add(Prediction.Unknown)
+        else:
+            self.susceptible.add(Prediction.Unknown)
+
+        if self.failed_is_resistant:
+            self.resistant.add(Prediction.Failed)
+        else:
+            self.susceptible.add(Prediction.Failed)
+
+    def from_predictions(
+        self, y_true: Prediction, y_pred: Prediction
+    ) -> Classification:
+        if y_true in self.susceptible:
+            expected_susceptible = True
+        elif y_true in self.resistant:
+            expected_susceptible = False
+        else:
+            raise NotImplementedError(f"Don't know how to classify {y_true} calls yet")
+
+        if y_pred in self.susceptible:
+            called_susceptible = True
+        elif y_pred in self.resistant:
+            called_susceptible = False
+        else:
+            raise NotImplementedError(f"Don't know how to classify {y_pred} calls yet")
+
+        if expected_susceptible and called_susceptible:
+            return Classification.TrueNegative
+        elif expected_susceptible and not called_susceptible:
+            return Classification.FalsePositive
+        elif not expected_susceptible and not called_susceptible:
+            return Classification.TruePositive
+        else:
+            return Classification.FalseNegative
 
 
 def load_susceptibility(stream: TextIO) -> dict:
@@ -55,14 +90,13 @@ def load_susceptibility(stream: TextIO) -> dict:
         return data["susceptibility"]
 
 
-def extract_calls(data: dict, convert_minor: bool = False) -> Dict[str, Prediction]:
+def extract_calls(data: dict) -> Dict[str, Prediction]:
     """Takes a susceptibility dictionary and returns the calls for each drug"""
     calls = dict()
 
     for drug in data:
         call = data[drug]["predict"]
-        prediction = Prediction(call.upper()) if convert_minor else Prediction(call)
-        calls[drug] = prediction
+        calls[drug] = Prediction(call)
 
     return calls
 
@@ -93,8 +127,20 @@ def extract_calls(data: dict, convert_minor: bool = False) -> Dict[str, Predicti
 )
 @click.option(
     "-r",
-    "--minor-is-major",
-    help="Minor resistance 'r' should be treated as major resistance 'R'",
+    "--minor-is-susceptible",
+    help="Minor resistance 'r' should be treated as susceptible 'S'",
+    is_flag=True,
+)
+@click.option(
+    "-U",
+    "--unknown-is-resistant",
+    help="Unknown calls are considered resistant. By default they're considered susceptible",
+    is_flag=True,
+)
+@click.option(
+    "-F",
+    "--failed-is-resistant",
+    help="Failed calls are considered resistant. By default they're considered susceptible",
     is_flag=True,
 )
 @click.option("-v", "--verbose", help="Turns on debug-level logging.", is_flag=True)
@@ -103,7 +149,9 @@ def main(
     test_istream: TextIO,
     output: TextIO,
     verbose: bool,
-    minor_is_major: bool,
+    minor_is_susceptible: bool,
+    unknown_is_resistant: bool,
+    failed_is_resistant: bool,
 ):
     """Concordance of drug resistant predictions"""
     log_level = logging.DEBUG if verbose else logging.INFO
@@ -112,19 +160,24 @@ def main(
     )
 
     truth_susceptibility = load_susceptibility(truth_istream)
-    true_calls = extract_calls(truth_susceptibility, convert_minor=minor_is_major)
+    true_calls = extract_calls(truth_susceptibility)
 
     test_susceptibility = load_susceptibility(test_istream)
-    test_calls = extract_calls(test_susceptibility, convert_minor=minor_is_major)
+    test_calls = extract_calls(test_susceptibility)
 
     if len(true_calls.keys() - test_calls.keys()) != 0:
         raise KeyError("Drug names aren't consistent between the two datasets")
 
     logging.info("Classifying prediction concordance...")
     print("drug,classification,true_call,test_call", file=output)
+    classifier = Classifier(
+        unknown_is_resistant=unknown_is_resistant,
+        minor_is_susceptible=minor_is_susceptible,
+        failed_is_resistant=failed_is_resistant,
+    )
     for drug, y_true in true_calls.items():
         y_pred = test_calls[drug]
-        classification = Classifier.from_predictions(y_true, y_pred)
+        classification = classifier.from_predictions(y_true, y_pred)
         print(f"{drug},{classification},{y_true},{y_pred}", file=output)
 
     logging.info("Done!")

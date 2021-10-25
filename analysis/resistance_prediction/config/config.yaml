@@ -7,15 +7,17 @@ padding:           100  # base padding to add to genes in drprg build
 filters:
   min_covg:        3
   min_strand_bias: 0.01
-  min_frs:         0.75
+  min_frs:         0.7
   max_indel:       20
   min_gt_conf:
     nanopore: 5
     illumina: 5
 
 containers:
-  base:    "docker://bash:5.1"
-  mykrobe: "docker://quay.io/biocontainers/mykrobe:0.10.0--py38h8e3bb3f_0"
-  conda:   "docker://continuumio/miniconda3:4.9.2"
-  drprg:   "docker://quay.io/mbhall88/drprg:0ef9e82"
-  mafft:   "docker://quay.io/biocontainers/mafft:7.475--h516909a_0"
+  base:     "docker://bash:5.1"
+  mykrobe:  "docker://quay.io/biocontainers/mykrobe:0.10.0--py38h8e3bb3f_0"
+  conda:    "docker://continuumio/miniconda3:4.9.2"
+  drprg:    "docker://quay.io/mbhall88/drprg:cb4f9b8"
+  mafft:    "docker://quay.io/biocontainers/mafft:7.475--h516909a_0"
+  happy:    "docker://quay.io/biocontainers/hap.py:0.3.14--py27h5c5a3ab_0"
+  bcftools: "docker://quay.io/biocontainers/bcftools:1.11--h7c999a4_0"

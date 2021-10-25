@@ -26,18 +26,19 @@ rule analyse_results:
     input:
         coverage=QC("report/coverage.csv"),
         phenosheet=config["phenosheet"],
-        concordance=[
-            RESULTS / f"concordance/mykrobe/nanopore/{site}/{sample}.mykrobe.csv"
-            for site, sample in zip(samplesheet["site"], samplesheet["sample"])
-        ],
+        concordance=all_concordance_files,
     output:
         dst_data=RESULTS / "figures/available_dst.png",
         pheno_concordance_plot=RESULTS / "figures/phenotype_concordance.png",
+        geno_concordance_plot=RESULTS / "figures/illumina_concordance.png",
         pheno_concordance_csv=RESULTS / "figures/phenotype_concordance.csv",
         illumina_concordance_csv=RESULTS / "figures/illumina_concordance.csv",
         pheno_coverage_plot=RESULTS / "figures/phenotype_coverage.png",
     params:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
+        unknown_is_resistant=False,
+        minor_is_susceptible=False,
+        failed_is_resistant=False,
     conda:
         str(ENVS / "analyse_results.yaml")
     log:

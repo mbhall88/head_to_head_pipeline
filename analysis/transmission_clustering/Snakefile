@@ -97,8 +97,6 @@ rule dotplot:
     threads: 1
     resources:
         mem_mb=int(2 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["dotplot"]
     params:
@@ -193,8 +191,6 @@ rule plot_concordance:
         colour_by="caller",
         index="sample",
         log_scale=False,
-    container:
-        containers["conda"]
     conda:
         envs["plot_concordance"]
     log:
@@ -222,7 +218,7 @@ def infer_threshold(wildcards) -> str:
     elif wildcards.caller == "pandora_compare":
         opt += f",{config['compare_clustering_thresholds'][int(wildcards.threshold)]}"
     else:
-        opt += f" -A {config['adaptive_threshold']}"
+        opt += f",{config['map_clustering_thresholds'][int(wildcards.threshold)]}"
     return opt
 
 
@@ -243,8 +239,6 @@ rule clustering:
             subcategory="Confusion Matrix",
             caption=f"{report_dir}/confusion_matrix.rst",
         ),
-    container:
-        containers["conda"]
     conda:
         envs["clustering"]
     params:
@@ -282,8 +276,6 @@ rule mixed_simulations:
     threads: 1
     resources:
         mem_mb=int(2 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["mixed_simulations"]
     params:
@@ -293,7 +285,7 @@ rule mixed_simulations:
                 "ont": 0,
                 "mixed": 0,
             },
-            2: {"ont": 2, "mixed": 2},
+            2: {"ont": 3, "mixed": 2},
             5: {"ont": 5, "mixed": 5},
             12: {"ont": 11, "mixed": 12},
         },

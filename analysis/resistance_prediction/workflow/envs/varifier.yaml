@@ -1,0 +1,8 @@
+name: varifier
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconda::varifier=0.3
+  - bioconda::bcftools=1

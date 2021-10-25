@@ -90,21 +90,28 @@ output_files.add(truth_eval_dir / "all_variants/truth_all_eval.precision.png")
 output_files.add(truth_eval_dir / "snps/truth_snps_eval.recall.png")
 output_files.add(truth_eval_dir / "snps/truth_snps_eval.precision.png")
 output_files.update(VARIFIER_JSONS_INDELS)
+output_files.add(distance_dir / "mixed.pandora.matrix.csv")
 
 
 # ======================================================
 # Sub Workflows
 # ======================================================
 subworkflow build_prg:
-    workdir: build_prg_dir
-    snakefile: build_prg_dir / "Snakefile"
-    configfile: build_prg_dir / "config.yaml"
+    workdir:
+        build_prg_dir
+    snakefile:
+        build_prg_dir / "Snakefile"
+    configfile:
+        build_prg_dir / "config.yaml"
 
 
 subworkflow qc:
-    workdir: qc_dir
-    snakefile: qc_dir / "Snakefile"
-    configfile: qc_dir / "config.yaml"
+    workdir:
+        qc_dir
+    snakefile:
+        qc_dir / "Snakefile"
+    configfile:
+        qc_dir / "config.yaml"
 
 
 # ======================================================
@@ -175,8 +182,6 @@ rule update_msas_for_single_sample:
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["update_msas"]
     log:
@@ -378,8 +383,6 @@ rule filter_single_sample_vcf:
         script=scripts["filter"],
     log:
         rule_log_dir / "filter_single_sample_vcf/{prg_name}/{site}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["filter"]
     shell:
@@ -423,8 +426,6 @@ rule evaluate_all_variants_single_sample:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_all_variants_single_sample/{prg_name}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["varifier"]
     shell:
@@ -460,8 +461,6 @@ rule plot_evaluation_all_variants_single_sample:
     threads: 1
     resources:
         mem_mb=int(GB * 0.5),
-    container:
-        containers["conda"]
     conda:
         envs["plot_truth_eval"]
     params:
@@ -483,8 +482,6 @@ rule extract_snps:
     threads: 1
     resources:
         mem_mb=int(0.5 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["extract_snps"]
     params:
@@ -537,8 +534,6 @@ rule evaluate_snps_single_sample:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_snps_single_sample/{prg_name}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["varifier"]
     shell:
@@ -578,8 +573,6 @@ rule evaluate_indels_single_sample:
         outdir=lambda wildcards, output: Path(output.summary).parent,
     log:
         rule_log_dir / "evaluate_indels_single_sample/{prg_name}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["varifier"]
     shell:
@@ -615,8 +608,6 @@ rule plot_evaluation_snps_single_sample:
     threads: 1
     resources:
         mem_mb=int(GB * 0.5),
-    container:
-        containers["conda"]
     conda:
         envs["plot_truth_eval"]
     params:
@@ -640,8 +631,6 @@ rule generate_consensus:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: int(GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["consensus"]
     params:
@@ -729,8 +718,6 @@ rule plot_distance_matrix:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["plot_distance_matrix"]
     log:
@@ -760,8 +747,6 @@ rule calculate_concordance:
         script=scripts["concordance"],
     log:
         rule_log_dir / "calculate_concordance/{prg_name}/{site}/{sample}.log",
-    container:
-        containers["conda"]
     conda:
         envs["concordance"]
     shell:
@@ -804,8 +789,6 @@ rule deduplicate_denovo_paths:
     threads: 16
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["deduplicate_fasta"]
     log:
@@ -831,8 +814,6 @@ rule update_msas_for_multi_sample:
     threads: 32
     resources:
         mem_mb=lambda wildcards, attempt: int(32 * GB) * attempt,
-    container:
-        containers["conda"]
     conda:
         envs["update_msas"]
     log:
@@ -893,8 +874,6 @@ rule combine_multi_sample_local_prgs:
         extras="--no-ignore --hidden",
         extension="prg",
         pattern=".",
-    container:
-        containers["conda"]
     conda:
         envs["fd"]
     log:
@@ -941,8 +920,6 @@ rule create_sample_index:
     params:
         qc_dir=qc_dir,
         samplesheet=samplesheet,
-    container:
-        containers["conda"]
     conda:
         envs["create_sample_index"]
     script:
@@ -1064,8 +1041,6 @@ rule extract_multi_sample_snps:
     threads: 1
     resources:
         mem_mb=int(0.5 * GB),
-    container:
-        containers["conda"]
     conda:
         envs["extract_snps"]
     params:
@@ -1102,8 +1077,6 @@ rule filter_multi_sample_vcf:
         script=scripts["filter"],
     log:
         rule_log_dir / "filter_multi_sample_vcf/{prg_name}.log",
-    container:
-        containers["conda"]
     conda:
         envs["filter"]
     shell:
@@ -1122,8 +1095,6 @@ rule make_genotype_matrix:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["make_genotype_matrix"]
     log:
@@ -1142,8 +1113,6 @@ rule calculate_multi_sample_distance:
     threads: 1
     resources:
         mem_mb=GB,
-    container:
-        containers["conda"]
     conda:
         envs["multi_dist"]
     params:
@@ -1176,11 +1145,28 @@ rule plot_multi_sample_distance_matrix:
     threads: 1
     resources:
         mem_mb=int(GB),
-    container:
-        containers["conda"]
     conda:
         envs["plot_distance_matrix"]
     log:
         rule_log_dir / "plot_distance_matrix/{prg_name}.log",
     shell:
         "python {params.script} {params.options} -i {input.matrix} -o {output.plot} 2> {log}"
+
+
+rule mixed_snp_distance:
+    input:
+        a=baseline_variant_dir / "consensus/compass/compass.consensus.fa",
+        b=consensus_dir / "sparse/pandora.sparse.consensus.fa",
+    output:
+        matrix=distance_dir / "mixed.pandora.matrix.csv",
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
+    conda:
+        envs["distance"]
+    params:
+        script=scripts["distance"],
+    log:
+        rule_log_dir / "mixed_snp_distance.log",
+    shell:
+        "python {params.script} {input.a} {input.b} > {output.matrix} 2> {log}"

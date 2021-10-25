@@ -1,0 +1,13 @@
+graph H {
+    node [style=filled];
+    {node [color=tomato,style=filled] L M K}
+    A -- B [label=11];
+    B -- C [label=3];
+    A -- C [label=5];
+    D -- E [label=2];
+    D -- K [label=10];
+    F -- G [label=2];
+    F -- H [label=7];
+    F -- I [label=1];
+    L -- M [label=10];
+}
