@@ -25,6 +25,7 @@ scripts: Dict[str, PathLike] = config["scripts"]
 rule_log_dir = Path("logs/stderr")
 decontam_db = Path("decontam_db")
 data_dir = Path(config["data_dir"])
+nfs_data_dir = Path(config["nfs_data_dir"])
 report_dir = Path("report")
 plot_dir = report_dir / "plotting"
 filtered_dir = Path("filtered")
@@ -36,6 +37,7 @@ compass_vcf_dir = Path(config["compass_vcf_dir"])
 # ======================================================
 MM2_PRESET = "map-ont"
 BWA_EXTNS = [".amb", ".ann", ".bwt", ".pac", ".sa"]
+BASECALL_VER = config["basecall_model"]
 technologies = ["illumina", "nanopore"]
 
 output_files = set()
@@ -45,7 +47,13 @@ subsample_logfiles = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
+    run = row["run"]
     samples.add(sample)
+
+    output_files.add(
+        data_dir
+        / f"{site}/nanopore/raw_data/{run}/{BASECALL_VER}/sequencing_summary.txt"
+    )
     for tech in technologies:
         filter_logfiles.add(
             rule_log_dir / "filter_contamination" / f"{site}" / f"{sample}.{tech}.log"
@@ -73,6 +81,61 @@ report: report_dir / "workflow.rst"
 rule all:
     input:
         output_files,
+
+
+rule basecall:
+    input:
+        fast5=nfs_data_dir / "{site}/nanopore/raw_data/{run}/multi_fast5s",
+    output:
+        summary=(
+            data_dir
+            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/sequencing_summary.txt"
+        ),
+    threads: 2
+    resources:
+        mem_mb=lambda wildcards, attempt: int(16 * GB) * attempt,
+    container:
+        containers["guppy-gpu"]
+    params:
+        extras=" ".join(
+            [
+                "--recursive",
+                "--compress_fastq",
+                "--device 'cuda:all:100%'",
+                "--disable_qscore_filtering",
+                "--barcoding_config_file configuration.cfg",
+                "--trim_barcodes",
+                f"-c {config['basecall_config']}",
+            ]
+        ),
+        save_path=lambda wildcards, output: Path(output.summary).parent,
+    log:
+        rule_log_dir / f"basecall/{BASECALL_VER}/{{site}}/{{run}}.log",
+    shell:
+        """
+        guppy_basecaller {params.extras} \
+            --num_callers {threads} \
+            -i {input.fast5} \
+            -s {params.save_path} > {log} 2>&1
+        """
+
+
+# rule combine_basecalled_fastqs:
+#     input:
+#         demux_dir=infer_demux_dir_for_sample,
+#     output:
+#         fastq=DATA_DIR / f"guppy_{GUPPY_VERSION}/{{sample}}.fq.gz",
+#     threads: 1
+#     resources:
+#         mem_mb=int(GB),
+#     container:
+#         CONTAINERS["base"]
+#     params:
+#         barcode_dir=infer_barcode_dir,
+#     log:
+#         RULE_LOG_DIR / f"combine_barcode_fastqs/{GUPPY_VERSION}/{{sample}}.log",
+#     shell:
+#         "cat {input.demux_dir}/{params.barcode_dir}/*.fastq* > {output.fastq} 2> {log}"
 
 
 rule build_decontamination_db:
@@ -323,7 +386,7 @@ rule assign_lineages:
         envs["assign_lineages"]
     params:
         script=scripts["assign_lineages"],
-        default_lineage=config["default_lineage"], # the name given to samples with no hits in the panel
+        default_lineage=config["default_lineage"],  # the name given to samples with no hits in the panel
         max_het=1,
         max_alt_lineages=1,
         ref_lineage_position=config["ref_lineage_position"],

@@ -26,7 +26,7 @@ case $HOSTNAME in
         ;;
 esac
 
-ARGS="--contain -B $BINDS"
+ARGS="--contain -B $BINDS --nv"
 
 bsub -R "select[mem>$MEMORY] rusage[mem=$MEMORY] span[hosts=1]" \
     -M "$MEMORY" \
