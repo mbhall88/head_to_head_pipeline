@@ -89,7 +89,7 @@ rule basecall:
     output:
         summary=(
             data_dir
-            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/sequencing_summary.txt"
+            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/basecall/sequencing_summary.txt"
         ),
     threads: 2
     resources:
