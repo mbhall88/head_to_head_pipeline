@@ -103,8 +103,6 @@ rule basecall:
                 "--compress_fastq",
                 "--device 'cuda:all:100%'",
                 "--disable_qscore_filtering",
-                "--barcoding_config_file configuration.cfg",
-                "--trim_barcodes",
                 f"-c {config['basecall_config']}",
             ]
         ),
