@@ -13,6 +13,8 @@ containers:
   pyfastaq:  "docker://quay.io/biocontainers/pyfastaq:3.17.0--py_2"
   rasusa:    "docker://quay.io/mbhall88/rasusa:0.6.0"
   guppy-gpu: "docker://quay.io/mbhall88/guppy-gpu:5.0.16"
+  guppy-cpu: "docker://quay.io/mbhall88/guppy-cpu:5.0.16"
+  base:      "docker://bash:5.1"
 envs:
   decontam_db:          "envs/decontam_db.yaml"
   aln_tools:            "envs/aln_tools.yaml"

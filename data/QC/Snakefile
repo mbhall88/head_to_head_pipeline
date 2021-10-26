@@ -19,6 +19,7 @@ configfile: "config.yaml"
 
 inclusion_expr = "excluded == 0"
 samplesheet = pd.read_csv(config["samplesheet"]).query(inclusion_expr)
+samplesheet.set_index("sample", drop=False, inplace=True, verify_integrity=True)
 containers: Dict[str, PathLike] = config["containers"]
 envs: Dict[str, PathLike] = config["envs"]
 scripts: Dict[str, PathLike] = config["scripts"]
@@ -50,10 +51,6 @@ for idx, row in samplesheet.iterrows():
     run = row["run"]
     samples.add(sample)
 
-    output_files.add(
-        data_dir
-        / f"{site}/nanopore/raw_data/{run}/{BASECALL_VER}/sequencing_summary.txt"
-    )
     for tech in technologies:
         filter_logfiles.add(
             rule_log_dir / "filter_contamination" / f"{site}" / f"{sample}.{tech}.log"
@@ -118,22 +115,66 @@ rule basecall:
         """
 
 
-# rule combine_basecalled_fastqs:
-#     input:
-#         demux_dir=infer_demux_dir_for_sample,
-#     output:
-#         fastq=DATA_DIR / f"guppy_{GUPPY_VERSION}/{{sample}}.fq.gz",
-#     threads: 1
-#     resources:
-#         mem_mb=int(GB),
-#     container:
-#         CONTAINERS["base"]
-#     params:
-#         barcode_dir=infer_barcode_dir,
-#     log:
-#         RULE_LOG_DIR / f"combine_barcode_fastqs/{GUPPY_VERSION}/{{sample}}.log",
-#     shell:
-#         "cat {input.demux_dir}/{params.barcode_dir}/*.fastq* > {output.fastq} 2> {log}"
+rule demux:
+    input:
+        summary=rules.basecall.output.summary,
+    output:
+        summary=(
+            data_dir
+            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/demux/barcoding_summary.txt"
+        ),
+    threads: 8
+    resources:
+        mem_mb=int(8 * GB),
+    container:
+        containers["guppy-cpu"]
+    log:
+        rule_log_dir / f"demux/{BASECALL_VER}/{{site}}/{{run}}.log",
+    params:
+        extras="--trim_barcodes --compress_fastq -c configuration.cfg",
+        save_path=lambda wildcards, output: Path(output.summary).parent,
+        input_dir=lambda wildcards, input: Path(input.summary).parent,
+    shell:
+        """
+        guppy_barcoder -i {params.input_dir} -s {params.save_path} -t {threads} \
+            {params.extras} > {log} 2>&1
+        """
+
+
+def infer_demux_for_sample(wildcards) -> str:
+    run_for_sample = samplesheet.at[wildcards.sample, "run"]
+    site_for_sample = samplesheet.at[wildcards.sample, "site"]
+    return str(
+        data_dir
+        / f"{site_for_sample}/nanopore/raw_data/{run_for_sample}/{BASECALL_VER}/demux/barcoding_summary.txt"
+    )
+
+
+def infer_barcode_dir(wildcards) -> str:
+    barcode = int(samplesheet.at[wildcards.sample, "barcode"])
+    return f"barcode{barcode:02}"  # zero-pad to two digits
+
+
+rule combine_demux_fastqs:
+    input:
+        demux_summary=infer_demux_for_sample,
+    output:
+        fastq=(
+            data_dir
+            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/demux/{{sample}}.nanopore.fq.gz"
+        ),
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    container:
+        containers["base"]
+    params:
+        barcode_dir=infer_barcode_dir,
+        demux_dir=lambda wildcards, input: Path(input.demux_summary).parent,
+    log:
+        rule_log_dir / f"combine_demux_fastqs/{BASECALL_VER}/{{site}}/{{run}}/{{sample}}.log",
+    shell:
+        "cat {params.demux_dir}/{params.barcode_dir}/*.fastq* > {output.fastq} 2> {log}"
 
 
 rule build_decontamination_db:
@@ -212,12 +253,18 @@ rule map_illumina_to_decontam_db:
         """
 
 
+def infer_nanopore_fastq(wildcards) -> str:
+    run_for_sample = samplesheet.at[wildcards.sample, "run"]
+    return str(
+        data_dir
+        / f"{wildcards.site}/nanopore/raw_data/{run_for_sample}/{BASECALL_VER}/demux/{wildcards.sample}.nanopore.fq.gz"
+    )
+
+
 rule map_nanopore_to_decontam_db:
     input:
         index=rules.index_decontam_db.output.mm2_index,
-        query=(
-            data_dir / "{site}" / "nanopore" / "{sample}" / "{sample}.nanopore.fastq.gz"
-        ),
+        query=infer_nanopore_fastq,
     output:
         bam="mapped/{site}/{sample}.nanopore.sorted.bam",
         index="mapped/{site}/{sample}.nanopore.sorted.bam.bai",
