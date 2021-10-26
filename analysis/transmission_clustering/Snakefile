@@ -128,131 +128,23 @@ rule dotplot:
         """
 
 
-concordance_jsons = set()
-for idx, row in samplesheet.iterrows():
-    site = row["site"]
-    sample = row["sample"]
-
-    for caller in config["nanopore_callers"]:
-        if caller == "pandora_map":
-            caller_dir = pandora_dir / "concordance/sparse"
-        elif caller == "bcftools":
-            caller_dir = baseline_dir / "concordance"
-        else:
-            continue
-        concordance_jsons.add(caller_dir / f"{site}/{sample}.concordance.json")
-
-
-rule plot_concordance:
-    input:
-        jsons=concordance_jsons,
-        coveragesheet=qc_dir / "report/coverage.csv",
-    output:
-        alt_plot=report(
-            plot_dir / "alt_concordance.html",
-            caption=f"{report_dir}/alt_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        gw_plot=report(
-            plot_dir / "gw_concordance.html",
-            caption=f"{report_dir}/gw_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_call_rate_plot=report(
-            plot_dir / "depth_call_rate.html",
-            caption=f"{report_dir}/depth_call_rate.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_gw_call_rate_plot=report(
-            plot_dir / "depth_gw_call_rate.html",
-            caption=f"{report_dir}/depth_gw_call_rate.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_concordance_plot=report(
-            plot_dir / "depth_concordance.html",
-            caption=f"{report_dir}/depth_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-        depth_gw_concordance_plot=report(
-            plot_dir / "depth_gw_concordance.html",
-            caption=f"{report_dir}/depth_gw_concordance.rst",
-            category="Concordance",
-            subcategory="Plots",
-        ),
-    threads: 1
-    resources:
-        mem_mb=lambda wildcards, attempt: int(0.5 * GB) * attempt,
-    params:
-        colour_by="caller",
-        index="sample",
-        log_scale=False,
-    conda:
-        envs["plot_concordance"]
-    log:
-        rule_log_dir / "plot_concordance.log",
-    script:
-        scripts["plot_concordance"]
-
-
-def infer_caller_dist_mtx(wildcards) -> str:
-    if wildcards.caller == "pandora_map":
-        p = pandora_dir / "distance/pandora.sparse.matrix.csv"
-    elif wildcards.caller == "pandora_compare":
-        p = pandora_dir / "distance/pandora.sparse.multisample.distance.csv"
-    elif wildcards.caller == "bcftools":
-        p = baseline_dir / "distance/bcftools.matrix.csv"
-    else:
-        raise NotImplementedError(f"Unrecognised caller {wildcards.caller}")
-    return str(p)
-
-
-def infer_threshold(wildcards) -> str:
-    opt = f"-T {wildcards.threshold}"
-    if wildcards.caller == "bcftools":
-        opt += f",{config['bcftools_clustering_thresholds'][int(wildcards.threshold)]}"
-    elif wildcards.caller == "pandora_compare":
-        opt += f",{config['compare_clustering_thresholds'][int(wildcards.threshold)]}"
-    else:
-        opt += f",{config['map_clustering_thresholds'][int(wildcards.threshold)]}"
-    return opt
-
 
 rule clustering:
     input:
-        compass_dist=rules.dotplot.input.x_matrix,
-        query_dist=infer_caller_dist_mtx,
+        illumina_dist=rules.dotplot.input.x_matrix,
+        ont_dist=infer_caller_dist_mtx,
     output:
-        report(
-            plot_dir / "clustering/{caller}/t{threshold}/{caller}.clusters.html",
-            category="Clustering",
-            subcategory="Clusters",
-            caption=f"{report_dir}/clusters.rst",
-        ),
-        report(
-            plot_dir / "clustering/{caller}/t{threshold}/{caller}.confmatrix.png",
-            category="Clustering",
-            subcategory="Confusion Matrix",
-            caption=f"{report_dir}/confusion_matrix.rst",
-        ),
+        report_dir / "cluster_metrics.csv"
     conda:
         envs["clustering"]
     params:
-        script=scripts["clustering"],
-        outdir=lambda wildcards, output: output[0].rpartition("/")[0],
-        extras=" ".join(["-S compass,{caller}", "-v"]),
-        threshold=infer_threshold,
+        thresholds=config["bcftools_clustering_thresholds"],
+        figsize=(10, 10),
+        node_size=400,
     log:
-        rule_log_dir / "clustering/{caller}/t{threshold}.log",
-    shell:
-        """
-        python {params.script} {params.extras} {params.threshold} \
-          -o {params.outdir} {input.compass_dist} {input.query_dist} 2> {log}
-        """
+        "report/clustering.processed.ipynb",
+    notebook:
+        "notebooks/clustering.py.ipynb"
 
 
 rule mixed_simulations:
