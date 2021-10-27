@@ -116,8 +116,8 @@ rule basecall:
 
 
 def infer_barcode_kit(wildcards) -> str:
-    kit = int(samplesheet.at[wildcards.sample, "barcode_kit"])
-    return f'--barcode_kits "{kit}"'
+    kits = set(samplesheet.query("run == @wildcards.run")["barcode_kit"])
+    return f"--barcode_kits \"{' '.join(kits)}\""
 
 
 rule demux:
