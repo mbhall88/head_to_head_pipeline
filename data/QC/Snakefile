@@ -90,7 +90,7 @@ rule basecall:
         ),
     threads: 2
     resources:
-        mem_mb=int(16 * GB),
+        mem_mb=int(8 * GB),
     container:
         containers["guppy-gpu"]
     params:
@@ -352,7 +352,7 @@ rule extract_decontaminated_illumina_reads:
 
 rule extract_decontaminated_nanopore_reads:
     input:
-        r1=rules.map_nanopore_to_decontam_db.input.query,
+        r1=infer_nanopore_fastq,
         read_ids=filtered_dir / "{site}" / "nanopore" / "{sample}" / "keep.reads",
     output:
         r1=(
