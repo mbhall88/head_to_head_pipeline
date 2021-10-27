@@ -128,6 +128,9 @@ rule demux:
             data_dir
             / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/demux/barcoding_summary.txt"
         ),
+        save_path=directory(
+            data_dir / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/demux"
+        ),
     threads: 8
     resources:
         mem_mb=int(8 * GB),
@@ -137,12 +140,11 @@ rule demux:
         rule_log_dir / f"demux/{BASECALL_VER}/{{site}}/{{run}}.log",
     params:
         extras="--trim_barcodes --compress_fastq",
-        save_path=lambda wildcards, output: Path(output.summary).parent,
         input_dir=lambda wildcards, input: Path(input.summary).parent,
         kit=infer_barcode_kit,
     shell:
         """
-        guppy_barcoder -i {params.input_dir} -s {params.save_path} -t {threads} \
+        guppy_barcoder -i {params.input_dir} -s {output.save_path} -t {threads} \
             {params.extras} {params.kit} > {log} 2>&1
         """
 
@@ -167,7 +169,7 @@ rule combine_demux_fastqs:
     output:
         fastq=(
             data_dir
-            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/demux/{{sample}}.nanopore.fq.gz"
+            / f"{{site}}/nanopore/raw_data/{{run}}/{BASECALL_VER}/{{sample}}.nanopore.fq.gz"
         ),
     threads: 1
     resources:
@@ -263,7 +265,7 @@ def infer_nanopore_fastq(wildcards) -> str:
     run_for_sample = samplesheet.at[wildcards.sample, "run"]
     return str(
         data_dir
-        / f"{wildcards.site}/nanopore/raw_data/{run_for_sample}/{BASECALL_VER}/demux/{wildcards.sample}.nanopore.fq.gz"
+        / f"{wildcards.site}/nanopore/raw_data/{run_for_sample}/{BASECALL_VER}/{wildcards.sample}.nanopore.fq.gz"
     )
 
 
