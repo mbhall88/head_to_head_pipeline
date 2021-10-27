@@ -3,5 +3,5 @@ __default__:
 
 basecall:
   - "-q gpu"
-  - "-gpu 'num=2:mode=shared:j_exclusive=yes'"
+  - "-gpu 'num=2:mode=exclusive_process'"
 

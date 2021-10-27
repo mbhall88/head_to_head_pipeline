@@ -90,7 +90,7 @@ rule basecall:
         ),
     threads: 2
     resources:
-        mem_mb=int(8 * GB),
+        mem_mb=int(4 * GB),
     container:
         containers["guppy-gpu"]
     params:
