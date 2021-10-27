@@ -115,6 +115,11 @@ rule basecall:
         """
 
 
+def infer_barcode_kit(wildcards) -> str:
+    kit = int(samplesheet.at[wildcards.sample, "barcode_kit"])
+    return f'--barcode_kits "{kit}"'
+
+
 rule demux:
     input:
         summary=rules.basecall.output.summary,
@@ -131,13 +136,14 @@ rule demux:
     log:
         rule_log_dir / f"demux/{BASECALL_VER}/{{site}}/{{run}}.log",
     params:
-        extras="--trim_barcodes --compress_fastq -c configuration.cfg",
+        extras="--trim_barcodes --compress_fastq",
         save_path=lambda wildcards, output: Path(output.summary).parent,
         input_dir=lambda wildcards, input: Path(input.summary).parent,
+        kit=infer_barcode_kit,
     shell:
         """
         guppy_barcoder -i {params.input_dir} -s {params.save_path} -t {threads} \
-            {params.extras} > {log} 2>&1
+            {params.extras} {params.kit} > {log} 2>&1
         """
 
 
