@@ -138,10 +138,10 @@ rule pileup_nanopore:
         mem_mb=lambda wildcards, attempt: {
             1: int(8 * GB),
             2: int(16 * GB),
-            3: int(60 * GB),
-        }[attempt],
+            3: int(64 * GB),
+        }.get(attempt, 100 * GB),
     params:
-        options="-x -O b -I -Q 13 -a 'INFO/SCR,FORMAT/SP,INFO/ADR,INFO/ADF' -h100 -M100000"
+        options="-x -O b -I -Q 13 -a 'INFO/SCR,FORMAT/SP,INFO/ADR,INFO/ADF' -h100 -M10000"
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
