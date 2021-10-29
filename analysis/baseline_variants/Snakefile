@@ -219,39 +219,6 @@ rule filter_nanopore_snps:
         """
 
 
-rule calculate_concordance:
-    input:
-        truth=compass_vcf_dir / "{sample}.compass.vcf.gz",
-        query=rules.filter_nanopore_snps.output.vcf,
-        mask=H37RV["mask"],
-    output:
-        csv=concordance_dir / "{site}/{sample}.concordance.csv",
-        json=report(
-            concordance_dir / "{site}/{sample}.concordance.json",
-            category="Concordance",
-            subcategory="Raw Data",
-            caption=f"{report_dir}/calculate_concordance.rst",
-        ),
-    threads: 1
-    resources:
-        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
-    params:
-        options="--verbose --apply-filter",
-        script=scripts["concordance"],
-    log:
-        rule_log_dir / "calculate_concordance/{site}/{sample}.log",
-    conda:
-        envs["concordance"]
-    shell:
-        """
-        python {params.script} {params.options} \
-            -a {input.truth} \
-            -b {input.query} \
-            -m {input.mask} \
-            -c {output.csv} \
-            -j {output.json} 2> {log}
-        """
-
 
 def infer_assembly_path(wildcards):
     asm = assemblies[wildcards.sample]
@@ -451,35 +418,6 @@ rule snp_distance:
         """
         snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
         """
-
-
-rule plot_distance_matrix:
-    input:
-        matrix=rules.snp_distance.output.matrix,
-    output:
-        plot=report(
-            distance_dir / "{caller}.heatmap.html",
-            category="Distance",
-            subcategory="Plot",
-            caption=report_dir / "plot_distance_matrix.rst",
-        ),
-    params:
-        script=scripts["plot_distance_matrix"],
-        options=" ".join(
-            [
-                "--delim ,",
-                "--title '{caller} pairwise distance'",
-            ]
-        ),
-    threads: 1
-    resources:
-        mem_mb=int(GB),
-    conda:
-        envs["plot_distance_matrix"]
-    log:
-        rule_log_dir / "plot_distance_matrix/{caller}.log",
-    shell:
-        "python {params.script} {params.options} -i {input.matrix} -o {output.plot} 2> {log}"
 
 
 rule mixed_snp_distance:
