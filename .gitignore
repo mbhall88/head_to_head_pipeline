@@ -398,3 +398,5 @@ analysis/resistance_prediction/results
 analysis/thesis/data/variant_call_logs
 analysis/assembly
 analysis/thesis/data
+analysis/baseline_variants/bcftools_filtering
+analysis/baseline_variants/archive
