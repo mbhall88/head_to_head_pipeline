@@ -44,7 +44,7 @@ samples have failed QC.
 - [R38290](#r38290)
 - [mada_114](#mada_114)
 - [mada_146](#mada_146)
-- [mada_1-21](#mada_1-21)
+- [~~mada_1-21~~](#mada_1-21)
 - [mada_2-47](#mada_2-47)
 - [mada_1-42](#mada_1-42)
 - [mada_1-37](#mada_1-37)
@@ -304,8 +304,9 @@ https://github.com/mbhall88/head_to_head_pipeline/issues/23
 
 ## mada_1-21
 
-Nanopore coverage 29.77 is below cutoff of 30x. See
-https://github.com/mbhall88/head_to_head_pipeline/issues/23
+~~Nanopore coverage 29.77 is below cutoff of 30x. See
+https://github.com/mbhall88/head_to_head_pipeline/issues/23~~  
+After re-basecalling the data with guppy version 5.0.16 this sample now has 31x coverage and is included in analyses.
 
 ## mada_2-47
 
