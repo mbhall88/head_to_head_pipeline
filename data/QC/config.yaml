@@ -15,6 +15,7 @@ containers:
   guppy-gpu: "docker://quay.io/mbhall88/guppy-gpu:5.0.16"
   guppy-cpu: "docker://quay.io/mbhall88/guppy-cpu:5.0.16"
   base:      "docker://bash:5.1"
+  seqkit:    "docker://quay.io/biocontainers/seqkit:2.0.0--h9ee0642_0"
 envs:
   decontam_db:          "envs/decontam_db.yaml"
   aln_tools:            "envs/aln_tools.yaml"
