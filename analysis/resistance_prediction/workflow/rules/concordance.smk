@@ -22,6 +22,26 @@ rule concordance:
         """
 
 
+rule mutation_concordance:
+    input:
+        illumina_predictions=(
+            RESULTS / "mykrobe/predict/illumina/{site}/{sample}/{sample}.mykrobe.json"
+        ),
+        nanopore_predictions=(
+            RESULTS / "mykrobe/predict/nanopore/{site}/{sample}/{sample}.mykrobe.json"
+        ),
+    output:
+        table=RESULTS / "mutation_concordance/mykrobe/{site}/{sample}.csv",
+    log:
+        LOGS / "mutation_concordance/{site}/{sample}.log",
+    container:
+        CONTAINERS["conda"]
+    params:
+        delim=",",
+    script:
+        str(SCRIPTS / "mutation_concordance.py")
+
+
 rule analyse_results:
     input:
         coverage=QC("report/coverage.csv"),
