@@ -15,7 +15,7 @@ rule mykrobe:
         LOGS / "mykrobe/{tech}/{site}/{sample}.log",
     params:
         species="tb",
-        flags="--force -A --debug --format json",
+        flags="--force -A --debug --format json --min_proportion_expected_depth 0.25",
         tech_flag=(
             lambda wildcards: "-e 0.08 --ploidy haploid"
             if wildcards.tech == "nanopore"
