@@ -42,6 +42,29 @@ rule mutation_concordance:
         str(SCRIPTS / "mutation_concordance.py")
 
 
+rule analyse_mutation_concordance:
+    input:
+        tables=expand(
+            RESULTS / "mutation_concordance/mykrobe/{site}/{sample}.csv",
+            zip,
+            site=samplesheet["site"],
+            sample=samplesheet["sample"],
+        ),
+    output:
+        RESULTS / "mutation_concordance/results.txt",
+    log:
+        notebook=str(RESULTS / "mutation_concordance/results.ipynb"),
+    resources:
+        mem_mb=int(4 * GB),
+    params:
+        treat_minor_as="REF",
+        treat_null_as="FILT",
+    conda:
+        str(ENVS / "mutation_concordance.yaml")
+    notebook:
+        str(NOTEBOOKS / "mutation_concordance.py.ipynb")
+
+
 rule analyse_results:
     input:
         coverage=QC("report/coverage.csv"),
@@ -57,7 +80,7 @@ rule analyse_results:
     params:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
         unknown_is_resistant=False,
-        minor_is_susceptible=False,
+        minor_is_susceptible=True,
         failed_is_resistant=False,
     conda:
         str(ENVS / "analyse_results.yaml")

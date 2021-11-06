@@ -28,7 +28,6 @@ OUTPUT = set()
 for idx, row in samplesheet.iterrows():
     site = row["site"]
     sample = row["sample"]
-    OUTPUT.add(RESULTS / f"mutation_concordance/mykrobe/{site}/{sample}.csv")
     for tool, tech in product(TOOLS, TECHS):
         OUTPUT.add(
             RESULTS / f"novel/assessment/{tech}/{site}/{sample}/{sample}.summary.csv"
@@ -38,6 +37,7 @@ for idx, row in samplesheet.iterrows():
 
 OUTPUT.add(RESULTS / "drprg/popn_prg/prgs/dr.prg.k15.w14.idx")
 OUTPUT.add(RESULTS / "figures/analysis.processed.ipynb")
+OUTPUT.add(RESULTS / "mutation_concordance/results.txt")
 
 
 subworkflow QC:

@@ -1,0 +1,7 @@
+name: mutation_concordance
+channels:
+  - conda-forge
+dependencies:
+  - python =3.8
+  - jupyter =1.0
+  - jupyterlab_code_formatter =1.4
