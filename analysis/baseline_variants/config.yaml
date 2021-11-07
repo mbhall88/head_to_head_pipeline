@@ -11,6 +11,7 @@ containers:
   bcftools:  "docker://quay.io/biocontainers/bcftools:1.13--h3a49de5_0"
   varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
+  psdm:      "docker://quay.io/mbhall88/psdm:0.1.0"
 envs:
   aln_tools:            "envs/aln_tools.yaml"
   filter:               "envs/filter.yaml"

@@ -141,7 +141,7 @@ rule pileup_nanopore:
             3: int(64 * GB),
         }.get(attempt, 100 * GB),
     params:
-        options="-x -O b -I -Q 13 -a 'INFO/SCR,FORMAT/SP,INFO/ADR,INFO/ADF' -h100 -M10000"
+        options="-x -O b -I -Q 13 -a 'INFO/SCR,FORMAT/SP,INFO/ADR,INFO/ADF' -h100 -M10000",
     log:
         rule_log_dir / "pileup_nanopore/{site}/{sample}.log",
     container:
@@ -217,7 +217,6 @@ rule filter_nanopore_snps:
             -i {input.vcf} \
             -o {output.vcf} 2> {log}
         """
-
 
 
 def infer_assembly_path(wildcards):
@@ -426,17 +425,17 @@ rule mixed_snp_distance:
         b=consensus_dir / "bcftools/bcftools.consensus.fa",
     output:
         matrix=distance_dir / "mixed.matrix.csv",
-    threads: 1
+    threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
-    conda:
-        envs["distance"]
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
+    container:
+        containers["psdm"]
     params:
-        script=scripts["distance"],
+        opts="-s -i -P",
     log:
         rule_log_dir / "mixed_snp_distance.log",
     shell:
-        "python {params.script} {input.a} {input.b} > {output.matrix} 2> {log}"
+        "psdm {params.opts} -t {threads} -o {output.matrix} {input.a} {input.b} 2> {log}"
 
 
 rule mixed_self_distances:
