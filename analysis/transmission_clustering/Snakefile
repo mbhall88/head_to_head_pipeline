@@ -128,13 +128,24 @@ rule dotplot:
         """
 
 
+def infer_caller_dist_mtx(wildcards) -> str:
+    if wildcards.caller == "pandora_map":
+        p = pandora_dir / "distance/pandora.sparse.matrix.csv"
+    elif wildcards.caller == "pandora_compare":
+        p = pandora_dir / "distance/pandora.sparse.multisample.distance.csv"
+    elif wildcards.caller == "bcftools":
+        p = baseline_dir / "distance/bcftools.matrix.csv"
+    else:
+        raise NotImplementedError(f"Unrecognised caller {wildcards.caller}")
+    return str(p)
+
 
 rule clustering:
     input:
         illumina_dist=rules.dotplot.input.x_matrix,
         ont_dist=infer_caller_dist_mtx,
     output:
-        report_dir / "cluster_metrics.csv"
+        report_dir / "cluster_metrics.csv",
     conda:
         envs["clustering"]
     params:
