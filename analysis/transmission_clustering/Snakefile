@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from typing import Union, Dict
-from itertools import product
 
 import pandas as pd
 
@@ -25,17 +24,9 @@ plot_dir = Path("plots").resolve()
 report_dir = Path("report").resolve()
 
 output_files = set()
-output_files.add(plot_dir / "dotplot.html")
-output_files.add(plot_dir / "close_dotplot.html")
-output_files.add(plot_dir / "alt_concordance.html")
+output_files.add("report/clustering.processed.ipynb")
 output_files.add(report_dir / "mixed_simulations.summary.html")
 output_files.add(plot_dir / "mixed_simulations.png")
-
-for caller, thresh in product(config["nanopore_callers"], config["thresholds"]):
-    output_files.add(plot_dir / f"clustering/{caller}/t{thresh}/{caller}.clusters.html")
-    output_files.add(
-        plot_dir / f"clustering/{caller}/t{thresh}/{caller}.confmatrix.png"
-    )
 
 # ======================================================
 # Sub Workflows
@@ -61,89 +52,10 @@ rule all:
         output_files,
 
 
-def generate_y_names(wildcards, input) -> str:
-    names = []
-    for fpath in map(Path, input.y_matrices):
-        name = fpath.name
-        if "pandora" in name:
-            name = "pandora_multi" if "multisample" in name else "pandora_single"
-        else:
-            name = name.split(".")[0]
-        names.append(name)
-    return ",".join(names)
-
-
-rule dotplot:
-    input:
-        x_matrix=baseline_dir / "distance/compass.matrix.csv",
-        y_matrices=[
-            baseline_dir / "distance/bcftools.matrix.csv",
-            pandora_dir / "distance/pandora.sparse.matrix.csv",
-            pandora_dir / "distance/pandora.sparse.multisample.distance.csv",
-        ],
-    output:
-        full_plot=report(
-            plot_dir / "dotplot.html",
-            caption=report_dir / "dotplot.rst",
-            category="Distance",
-            subcategory="Plot",
-        ),
-        close_plot=report(
-            plot_dir / "close_dotplot.html",
-            caption=report_dir / "close_dotplot.rst",
-            category="Distance",
-            subcategory="Plot",
-        ),
-    threads: 1
-    resources:
-        mem_mb=int(2 * GB),
-    conda:
-        envs["dotplot"]
-    params:
-        y_matrices_str=lambda wildcards, input: " ".join(
-            [f"-y {p}" for p in input.y_matrices]
-        ),
-        y_names=generate_y_names,
-        script=scripts["dotplot"],
-        threshold=config["adaptive_threshold"],
-        options=" ".join(
-            [
-                "--title 'Pairwise SNP distances for COMPASS and Nanopore calls'",
-                "--delim ,",
-            ]
-        ),
-        close_alpha=0.8,
-        full_alpha=0.2,
-    log:
-        rule_log_dir / "dotplot.log",
-    shell:
-        """
-        python {params.script} {params.options} --alpha {params.full_alpha} \
-            -x {input.x_matrix} {params.y_matrices_str} -Y {params.y_names} \
-            -o {output.full_plot} 2> {log}
-
-        python {params.script} {params.options} --alpha {params.close_alpha} \
-            -x {input.x_matrix} {params.y_matrices_str} -Y {params.y_names} \
-            -o {output.close_plot} -T {params.threshold} 2>> {log}
-        """
-
-
-def infer_caller_dist_mtx(wildcards) -> str:
-    if wildcards.caller == "pandora_map":
-        p = pandora_dir / "distance/pandora.sparse.matrix.csv"
-    elif wildcards.caller == "pandora_compare":
-        p = pandora_dir / "distance/pandora.sparse.multisample.distance.csv"
-    elif wildcards.caller == "bcftools":
-        p = baseline_dir / "distance/bcftools.matrix.csv"
-    else:
-        raise NotImplementedError(f"Unrecognised caller {wildcards.caller}")
-    return str(p)
-
-
 rule clustering:
     input:
-        illumina_dist=rules.dotplot.input.x_matrix,
-        ont_dist=infer_caller_dist_mtx,
+        illumina_dist=baseline_dir / "distance/compass.matrix.csv",
+        ont_dist=baseline_dir / "distance/bcftools.matrix.csv",
     output:
         report_dir / "cluster_metrics.csv",
     conda:
@@ -160,8 +72,8 @@ rule clustering:
 
 rule mixed_simulations:
     input:
-        compass_matrix=rules.dotplot.input.x_matrix,
-        bcftools_matrix=baseline_dir / "distance/bcftools.matrix.csv",
+        compass_matrix=rules.clustering.input.illumina_dist,
+        bcftools_matrix=rules.clustering.input.ont_dist,
         mixed_matrix=baseline_dir / "distance/mixed.matrix.csv",
     output:
         plot=report(
