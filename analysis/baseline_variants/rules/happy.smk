@@ -76,7 +76,7 @@ rule evaluate_compass_with_happy:
     log:
         rule_log_dir / "evaluate_compass_with_happy/{sample}.log",
     conda:
-        envs["happy"]
+        f"../{envs['happy']}"
     params:
         opts=" ".join(("--pass-only", "--write-vcf", "--leftshift", "--engine=vcfeval")),
         prefix=lambda wildcards, output: str(output.summary).split(".")[0],
@@ -104,7 +104,7 @@ rule evaluate_bcftools_with_happy:
     log:
         rule_log_dir / "evaluate_bcftools_with_happy/{sample}.log",
     conda:
-        envs["happy"]
+        f"../{envs['happy']}"
     params:
         opts=" ".join(
             (
