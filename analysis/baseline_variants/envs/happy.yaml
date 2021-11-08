@@ -1,8 +1,0 @@
-name: happy
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - hap.py = 0.3.14
-  - rtg-tools

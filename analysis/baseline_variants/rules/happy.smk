@@ -75,10 +75,10 @@ rule evaluate_compass_with_happy:
     threads: 8
     log:
         rule_log_dir / "evaluate_compass_with_happy/{sample}.log",
-    conda:
-        f"../{envs['happy']}"
+    container:
+        containers["happy"]
     params:
-        opts=" ".join(("--pass-only", "--write-vcf", "--leftshift", "--engine=vcfeval")),
+        opts=" ".join(("--pass-only", "--write-vcf", "--leftshift")),
         prefix=lambda wildcards, output: str(output.summary).split(".")[0],
     shell:
         """
@@ -103,8 +103,8 @@ rule evaluate_bcftools_with_happy:
     threads: 8
     log:
         rule_log_dir / "evaluate_bcftools_with_happy/{sample}.log",
-    conda:
-        f"../{envs['happy']}"
+    container:
+        containers["happy"]
     params:
         opts=" ".join(
             (
@@ -112,7 +112,6 @@ rule evaluate_bcftools_with_happy:
                 "--pass-only",
                 "--write-vcf",
                 "--leftshift",
-                "--engine=vcfeval",
             )
         ),
         prefix=lambda wildcards, output: str(output.summary).split(".")[0],
