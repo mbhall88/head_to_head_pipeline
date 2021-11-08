@@ -16,17 +16,21 @@ rule compress_and_index_truth_vcf:
         """
 
 
-rule index_compass_vcf:
+rule convert_and_index_compass_vcf:
     input:
         vcf=compass_vcf_dir / "{sample}.compass.vcf.gz",
     output:
+        bcf=compass_vcf_dir / "{sample}.compass.bcf",
         index=compass_vcf_dir / "{sample}.compass.vcf.gz.csi",
     container:
         containers["bcftools"]
     log:
         rule_log_dir / "index_compass_vcf/{sample}.log",
     shell:
-        "bcftools index -f -o {output.index} {input.vcf} 2> {log}"
+        """
+        bcftools view -O b -o {output.bcf} {input.vcf} 2> {log}
+        bcftools index -f -o {output.index} {output.bcf} 2>> {log}
+        """
 
 
 rule index_bcftools_vcf:
