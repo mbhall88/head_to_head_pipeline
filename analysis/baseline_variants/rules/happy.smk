@@ -63,8 +63,8 @@ rule evaluate_compass_with_happy:
     input:
         truth_vcf=rules.compress_and_index_truth_vcf.output.bcf,
         truth_idx=rules.compress_and_index_truth_vcf.output.index,
-        query_vcf=rules.index_compass_vcf.input.vcf,
-        query_idx=rules.index_compass_vcf.output.index,
+        query_vcf=rules.convert_and_index_compass_vcf.input.vcf,
+        query_idx=rules.convert_and_index_compass_vcf.output.index,
         ref=rules.index_truth_assembly.input.asm,
         ref_idx=rules.index_truth_assembly.output.index,
         mask=asm_dir
