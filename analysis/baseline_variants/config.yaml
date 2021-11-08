@@ -9,9 +9,11 @@ h37rv:
 containers:
   conda:     "docker://continuumio/miniconda3:4.7.12"
   bcftools:  "docker://quay.io/biocontainers/bcftools:1.13--h3a49de5_0"
-  varifier:  "docker://quay.io/mbhall88/varifier:84e3291"
+  varifier:  "docker://quay.io/iqballab/varifier:3c8152a"
   snp-dists: "docker://quay.io/biocontainers/snp-dists:0.7.0--hed695b0_0"
   psdm:      "docker://quay.io/mbhall88/psdm:0.1.0"
+  samtools:  "docker://quay.io/biocontainers/samtools:1.13--h8c37831_0"
+  happy:     "docker://quay.io/biocontainers/hap.py:0.3.14--py27h5c5a3ab_0"
 envs:
   aln_tools:            "envs/aln_tools.yaml"
   filter:               "envs/filter.yaml"
