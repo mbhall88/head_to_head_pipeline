@@ -69,8 +69,8 @@ rule evaluate_compass_with_happy:
         ref_idx=rules.index_ref_genome.output.index,
         mask=H37RV["mask"],
     output:
-        summary=(truth_eval_dir / "happy/{sample}/compass/{sample}.summary.csv",),
-        outdir=directory(truth_eval_dir / "happy/{sample}/compass"),
+        summary=(truth_eval_dir / "happy/compass/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "happy/compass/{sample}"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8
@@ -97,8 +97,8 @@ rule evaluate_bcftools_with_happy:
         ref_idx=rules.index_ref_genome.output.index,
         mask=H37RV["mask"],
     output:
-        summary=(truth_eval_dir / "happy/{sample}/bcftools/{sample}.summary.csv",),
-        outdir=directory(truth_eval_dir / "happy/{sample}/bcftools"),
+        summary=(truth_eval_dir / "happy/bcftools/{sample}/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "happy/bcftools/{sample}"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8

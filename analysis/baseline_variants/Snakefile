@@ -54,18 +54,18 @@ for idx, row in samplesheet.iterrows():
 
     if row["pacbio"] == 1:
         compass_truth_summary = (
-            truth_eval_dir / f"varifier/{sample}/compass/summary_stats.json"
+            truth_eval_dir / f"varifier/compass/{sample}/summary_stats.json"
         )
         bcftools_truth_summary = (
-            truth_eval_dir / f"varifier/{sample}/bcftools/summary_stats.json"
+            truth_eval_dir / f"varifier/bcftools/{sample}/summary_stats.json"
         )
         VARIFIER_JSONS.add(compass_truth_summary)
         VARIFIER_JSONS.add(bcftools_truth_summary)
         output_files.add(
-            truth_eval_dir / f"happy/{sample}/bcftools/{sample}.summary.csv"
+            truth_eval_dir / f"happy/bcftools/{sample}/{sample}.summary.csv"
         )
         output_files.add(
-            truth_eval_dir / f"happy/{sample}/compass/{sample}.summary.csv"
+            truth_eval_dir / f"happy/compass/{sample}/{sample}.summary.csv"
         )
 
 output_files.add(truth_eval_dir / "truth_snp_eval.png")
@@ -246,13 +246,13 @@ rule evaluate_compass_snps_with_truth_assembly:
         truth_mask=infer_assembly_mask_path,
     output:
         summary=report(
-            truth_eval_dir / "varifier/{sample}/compass/summary_stats.json",
+            truth_eval_dir / "varifier/compass/{sample}/summary_stats.json",
             category="Truth Evaluation",
             subcategory="Raw data",
             caption=report_dir / "varifier_compass.rst",
         ),
         truth_vcf=truth_eval_dir
-        / "varifier/{sample}/compass/recall/truth_vcf/04.truth.vcf",
+        / "varifier/compass/{sample}/recall/truth_vcf/04.truth.vcf",
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: int(22 * GB) * attempt,
@@ -289,13 +289,13 @@ rule evaluate_bcftools_snps_with_truth_assembly:
         truth_mask=infer_assembly_mask_path,
     output:
         summary=report(
-            truth_eval_dir / "varifier/{sample}/bcftools/summary_stats.json",
+            truth_eval_dir / "varifier/bcftools/{sample}/summary_stats.json",
             category="Truth Evaluation",
             subcategory="Raw data",
             caption=report_dir / "varifier_bcftools.rst",
         ),
         truth_vcf=truth_eval_dir
-        / "varifier/{sample}/bcftools/recall/truth_vcf/04.truth.vcf",
+        / "varifier/bcftools/{sample}/recall/truth_vcf/04.truth.vcf",
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: int(22 * GB) * attempt,
