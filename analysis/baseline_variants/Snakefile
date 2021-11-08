@@ -53,9 +53,11 @@ for idx, row in samplesheet.iterrows():
     FILTER_LOGS.add(rule_log_dir / f"filter_nanopore_snps/{site}/{sample}.log")
 
     if row["pacbio"] == 1:
-        compass_truth_summary = truth_eval_dir / f"{sample}/compass/summary_stats.json"
+        compass_truth_summary = (
+            truth_eval_dir / f"varifier/{sample}/compass/summary_stats.json"
+        )
         bcftools_truth_summary = (
-            truth_eval_dir / f"{sample}/bcftools/summary_stats.json"
+            truth_eval_dir / f"varifier/{sample}/bcftools/summary_stats.json"
         )
         VARIFIER_JSONS.add(compass_truth_summary)
         VARIFIER_JSONS.add(bcftools_truth_summary)
