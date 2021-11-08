@@ -21,7 +21,7 @@ rule convert_and_index_compass_vcf:
         vcf=compass_vcf_dir / "{sample}.compass.vcf.gz",
     output:
         bcf=compass_vcf_dir / "{sample}.compass.bcf",
-        index=compass_vcf_dir / "{sample}.compass.bcf.gz.csi",
+        index=compass_vcf_dir / "{sample}.compass.bcf.csi",
     container:
         containers["bcftools"]
     log:
