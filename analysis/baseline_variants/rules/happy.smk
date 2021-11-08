@@ -70,6 +70,7 @@ rule evaluate_compass_with_happy:
         mask=H37RV["mask"],
     output:
         summary=(truth_eval_dir / "happy/{sample}/compass/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "happy/{sample}/compass"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8
@@ -79,11 +80,10 @@ rule evaluate_compass_with_happy:
         containers["happy"]
     params:
         opts=" ".join(("--pass-only", "--write-vcf", "--leftshift")),
-        prefix=lambda wildcards, output: str(output.summary).split(".")[0],
     shell:
         """
-        hap.py {params.opts} -o {params.prefix} --threads {threads} -r {input.ref} \
-          -T ^{input.mask} {input.truth_vcf} {input.query_vcf} 2> {log}
+        hap.py {params.opts} -o {output.outdir}/{wildcards.sample} --threads {threads} \
+          -r {input.ref} -T ^{input.mask} {input.truth_vcf} {input.query_vcf} 2> {log}
         """
 
 
@@ -98,6 +98,7 @@ rule evaluate_bcftools_with_happy:
         mask=H37RV["mask"],
     output:
         summary=(truth_eval_dir / "happy/{sample}/bcftools/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "happy/{sample}/bcftools"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8
@@ -114,9 +115,8 @@ rule evaluate_bcftools_with_happy:
                 "--leftshift",
             )
         ),
-        prefix=lambda wildcards, output: str(output.summary).split(".")[0],
     shell:
         """
-        hap.py {params.opts} -o {params.prefix} --threads {threads} -r {input.ref} \
-          -T ^{input.mask} {input.truth_vcf} {input.query_vcf} 2> {log}
+        hap.py {params.opts} -o {output.outdir}/{wildcards.sample} --threads {threads} \
+          -r {input.ref} -T ^{input.mask} {input.truth_vcf} {input.query_vcf} 2> {log}
         """
