@@ -28,6 +28,7 @@ envs:
   mixed_self_distance:  "envs/mixed_self_distance.yaml"
   mixed_dotplot:        "envs/mixed_dotplot.yaml"
   bcftools_dotplot:     "envs/mixed_dotplot.yaml"
+  happy:                "envs/happy.yaml"
 scripts:
   filter:               "scripts/apply_filters.py"
   concordance:          "scripts/concordance.py"

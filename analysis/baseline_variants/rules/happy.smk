@@ -21,7 +21,7 @@ rule convert_and_index_compass_vcf:
         vcf=compass_vcf_dir / "{sample}.compass.vcf.gz",
     output:
         bcf=compass_vcf_dir / "{sample}.compass.bcf",
-        index=compass_vcf_dir / "{sample}.compass.vcf.gz.csi",
+        index=compass_vcf_dir / "{sample}.compass.bcf.gz.csi",
     container:
         containers["bcftools"]
     log:
@@ -75,8 +75,8 @@ rule evaluate_compass_with_happy:
     threads: 8
     log:
         rule_log_dir / "evaluate_compass_with_happy/{sample}.log",
-    container:
-        containers["happy"]
+    conda:
+        envs["happy"]
     params:
         opts=" ".join(("--pass-only", "--write-vcf", "--leftshift", "--engine=vcfeval")),
         prefix=lambda wildcards, output: str(output.summary).split(".")[0],
@@ -103,8 +103,8 @@ rule evaluate_bcftools_with_happy:
     threads: 8
     log:
         rule_log_dir / "evaluate_bcftools_with_happy/{sample}.log",
-    container:
-        containers["happy"]
+    conda:
+        envs["happy"]
     params:
         opts=" ".join(
             (
