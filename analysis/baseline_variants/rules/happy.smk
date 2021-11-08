@@ -2,9 +2,9 @@ rule compress_and_index_truth_vcf:
     input:
         vcf=rules.evaluate_compass_snps_with_truth_assembly.output.truth_vcf,
     output:
-        bcf=truth_eval_dir / "varifier/{sample}/compass/recall/truth_vcf/04.truth.bcf",
+        bcf=truth_eval_dir / "compass/{sample}/varifier/recall/truth_vcf/04.truth.bcf",
         index=truth_eval_dir
-        / "varifier/{sample}/compass/recall/truth_vcf/04.truth.bcf.csi",
+        / "compass/{sample}/varifier/recall/truth_vcf/04.truth.bcf.csi",
     container:
         containers["bcftools"]
     log:
@@ -69,8 +69,8 @@ rule evaluate_compass_with_happy:
         ref_idx=rules.index_ref_genome.output.index,
         mask=H37RV["mask"],
     output:
-        summary=(truth_eval_dir / "happy/compass/{sample}.summary.csv",),
-        outdir=directory(truth_eval_dir / "happy/compass/{sample}"),
+        summary=(truth_eval_dir / "compass/{sample}/happy/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "compass/{sample}/happy"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8
@@ -97,8 +97,8 @@ rule evaluate_bcftools_with_happy:
         ref_idx=rules.index_ref_genome.output.index,
         mask=H37RV["mask"],
     output:
-        summary=(truth_eval_dir / "happy/bcftools/{sample}/{sample}.summary.csv",),
-        outdir=directory(truth_eval_dir / "happy/bcftools/{sample}"),
+        summary=(truth_eval_dir / "bcftools/{sample}/happy/{sample}.summary.csv",),
+        outdir=directory(truth_eval_dir / "bcftools/{sample}/happy"),
     resources:
         mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
     threads: 8
