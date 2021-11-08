@@ -46,15 +46,15 @@ rule index_bcftools_vcf:
         "bcftools index -f -o {output.index} {input.vcf} 2> {log}"
 
 
-rule index_truth_assembly:
+rule index_ref_genome:
     input:
-        asm=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta",
+        asm=H37RV["genome"],
     output:
-        index=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta.fai",
+        index=f"{H37RV['genome']}.fai",
     container:
         containers["samtools"]
     log:
-        rule_log_dir / "index_truth_assembly/{sample}.log",
+        rule_log_dir / "index_truth_assembly.log",
     shell:
         "samtools faidx {input.asm} 2> {log}"
 
@@ -65,10 +65,9 @@ rule evaluate_compass_with_happy:
         truth_idx=rules.compress_and_index_truth_vcf.output.index,
         query_vcf=rules.convert_and_index_compass_vcf.input.vcf,
         query_idx=rules.convert_and_index_compass_vcf.output.index,
-        ref=rules.index_truth_assembly.input.asm,
-        ref_idx=rules.index_truth_assembly.output.index,
-        mask=asm_dir
-        / "{sample}/flye/pacbio/assessment/{sample}.flye.accuracy.pacbio.bed",
+        ref=rules.index_ref_genome.input.asm,
+        ref_idx=rules.index_ref_genome.output.index,
+        mask=H37RV["mask"],
     output:
         summary=(truth_eval_dir / "happy/{sample}/compass/{sample}.summary.csv",),
     resources:
@@ -94,10 +93,9 @@ rule evaluate_bcftools_with_happy:
         truth_idx=rules.compress_and_index_truth_vcf.output.index,
         query_vcf=rules.index_bcftools_vcf.input.vcf,
         query_idx=rules.index_bcftools_vcf.output.index,
-        ref=rules.index_truth_assembly.input.asm,
-        ref_idx=rules.index_truth_assembly.output.index,
-        mask=asm_dir
-        / "{sample}/flye/pacbio/assessment/{sample}.flye.accuracy.pacbio.bed",
+        ref=rules.index_ref_genome.input.asm,
+        ref_idx=rules.index_ref_genome.output.index,
+        mask=H37RV["mask"],
     output:
         summary=(truth_eval_dir / "happy/{sample}/bcftools/{sample}.summary.csv",),
     resources:
