@@ -417,19 +417,17 @@ rule snp_distance:
             subcategory="Data",
             caption=report_dir / "distance.rst",
         ),
-    threads: 1
+    threads: 8
     resources:
-        mem_mb=lambda wildcards, attempt: int(GB) * attempt,
+        mem_mb=lambda wildcards, attempt: int(2 * GB) * attempt,
     container:
-        containers["snp-dists"]
+        containers["psdm"]
     log:
         rule_log_dir / "snp_distance/{caller}.log",
     params:
-        options="-c",
+        options="-s -i -P",
     shell:
-        """
-        snp-dists {params.options} {input.fasta} 2> {log} > {output.matrix}
-        """
+        "psdm {params.options} -t {threads} -o {output.matrix} {input.fasta} 2> {log}"
 
 
 rule mixed_snp_distance:
