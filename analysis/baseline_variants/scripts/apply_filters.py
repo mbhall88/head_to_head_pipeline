@@ -252,8 +252,8 @@ class Filter:
         return variant_depth < self.min_depth if self.min_depth else False
 
     def _is_low_fed(self, variant: Variant) -> bool:
-        variant_depth = get_depth(variant)
-        fed = variant_depth / self.expected_depth
+        hq_depth = get_hq_depth(variant)
+        fed = hq_depth / self.expected_depth
         return fed < self.min_fed if self.min_fed > 0 else False
 
     def _is_high_depth(self, variant: Variant) -> bool:
@@ -385,7 +385,7 @@ class Filter:
             header = {
                 "ID": str(Tags.LowFed),
                 "Description": (
-                    f"Depth ({Tags.Depth}) as a fraction of the expected (median; {self.expected_depth}) is "
+                    f"High-quality depth of the called allele as a fraction of the expected (median; {self.expected_depth}) is "
                     f"less than {self.min_fed}"
                 ),
             }
@@ -547,6 +547,18 @@ def fraction_read_support(variant: Variant, sample_idx: int = 0) -> float:
 
 def get_depth(variant: Variant, default: int = 0) -> int:
     return variant.INFO.get(str(Tags.Depth), default)
+
+
+def get_hq_depth(variant: Variant, default: int = 0) -> int:
+    strand_depths = get_strand_depths(variant)
+    if strand_depths is None:
+        return default
+    called_idx = Genotype.from_arr(variant.genotypes[0]).allele_index()
+    if called_idx == 0:  # ref
+        called_covg = sum(strand_depths.ref_depths)
+    else:
+        called_covg = sum(strand_depths.alt_depths)
+    return called_covg
 
 
 def get_mapq(variant: Variant, default: int = 0) -> int:
