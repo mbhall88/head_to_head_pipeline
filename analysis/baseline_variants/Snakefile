@@ -472,8 +472,8 @@ rule mixed_self_distances:
 
 rule mixed_dotplot:
     input:
-        compass_matrix=distance_dir / "compass.matrix.csv",
-        mixed_matrix=rules.mixed_snp_distance.output.matrix,
+        x_matrix=distance_dir / "compass.matrix.csv",
+        y_matrix=rules.mixed_snp_distance.output.matrix,
     output:
         plot=report(
             distance_dir / "mixed.dotplot.png",
@@ -485,27 +485,32 @@ rule mixed_dotplot:
     resources:
         mem_mb=int(GB),
     conda:
-        envs["mixed_dotplot"]
+        envs["bcftools_dotplot"]
     log:
         rule_log_dir / "mixed_dotplot.log",
     params:
-        figsize=(13, 8),
+        mixed_dist=False,
+        figsize=(13, 13),
         dpi=300,
         xlabel="COMPASS SNP distance",
         ylabel="mixed tech. SNP distance",
         scatter_kws=dict(alpha=0.75, linewidth=0.25),
-        inset_bounds=[0.1, 0.6, 0.45, 0.45],
-        inset_threshold=100,
+        inset_bounds=[0.05, 0.52, 0.5, 0.48],
+        inset_threshold=20,
         legend_loc="lower right",
         inset_legend_loc="lower right",
+        plot_linear_model=False,
+        xthreshold=12,
+        ythreshold=12,
+        inset_ticklabels=[0, 2, 5, 11, 12],
     script:
-        scripts["mixed_dotplot"]
+        scripts["bcftools_dotplot"]
 
 
 rule bcftools_dotplot:
     input:
-        compass_matrix=distance_dir / "compass.matrix.csv",
-        ont_matrix=distance_dir / "bcftools.matrix.csv",
+        x_matrix=distance_dir / "compass.matrix.csv",
+        y_matrix=distance_dir / "bcftools.matrix.csv",
     output:
         plot=report(
             distance_dir / "bcftools.dotplot.png",
@@ -521,15 +526,20 @@ rule bcftools_dotplot:
     log:
         rule_log_dir / "bcftools_dotplot.log",
     params:
-        figsize=(13, 8),
+        mixed_dist=False,
+        figsize=(13, 13),
         dpi=300,
         xlabel="COMPASS SNP distance",
         ylabel="bcftools SNP distance",
         scatter_kws=dict(alpha=0.75, linewidth=0.25),
-        inset_bounds=[0.1, 0.6, 0.45, 0.45],
-        inset_threshold=100,
+        inset_bounds=[0.05, 0.52, 0.5, 0.48],
+        inset_threshold=20,
         legend_loc="lower right",
         inset_legend_loc="lower right",
+        plot_linear_model=False,
+        xthreshold=12,
+        ythreshold=11,
+        inset_ticklabels=[0, 2, 5, 11, 12],
     script:
         scripts["bcftools_dotplot"]
 
