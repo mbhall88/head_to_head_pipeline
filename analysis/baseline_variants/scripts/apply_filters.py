@@ -23,6 +23,7 @@ def validate_fraction(ctx, param, value):
 class Tags(Enum):
     Depth = "DP"
     LowDepth = "ld"
+    LowFed = "lfed"
     HighDepth = "hd"
     LowQual = "lq"
     StrandBias = "sb"
@@ -54,6 +55,7 @@ class Tags(Enum):
 @dataclass
 class FilterStatus:
     low_depth: bool = False
+    low_fed: bool = False
     high_depth: bool = False
     low_qual: bool = False
     strand_bias: bool = False
@@ -73,6 +75,8 @@ class FilterStatus:
         status = []
         if self.low_depth:
             status.append(str(Tags.LowDepth))
+        if self.low_fed:
+            status.append(str(Tags.LowFed))
         if self.high_depth:
             status.append(str(Tags.HighDepth))
         if self.low_qual:
@@ -199,6 +203,7 @@ class Filter:
         self,
         expected_depth: int = 0,
         min_depth: int = 0,
+        min_fed: float = 0,
         max_depth: int = 0,
         min_strand_bias: int = 0,
         min_qual: float = 0,
@@ -215,6 +220,7 @@ class Filter:
     ):
         self.expected_depth = expected_depth
         self.min_depth = min_depth
+        self.min_fed = min_fed
         self.max_depth = max_depth
         self.min_strand_bias = min_strand_bias / 100
         self.min_qual = min_qual
@@ -244,6 +250,11 @@ class Filter:
     def _is_low_depth(self, variant: Variant) -> bool:
         variant_depth = get_depth(variant)
         return variant_depth < self.min_depth if self.min_depth else False
+
+    def _is_low_fed(self, variant: Variant) -> bool:
+        variant_depth = get_depth(variant)
+        fed = variant_depth / self.expected_depth
+        return fed < self.min_fed if self.min_fed > 0 else False
 
     def _is_high_depth(self, variant: Variant) -> bool:
         variant_depth = get_depth(variant)
@@ -297,6 +308,9 @@ class Filter:
         if self.min_depth or self.max_depth:
             status.low_depth = self._is_low_depth(variant)
             status.high_depth = self._is_high_depth(variant)
+
+        if self.min_fed > 0:
+            status.low_fed = self._is_low_fed(variant)
 
         if self.min_mq:
             status.low_mapq = self._is_low_mapq(variant)
@@ -366,6 +380,17 @@ class Filter:
             }
             vcf.add_filter_to_header(header)
             logging.debug(f"Header for min. depth: {header}")
+
+        if self.min_fed > 0:
+            header = {
+                "ID": str(Tags.LowFed),
+                "Description": (
+                    f"Depth ({Tags.Depth}) as a fraction of the expected (median; {self.expected_depth}) is "
+                    f"less than {self.min_fed}"
+                ),
+            }
+            vcf.add_filter_to_header(header)
+            logging.debug(f"Header for min. FED: {header}")
 
         if self.min_mq > 0:
             header = {
@@ -567,6 +592,15 @@ def get_strand_depths(
     show_default=True,
 )
 @click.option(
+    "-x",
+    "--min-fed",
+    help=f"Minimum fraction of expected depth. Where expected depth is the median. "
+    f"This filter has ID: {Tags.LowFed.value}. Set to 0 to disable",
+    default=0.0,
+    show_default=True,
+    type=float,
+)
+@click.option(
     "-D",
     "--max-depth",
     help=(
@@ -729,6 +763,7 @@ def main(
     verbose: bool,
     min_qual: float,
     min_depth: int,
+    min_fed: float,
     max_depth: int,
     min_strand_bias: int,
     min_bqb: float,
@@ -801,6 +836,7 @@ def main(
         expected_depth=int(median_depth),
         min_qual=min_qual,
         min_depth=min_depth,
+        min_fed=min_fed,
         max_depth=max_depth,
         min_strand_bias=min_strand_bias,
         min_bqb=min_bqb,
