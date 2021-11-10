@@ -222,6 +222,7 @@ axins.axvspan(
 axins.set(ylim=(ymin, ymax), xlim=(xmin, xmax))
 
 inset_ticklabels = list(snakemake.params.inset_ticklabels)
+inset_ticklabels.append(threshold)
 inset_ticklabels = list(sorted(set(inset_ticklabels)))
 inset_ticklabel_fontsize = 7
 axins.set_xticks(inset_ticklabels)
