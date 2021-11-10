@@ -46,7 +46,7 @@ filters:
   min_fed:         0.2
   max_depth:       0
   min_qual:        85
-  min_strand_bias: 0
+  min_strand_bias: 1
   min_bqb:         0
   min_mqb:         0
   min_rpb:         0
