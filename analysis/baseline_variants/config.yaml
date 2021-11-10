@@ -43,17 +43,17 @@ scripts:
 # filters for nanopore bcftools calls
 filters:
   min_depth:       0
-  min_fed:         0.15
+  min_fed:         0
   max_depth:       0
-  min_qual:        60
-  min_strand_bias: 1
+  min_qual:        85
+  min_strand_bias: 0
   min_bqb:         0
   min_mqb:         0
   min_rpb:         0
   max_sgb:         0
   min_vdb:         0
   min_mq:          0
-  min_frs:         0.80
+  min_frs:         0
   # min_rqbz:        -2.6
   # max_rqbz:        3.0
   # max_scbz:        2.2
