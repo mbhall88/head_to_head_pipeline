@@ -543,7 +543,7 @@ rule bcftools_dotplot:
         xthreshold=12,
         lythreshold=6,
         ythreshold=12,
-        inset_ticklabels=[0, 2, 5, 12],
+        inset_ticklabels=[0, 2, 5, 6, 12],
     script:
         scripts["bcftools_dotplot"]
 
