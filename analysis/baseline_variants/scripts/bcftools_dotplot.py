@@ -185,7 +185,9 @@ for spine in axins.spines.values():
     spine.set_alpha(0.5)
 
 # add threshold-based partitions
+lxthreshold = snakemake.params.lxthreshold
 xthreshold = snakemake.params.xthreshold
+lythreshold = snakemake.params.lythreshold
 ythreshold = snakemake.params.ythreshold
 
 kwargs = dict(alpha=0.9, linewidth=0.1)
@@ -224,11 +226,48 @@ axins.set(ylim=(ymin, ymax), xlim=(xmin, xmax))
 inset_ticklabels = list(snakemake.params.inset_ticklabels)
 inset_ticklabels.append(threshold)
 inset_ticklabels = list(sorted(set(inset_ticklabels)))
-inset_ticklabel_fontsize = 7
+inset_ticklabel_fontsize = 8
 axins.set_xticks(inset_ticklabels)
 axins.set_xticklabels(inset_ticklabels, fontsize=inset_ticklabel_fontsize)
+inset_ticklabels.append(inset_data.max()[YCOL])
 axins.set_yticks(inset_ticklabels)
 axins.set_yticklabels(inset_ticklabels, fontsize=inset_ticklabel_fontsize)
+
+# add the fainter bands for the lower cluster level
+axins.axhspan(
+    ymin=lythreshold,
+    ymax=ythreshold,
+    xmin=0,
+    xmax=((lxthreshold - xmin) / (xmax - xmin)),
+    facecolor=RED,
+    alpha=0.1,
+    hatch="//",
+    edgecolor="black",
+)
+axins.axvspan(
+    xmin=lxthreshold,
+    xmax=xthreshold,
+    ymin=0,
+    ymax=((lythreshold - ymin) / (ymax - ymin)),
+    facecolor=GREY,
+    alpha=0.1,
+    hatch="//",
+    edgecolor="black",
+)
+fns = good_data.query(f"{YCOL}>@lythreshold and {XCOL}<=@lxthreshold")
+fps = good_data.query(f"{YCOL}<=@lythreshold and {XCOL}>@lxthreshold")
+good_data = good_data[~good_data.index.isin(fns.index)]
+good_data = good_data[~good_data.index.isin(fps.index)]
+axins = sns.scatterplot(
+    data=good_data, x=XCOL, y=YCOL, ax=axins, color=BLUE, alpha=0.5, linewidth=0.1
+)
+axins = sns.scatterplot(
+    data=fns, x=XCOL, y=YCOL, ax=axins, color=BLUE, marker="s", **kwargs
+)
+axins = sns.scatterplot(
+    data=fps, x=XCOL, y=YCOL, ax=axins, color=BLUE, marker="s", **kwargs
+)
+
 # remove axis labels on inset
 axins.set_xlabel("")
 axins.set_ylabel("")

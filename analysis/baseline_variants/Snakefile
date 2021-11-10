@@ -500,9 +500,11 @@ rule mixed_dotplot:
         legend_loc="lower right",
         inset_legend_loc="lower right",
         plot_linear_model=False,
+        lxthreshold=5,
         xthreshold=12,
+        lythreshold=5,
         ythreshold=12,
-        inset_ticklabels=[0, 2, 5, 11, 12],
+        inset_ticklabels=[0, 2, 5, 12],
     script:
         scripts["bcftools_dotplot"]
 
@@ -537,9 +539,11 @@ rule bcftools_dotplot:
         legend_loc="lower right",
         inset_legend_loc="lower right",
         plot_linear_model=False,
+        lxthreshold=5,
         xthreshold=12,
-        ythreshold=11,
-        inset_ticklabels=[0, 2, 5, 11, 12],
+        lythreshold=6,
+        ythreshold=12,
+        inset_ticklabels=[0, 2, 5, 12],
     script:
         scripts["bcftools_dotplot"]
 
