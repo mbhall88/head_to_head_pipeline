@@ -30,10 +30,10 @@ scripts:
   mixed_simulations: "scripts/mixed_simulations.py"
 
 bcftools_clustering_thresholds:
-  0:  0
-  2:  2
-  5:  5
-  12: 11
+  0:  3
+  2:  3
+  5:  6
+  12: 12
 
 compare_clustering_thresholds:
   0:  0

@@ -96,19 +96,18 @@ rule mixed_simulations:
     params:
         seed=1988,
         thresholds={
-            0: {
-                "ont": 0,
-                "mixed": 0,
-            },
-            2: {"ont": 3, "mixed": 2},
-            5: {"ont": 5, "mixed": 5},
-            12: {"ont": 11, "mixed": 12},
+            5: {"ont": 6, "mixed": 6},
+            12: {"ont": 12, "mixed": 12},
         },
         ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9],
         num_simulations=1000,
         figsize=(13, 13),
         dpi=300,
         legend_loc=(0.91, 0.53),
+        nrows=2,
+        ncols=1,
+        sharex=True,
+        sharey=False,
     log:
         rule_log_dir / "mixed_simulations.log",
     script:

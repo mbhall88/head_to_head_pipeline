@@ -186,12 +186,12 @@ SAMPLES = np.unique(np.array(list(chain.from_iterable(ILLUMINA_DF.index))))
 
 # setup plotting canvas
 fig, axes = plt.subplots(
-    int(len(THRESHOLDS) / 2),
-    int(len(THRESHOLDS) / 2),
+    nrows=snakemake.params.nrows,
+    ncols=snakemake.params.ncols,
     figsize=snakemake.params.figsize,
     dpi=snakemake.params.dpi,
-    sharex=True,
-    sharey=True,
+    sharex=snakemake.params.sharex,
+    sharey=snakemake.params.sharey,
     squeeze=True,
 )
 kwargs = dict(
