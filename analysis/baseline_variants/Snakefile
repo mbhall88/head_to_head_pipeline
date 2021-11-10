@@ -489,7 +489,7 @@ rule mixed_dotplot:
     log:
         rule_log_dir / "mixed_dotplot.log",
     params:
-        mixed_dist=False,
+        mixed_dist=True,
         figsize=(13, 13),
         dpi=300,
         xlabel="COMPASS SNP distance",

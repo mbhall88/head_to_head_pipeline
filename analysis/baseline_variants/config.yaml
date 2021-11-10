@@ -26,7 +26,7 @@ envs:
   distance:             "envs/distance.yaml"
   plot_distance_matrix: "envs/plot_distance_matrix.yaml"
   mixed_self_distance:  "envs/mixed_self_distance.yaml"
-  bcftools_dotplot:     "envs/mixed_dotplot.yaml"
+  bcftools_dotplot:     "envs/dotplot.yaml"
   happy:                "envs/happy.yaml"
 scripts:
   filter:               "scripts/apply_filters.py"
@@ -43,16 +43,17 @@ scripts:
 # filters for nanopore bcftools calls
 filters:
   min_depth:       0
+  min_fed:         0.15
   max_depth:       0
-  min_qual:        70
-  min_strand_bias: 0
+  min_qual:        60
+  min_strand_bias: 1
   min_bqb:         0
   min_mqb:         0
   min_rpb:         0
   max_sgb:         0
-  min_vdb:         0.00000001
+  min_vdb:         0
   min_mq:          0
-  min_frs:         0.9
+  min_frs:         0.80
   # min_rqbz:        -2.6
   # max_rqbz:        3.0
   # max_scbz:        2.2
