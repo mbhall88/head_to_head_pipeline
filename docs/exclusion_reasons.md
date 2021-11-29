@@ -43,7 +43,6 @@ This document is for noting the reason(s) for a sample's exclusion from the proj
 - [mada_1-34](#mada_1-34)
 - [R27006](#r27006)
 - [R13303](#r13303)
-- [R21408](#r21408)
 
 
 ## mada_1-45
@@ -238,10 +237,6 @@ for this sample does not match the Illumina. More information can be found [here
 After the first round of baseline variant calling it appears as though the nanopore data
 for this sample does not match the Illumina. More information can be found [here][40].
 
-## R21408
-
-After the first round of baseline variant calling it appears as though the nanopore data
-for this sample does not match the Illumina. More information can be found [here][40].
 
 
 
