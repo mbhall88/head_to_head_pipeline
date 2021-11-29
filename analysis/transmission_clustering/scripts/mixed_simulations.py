@@ -219,21 +219,21 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
     np_t = THRESHOLDS[t]["ont"]
     mix_t = THRESHOLDS[t]["mixed"]
     ax.set_title(
-        f"SNP threshold (Ill./NP/Mix) = {t}/{np_t}/{mix_t}",
+        f"SNP threshold = {'/'.join(map(str, sorted(set([t, np_t, mix_t]))))}",
         fontdict={"fontsize": 14},
     )
     ax.label_outer()
     # we only want one legend for the whole figure
-    ax.get_legend().remove()
+    #  ax.get_legend().remove()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=12))
     ax.tick_params("y", labelsize=12)
 
 ax.tick_params("x", labelsize=12)
-ax.set_xlabel("Illumina-to-Nanopore ratio", fontsize=14)
+ax.set_xlabel("Nanopore:Illumina ratio", fontsize=14)
 fig.tight_layout()
 # we only want one legend for the whole figure
 ax = axes.flatten()[0]
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=12))
 fig.savefig(snakemake.output.plot)
 # also save a HTML summary of the data
 summary = pd.concat(dfs).groupby(["ratio", "threshold", "metric"]).describe()
