@@ -10,13 +10,14 @@ All pipelines require the following dependencies to be installed:
 - [Singularity](https://sylabs.io/docs)
 - The Python library [`pandas`](https://pandas.pydata.org/)
 
-See subdirectories for more specific information about different pipelines.
+See subdirectories for more specific information about different pipelines. They are
+nested according to their dependence on the outputs of each pipeline.
 
 - [Quality Control](data/QC)
-- [Assembly](analysis/assembly)
-- [Baseline variant analysis](analysis/baseline_variants)
-- [Transmission clustering](analysis/transmission_clustering)
-- [Drug Resistance Prediction](analysis/resistance_prediction)
+  - [Assembly](analysis/assembly)
+  - [Baseline variant analysis](analysis/baseline_variants)
+    - [Transmission clustering](analysis/transmission_clustering)
+  - [Drug Resistance Prediction](analysis/resistance_prediction)
 
 The following pipelines are not relevant to the work in the final paper.
 

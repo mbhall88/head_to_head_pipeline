@@ -2,8 +2,8 @@
 
 ![rulegraph](resources/rulegraph.png)
 
-This directory houses the pipeline to perform quality control on the samples. There is
-an assumption that the [Illumina
+This directory houses the pipeline to perform basecalling of the Nanopore data and
+quality control on the samples. There is an assumption that the [Illumina
 baseline variant calling](../../analysis/baseline_variants) has been done already - as
 these VCFs are used for lineage-calling.
 
@@ -20,3 +20,4 @@ trick.
 
 A description of why samples have been deemed to have failed QC can be found in
 [`failed_qc_reasons.md`](../../docs/failed_qc_reasons.md).
+
