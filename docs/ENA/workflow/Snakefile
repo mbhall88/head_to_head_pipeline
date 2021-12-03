@@ -1,0 +1,38 @@
+from pathlib import Path
+from typing import Set
+
+import pandas as pd
+
+
+configfile: "config/config.yaml"
+
+
+samplesheet = pd.read_csv(config["samplesheet"])
+data_dir = Path(config["data_dir"])
+containers = config["containers"]
+log_dir = Path("logs/stderr")
+output: Set[Path] = set()
+for i, row in samplesheet.iterrows():
+    site = row.site
+    run = row.run
+    output.add(Path(data_dir / f"archive/{site}.{run}.tar.gz"))
+
+
+rule all:
+    input:
+        output,
+
+
+rule archive_raw_nanopore:
+    input:
+        fast5_dir=data_dir / "{site}/nanopore/raw_data/{run}/multi_fast5s",
+    output:
+        archive=data_dir / "archive/{site}.{run}.tar.gz",
+    log:
+        log_dir / "archive_raw_nanopore/{site}/{run}.log",
+    container:
+        containers["base"]
+    params:
+        opts="--create --verify --gzip --verbose",
+    shell:
+        "tar {params.opts} -f {output.archive} {input.fast5_dir} 2> {log}"
