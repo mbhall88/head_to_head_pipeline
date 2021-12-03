@@ -33,6 +33,6 @@ rule archive_raw_nanopore:
     container:
         containers["base"]
     params:
-        opts="--create --verify --gzip --verbose",
+        opts="c -z -v",
     shell:
         "tar {params.opts} -f {output.archive} {input.fast5_dir} 2> {log}"
