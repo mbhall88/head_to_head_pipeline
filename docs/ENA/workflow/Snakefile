@@ -15,7 +15,7 @@ output: Set[Path] = set()
 for i, row in samplesheet.iterrows():
     site = row.site
     run = row.run
-    output.add(Path(data_dir / f"archive/{site}.{run}.tar.gz"))
+    output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
 
 
 rule all:
@@ -36,3 +36,16 @@ rule archive_raw_nanopore:
         opts="c -z -v",
     shell:
         "tar {params.opts} -f {output.archive} {input.fast5_dir} 2> {log}"
+
+
+rule generate_nanopore_checksum:
+    input:
+        archive=rules.archive_raw_nanopore.output.archive,
+    output:
+        checksum=data_dir / "archive/{site}.{run}.md5",
+    log:
+        log_dir / "generate_nanopore_checksum/{site}/{run}.log",
+    container:
+        containers["base"]
+    shell:
+        "md5sum {input.archive} > {output.checksum} 2> {log}"
