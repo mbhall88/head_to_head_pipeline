@@ -1,4 +1,6 @@
 data_dir:    "/nfs/research/zi/mbhall/tech_wars/data"
+asm_dir:     "../../analysis/assembly/results"
 samplesheet: "../samples.paper.csv"
 containers:
-  base: "docker://bash:5.1"
+  base:   "docker://bash:5.1"
+  seqkit: "docker://quay.io/biocontainers/seqkit:2.1.0--h9ee0642_0"

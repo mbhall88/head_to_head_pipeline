@@ -11,11 +11,16 @@ samplesheet = pd.read_csv(config["samplesheet"])
 data_dir = Path(config["data_dir"])
 containers = config["containers"]
 log_dir = Path("logs/stderr")
+asm_dir = Path(config["asm_dir"])
+results = Path("results")
 output: Set[Path] = set()
 for i, row in samplesheet.iterrows():
     site = row.site
     run = row.run
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
+    if row["pacbio"] == 1:
+        sample = row["sample"]
+        output.add(results / f"asm/{sample}.fa.gz")
 
 
 rule all:
@@ -49,3 +54,16 @@ rule generate_nanopore_checksum:
         containers["base"]
     shell:
         "md5sum {input.archive} > {output.checksum} 2> {log}"
+
+
+rule unwrap_and_compress_assemblies:
+    input:
+        asm=asm_dir / "{sample}/flye/pacbio/decontam.assembly.flye.pacbio.fasta",
+    output:
+        asm=results / "asm/{sample}.fa.gz",
+    log:
+        log_dir / "unwrap_and_compress_assemblies/{sample}.log",
+    container:
+        containers["seqkit"]
+    shell:
+        "seqkit -w 0 -o {output.asm} {input.asm} 2> {log}"
