@@ -66,4 +66,4 @@ rule unwrap_and_compress_assemblies:
     container:
         containers["seqkit"]
     shell:
-        "seqkit -w 0 -o {output.asm} {input.asm} 2> {log}"
+        "seqkit seq -w 0 -o {output.asm} {input.asm} 2> {log}"
