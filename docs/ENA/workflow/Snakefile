@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Set
+import os
 
 import pandas as pd
 
@@ -23,9 +24,53 @@ for i, row in samplesheet.iterrows():
         output.add(results / f"asm/{sample}.fa.gz")
 
 
+envvars:
+    "UNAME",
+    "PASSWD",
+
+
 rule all:
     input:
         output,
+
+
+rule create_samples_xml:
+    input:
+        sheet=config["samplesheet"],
+    output:
+        xml=results / "samples/samples.xml",
+    params:
+        script="scripts/samples2xml.py",
+    log:
+        log_dir / "create_samples_xml.log",
+    conda:
+        "workflow/envs/samples2xml.yaml"
+    shell:
+        "python {params.script} {input.sheet} > {output.xml} 2> {log}"
+
+
+rule submit_samples:
+    input:
+        samples=rules.create_samples_xml.output.xml,
+        submission="resources/submission.xml",
+    output:
+        response=results / "samples/response.xml",
+    log:
+        log_dir / "submit_samples.log",
+    container:
+        containers["curl"]
+    params:
+        script="scripts/submit_sample_xml.sh",
+        url="https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
+        uname=os.environ["UNAME"],
+        passwd=os.environ["PASSWD"],
+    shell:
+        """
+        curl -u {params.uname}:{params.passwd} \
+          -F "SUBMISSION=@{input.submission}" \
+          -F "SAMPLE=@{input.samples}" \
+          {params.url} > {output.response} 2> {log}
+        """
 
 
 rule archive_raw_nanopore:
@@ -67,3 +112,7 @@ rule unwrap_and_compress_assemblies:
         containers["seqkit"]
     shell:
         "seqkit seq -w 0 -o {output.asm} {input.asm} 2> {log}"
+
+
+# todo: create read manifest files https://ena-docs.readthedocs.io/en/latest/submit/reads/webin-cli.html
+# todo: submit read data with Webin-CLI https://ena-docs.readthedocs.io/en/latest/submit/general-guide/webin-cli.html
