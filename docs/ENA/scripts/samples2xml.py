@@ -70,11 +70,9 @@ def main():
         location = LOCATION[row.site]
         date = row["collection_date"]
         if pd.isna(date):
-            print(
-                f"[WARNING] Date is null for sample {row['sample']}...skipping...",
-                file=sys.stderr,
+            raise ValueError(
+                f"Date is null for sample {row['sample']}",
             )
-            continue
         attrs = attributes(date, location, row.lineage)
         sample_el.append(attrs)
         root.append(sample_el)

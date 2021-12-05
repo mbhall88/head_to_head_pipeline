@@ -1,0 +1,7 @@
+name: samples2xml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pandas=1

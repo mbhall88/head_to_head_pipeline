@@ -60,7 +60,6 @@ rule submit_samples:
     container:
         containers["curl"]
     params:
-        script="scripts/submit_sample_xml.sh",
         url="https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
         uname=os.environ["UNAME"],
         passwd=os.environ["PASSWD"],

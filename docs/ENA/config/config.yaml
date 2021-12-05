@@ -4,3 +4,4 @@ samplesheet: "../samples.paper.csv"
 containers:
   base:   "docker://bash:5.1"
   seqkit: "docker://quay.io/biocontainers/seqkit:2.1.0--h9ee0642_0"
+  curl:   "docker://curlimages/curl:7.80.0"

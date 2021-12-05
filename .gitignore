@@ -400,3 +400,9 @@ analysis/assembly
 analysis/thesis/data
 analysis/baseline_variants/bcftools_filtering
 analysis/baseline_variants/archive
+analysis/resistance_prediction/coverage.csv
+analysis/resistance_prediction/workflow/notebooks/novel.frs70.png
+analysis/resistance_prediction/workflow/notebooks/pheno_concordance_plot.png
+analysis/transmission_clustering/report/mixed_simulations.png
+analysis/transmission_clustering/report/mixed_simulations.summary.html
+data/QC/report/coverage.csv
