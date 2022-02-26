@@ -46,7 +46,7 @@ rule create_samples_xml:
     log:
         log_dir / "create_samples_xml.log",
     conda:
-        "workflow/envs/samples2xml.yaml"
+        "envs/samples2xml.yaml"
     shell:
         "python {params.script} {input.sheet} > {output.xml} 2> {log}"
 
