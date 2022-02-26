@@ -226,11 +226,12 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
     # we only want one legend for the whole figure
     #  ax.get_legend().remove()
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=12))
-    ax.tick_params("y", labelsize=12)
+    ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=16))
+    ax.tick_params("y", labelsize=16)
+    ax.set_ylabel("")
 
-ax.tick_params("x", labelsize=12)
-ax.set_xlabel("Nanopore:Illumina ratio", fontsize=14)
+ax.tick_params("x", labelsize=16)
+ax.set_xlabel("Nanopore:Illumina ratio", fontsize=16)
 fig.tight_layout()
 # we only want one legend for the whole figure
 ax = axes.flatten()[0]
