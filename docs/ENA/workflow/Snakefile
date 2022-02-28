@@ -26,9 +26,9 @@ for i, row in samplesheet.iterrows():
         output.add(results / f"asm/{sample}.fa.gz")
 
 
-envvars:
-    "UNAME",
-    "PASSWD",
+#envvars:
+#    "UNAME",
+#    "PASSWD",
 
 
 rule all:
@@ -42,7 +42,7 @@ rule create_samples_xml:
     output:
         xml=results / "samples/samples.xml",
     params:
-        script="scripts/samples2xml.py",
+        script="workflow/scripts/samples2xml.py",
     log:
         log_dir / "create_samples_xml.log",
     conda:
@@ -59,10 +59,10 @@ rule submit_samples:
         response=results / "samples/response.xml",
     log:
         log_dir / "submit_samples.log",
-    container:
-        containers["curl"]
+    conda:
+        "envs/curl.yaml"
     params:
-        url="https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
+        url="https://www.ebi.ac.uk/ena/submit/drop-box/submit/",
         uname=os.environ["UNAME"],
         passwd=os.environ["PASSWD"],
     shell:
