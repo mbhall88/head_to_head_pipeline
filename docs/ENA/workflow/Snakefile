@@ -21,9 +21,9 @@ output.add(results / "samples/response.xml")
 for i, row in samplesheet.iterrows():
     site = row.site
     run = row.run
+    sample = row["sample"]
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
     if row["pacbio"] == 1:
-        sample = row["sample"]
         output.add(results / f"asm/{sample}.fa.gz")
 
         output.add(results / f"reads/pacbio/{sample}/manifest.pacbio.{sample}.tsv")
