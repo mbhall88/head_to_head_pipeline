@@ -135,12 +135,16 @@ rule create_read_manifest:
         info=config["samplesheet"],
     output:
         manifest=results / "reads/{tech}/{sample}/manifest.{tech}.{sample}.tsv",
+    log:
+        log_dir / "create_read_manifest/{tech}/{sample}.log",
     params:
         project=config["project"],
         gridion=config["gridion"],
         nextseq=config["NextSeq"],
         reads_dir=reads_dir,
         data_dir=data_dir,
+    conda:
+        "envs/create_read_manifest.yaml"
     script:
         "scripts/create_read_manifest.py"
 
