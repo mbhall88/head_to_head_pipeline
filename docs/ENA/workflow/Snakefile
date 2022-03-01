@@ -10,6 +10,7 @@ configfile: "config/config.yaml"
 
 samplesheet = pd.read_csv(config["samplesheet"])
 data_dir = Path(config["data_dir"])
+reads_dir = Path(config["reads_dir"])
 containers = config["containers"]
 log_dir = Path("logs/stderr")
 asm_dir = Path(config["asm_dir"])
@@ -25,10 +26,12 @@ for i, row in samplesheet.iterrows():
         sample = row["sample"]
         output.add(results / f"asm/{sample}.fa.gz")
 
+        output.add(results / f"reads/pacbio/{sample}/manifest.pacbio.{sample}.tsv")
 
-#envvars:
-#    "UNAME",
-#    "PASSWD",
+    output.add(results / f"reads/pacbio/{sample}/manifest.pacbio.{sample}.tsv")
+    if pd.isna(row["illumina_run_accession"]):  # illumina data hasn't been submitted
+        output.add(results / f"reads/illumina/{sample}/manifest.illumina.{sample}.tsv")
+    output.add(results / f"reads/nanopore/{sample}/manifest.nanopore.{sample}.tsv")
 
 
 rule all:
@@ -74,6 +77,19 @@ rule submit_samples:
         """
 
 
+rule add_sample_accessions_to_sheet:
+    input:
+        xml=rules.submit_samples.output.response,
+    output:
+        csv=results / "samples/accessions.csv",
+    log:
+        log_dir / "add_sample_accessions_to_sheet.log",
+    container:
+        containers["python"]
+    script:
+        "scripts/add_sample_accessions_to_sheet.py"
+
+
 rule archive_raw_nanopore:
     input:
         fast5_dir=data_dir / "{site}/nanopore/raw_data/{run}/multi_fast5s",
@@ -115,5 +131,20 @@ rule unwrap_and_compress_assemblies:
         "seqkit seq -w 0 -o {output.asm} {input.asm} 2> {log}"
 
 
-# todo: create read manifest files https://ena-docs.readthedocs.io/en/latest/submit/reads/webin-cli.html
+rule create_read_manifest:
+    input:
+        samples=rules.add_sample_accessions_to_sheet.output.csv,
+        info=config["samplesheet"],
+    output:
+        manifest=results / "reads/{tech}/{sample}/manifest.{tech}.{sample}.tsv",
+    params:
+        project=config["project"],
+        gridion=config["gridion"],
+        nextseq=config["NextSeq"],
+        reads_dir=reads_dir,
+        data_dir=data_dir,
+    script:
+        "scripts/create_read_manifest.py"
+
+
 # todo: submit read data with Webin-CLI https://ena-docs.readthedocs.io/en/latest/submit/general-guide/webin-cli.html

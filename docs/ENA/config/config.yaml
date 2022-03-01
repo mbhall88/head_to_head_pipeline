@@ -1,6 +1,55 @@
 data_dir:    "/nfs/research/zi/mbhall/tech_wars/data"
+reads_dir:   "/hps/nobackup/iqbal/mbhall/tech_wars/data/QC/subsampled"
 asm_dir:     "../../analysis/assembly/results"
 samplesheet: "../samples.paper.csv"
+project:     "PRJEB49093"
 containers:
   base:   "docker://bash:5.1"
   seqkit: "docker://quay.io/biocontainers/seqkit:2.1.0--h9ee0642_0"
+  python: "docker://python:3.9"
+
+# nanopore runs that were sequenced on GridION
+gridion:
+  - "birmingham-mgit-run3"
+  - "birmingham-mgit-run4"
+  - "birmingham-mgit-run5"
+  - "birmingham-mgit-run6"
+  - "birmingham-mgit-run7"
+  - "mgit_phe_1"
+  - "mgit_phe_2"
+
+# samples sequenced on illumina nextseq instrument
+NextSeq:
+  - R13303
+  - R15311
+  - R16657
+  - R17830
+  - R18040
+  - R18043
+  - R20412
+  - R21046
+  - R22393
+  - R22435
+  - R22601
+  - R22727
+  - R23013
+  - R23146
+  - R23399
+  - R23824
+  - R25564
+  - R26840
+  - R27657
+  - R28012
+  - R30042
+  - R30078
+  - R30234
+  - R31095
+  - R32258
+  - R32273
+  - R32929
+  - R36134
+  - R36431
+  - R36440
+  - R37259
+  - R37765
+  - R38290

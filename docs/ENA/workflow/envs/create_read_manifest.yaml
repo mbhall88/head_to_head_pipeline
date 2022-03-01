@@ -1,0 +1,6 @@
+name: create_read_manifest
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pandas=1

@@ -24,3 +24,7 @@ The following pipelines are not relevant to the work in the final paper.
 - [H37Rv PRG construction](data/H37Rv_PRG)
 - [Pandora variant analysis](analysis/pandora_variants)
 
+
+# Data availability
+
+All data is submitted under the Project accession **PRJEB49093**.
