@@ -172,7 +172,7 @@ rule submit_read_data:
         context="reads",
         uname=os.environ["UNAME"],
         passwd_envvar="PASSWD",
-        opts="-test -submit",
+        opts="-submit",
     resources:
         mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
     shell:

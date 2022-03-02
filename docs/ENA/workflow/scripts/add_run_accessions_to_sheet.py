@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Tuple, List
 import re
 
-ALIAS_REGEX = re.compile(r"-(?P<alias>mada_[12]-?\d+|R\d+|1[6-9]_\d+)-")
+ALIAS_REGEX = re.compile(r"(?P<alias>mada_[12]-?\d+|R\d+|1[6-9]_\d+)")
 
 
 def extract_accessions_from_receipt(file: Path) -> Tuple[str, str, str, str]:
