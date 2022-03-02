@@ -9,7 +9,7 @@ from typing import Tuple, List
 
 
 def extract_accessions_from_receipt(file: Path) -> Tuple[str, str, str, str]:
-    tree = ET.parse(snakemake.input.xml)
+    tree = ET.parse(file)
     root = tree.getroot()
 
     if root.attrib["success"] != "true":

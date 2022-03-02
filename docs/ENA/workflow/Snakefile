@@ -28,16 +28,16 @@ for i, row in samplesheet.iterrows():
     if row["pacbio"] == 1:
         output.add(results / f"asm/{sample}.fa.gz")
         receipts.add(
-            results / f"reads/pacbio/{sample}/reads/{sample}-pacbio/receipt.xml"
+            results / f"reads/pacbio/{sample}/reads/{sample}-pacbio/submit/receipt.xml"
         )
 
     if pd.isna(row["illumina_run_accession"]):  # illumina data hasn't been submitted
         receipts.add(
-            results / f"reads/illumina/{sample}/reads/{sample}-illumina/receipt.xml"
+            results / f"reads/illumina/{sample}/reads/{sample}-illumina/submit/receipt.xml"
         )
 
     receipts.add(
-        results / f"reads/nanopore/{sample}/reads/{sample}-nanopore/receipt.xml"
+        results / f"reads/nanopore/{sample}/reads/{sample}-nanopore/submit/receipt.xml"
     )
 
 
