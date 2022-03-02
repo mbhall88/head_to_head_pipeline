@@ -18,7 +18,7 @@ tech = snakemake.wildcards.tech
 
 if tech == "nanopore":
     platform = "OXFORD_NANOPORE"
-    gridion = set(snakemake.params.gridio)
+    gridion = set(snakemake.params.gridion)
     run = samplesheet.at[name, "run"]
     instrument = "GridION" if run in gridion else "MinION"
     fastq = [reads_dir / f"{site}/{tech}/{name}/{name}.subsampled.fastq.gz"]
