@@ -165,7 +165,7 @@ rule submit_read_data:
         opts="-validate",
     shell:
         """
-        java -jar /webin-cli.jar {params.opts} -context {params.context} -manifest {input.manifest} \
+        ena-webin-cli {params.opts} -context {params.context} -manifest {input.manifest} \
           -username {params.uname} -passwordEnv={params.passwd_envvar} -inputDir / &> {log}
         touch {output.done}
         """
