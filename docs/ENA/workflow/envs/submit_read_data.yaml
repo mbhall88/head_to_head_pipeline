@@ -1,0 +1,6 @@
+name: submit_read_data
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - ena-webin-cli=4.3.0

@@ -25,11 +25,11 @@ for i, row in samplesheet.iterrows():
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
     if row["pacbio"] == 1:
         output.add(results / f"asm/{sample}.fa.gz")
-        output.add(results / f"reads/pacbio/{sample}/manifest.pacbio.{sample}.tsv")
+        output.add(results / f"reads/pacbio/{sample}/.pacbio.{sample}.done")
 
     if pd.isna(row["illumina_run_accession"]):  # illumina data hasn't been submitted
-        output.add(results / f"reads/illumina/{sample}/manifest.illumina.{sample}.tsv")
-    output.add(results / f"reads/nanopore/{sample}/manifest.nanopore.{sample}.tsv")
+        output.add(results / f"reads/illumina/{sample}/.illumina.{sample}.done")
+    output.add(results / f"reads/nanopore/{sample}/.nanopore.{sample}.done")
 
 
 rule all:
@@ -149,4 +149,23 @@ rule create_read_manifest:
         "scripts/create_read_manifest.py"
 
 
-# todo: submit read data with Webin-CLI https://ena-docs.readthedocs.io/en/latest/submit/general-guide/webin-cli.html
+rule submit_read_data:
+    input:
+        manifest=rules.create_read_manifest.output.manifest,
+    output:
+        done=results / "reads/{tech}/{sample}/.{tech}.{sample}.done",
+    log:
+        results / "reads/{tech}/{sample}/mresponse.{tech}.{sample}.log",
+    conda:
+        "envs/submit_read_data.yaml"
+    params:
+        context="reads",
+        uname=os.environ["UNAME"],
+        passwd_envvar="PASSWD",
+        opts="-validate",
+    shell:
+        """
+        java -jar /webin-cli.jar {params.opts} -context {params.context} -manifest {input.manifest} \
+          -username {params.uname} -passwordEnv={params.passwd_envvar} -inputDir / &> {log}
+        touch {output.done}
+        """
