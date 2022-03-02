@@ -6,6 +6,9 @@ sys.stderr = open(snakemake.log[0], "w")
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Tuple, List
+import re
+
+ALIAS_REGEX = re.compile(r"-(?P<alias>mada_[12]-?\d+|R\d+|1[6-9]_\d+)-")
 
 
 def extract_accessions_from_receipt(file: Path) -> Tuple[str, str, str, str]:
@@ -31,7 +34,11 @@ def extract_accessions_from_receipt(file: Path) -> Tuple[str, str, str, str]:
         raise KeyError(f"Got no run accession for successful submission {file}")
 
     tech = alias.split("-")[-1]
-    name = alias.split("-")[-2]
+    match = ALIAS_REGEX.search(alias)
+    if match is None:
+        raise KeyError(f"Cannot extract alias from {alias}")
+    else:
+        name = match.group("alias")
     return name, tech, experiment, run_acc
 
 
