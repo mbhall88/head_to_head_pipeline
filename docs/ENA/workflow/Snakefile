@@ -17,8 +17,9 @@ log_dir = Path("logs/stderr")
 asm_dir = Path(config["asm_dir"])
 results = Path("results")
 output: Set[Path] = set()
+receipts: Set[Path] = set()
 
-output.add(results / "samples/response.xml")
+output.add(results / "reads/accessions.csv")
 for i, row in samplesheet.iterrows():
     site = row.site
     run = row.run
@@ -26,11 +27,18 @@ for i, row in samplesheet.iterrows():
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
     if row["pacbio"] == 1:
         output.add(results / f"asm/{sample}.fa.gz")
-        output.add(results / f"reads/pacbio/{sample}/.pacbio.{sample}.done")
+        receipts.add(
+            results / f"reads/pacbio/{sample}/reads/{sample}-pacbio/receipt.xml"
+        )
 
     if pd.isna(row["illumina_run_accession"]):  # illumina data hasn't been submitted
-        output.add(results / f"reads/illumina/{sample}/.illumina.{sample}.done")
-    output.add(results / f"reads/nanopore/{sample}/.nanopore.{sample}.done")
+        receipts.add(
+            results / f"reads/illumina/{sample}/reads/{sample}-illumina/receipt.xml"
+        )
+
+    receipts.add(
+        results / f"reads/nanopore/{sample}/reads/{sample}-nanopore/receipt.xml"
+    )
 
 
 rule all:
@@ -154,7 +162,7 @@ rule submit_read_data:
     input:
         manifest=rules.create_read_manifest.output.manifest,
     output:
-        done=results / "reads/{tech}/{sample}/.{tech}.{sample}.done",
+        receipt=results / "reads/{tech}/{sample}/reads/{sample}-{tech}/receipt.xml",
     log:
         results / "reads/{tech}/{sample}/mresponse.{tech}.{sample}.log",
     conda:
@@ -170,5 +178,17 @@ rule submit_read_data:
         """
         ena-webin-cli {params.opts} -context {params.context} -manifest {input.manifest} \
           -username {params.uname} -passwordEnv={params.passwd_envvar} -inputDir / &> {log}
-        touch {output.done}
         """
+
+
+rule add_run_accessions_to_sheet:
+    input:
+        receipts=receipts,
+    output:
+        sheet=results / "reads/accessions.csv",
+    log:
+        log_dir / "add_run_accessions_to_sheet.log",
+    container:
+        containers["python"]
+    script:
+        "scripts/add_run_accessions_to_sheet.py"
