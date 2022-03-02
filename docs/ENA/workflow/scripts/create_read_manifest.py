@@ -54,7 +54,8 @@ library_strategy = "WGS"
 with open(snakemake.output.manifest, "w") as fp:
     print(f"STUDY\t{project}", file=fp)
     print(f"SAMPLE\t{sample}", file=fp)
-    print(f"NAME\t{name}", file=fp)
+    alias = f"{name}-{tech}"
+    print(f"NAME\t{alias}", file=fp)
     print(f"INSTRUMENT\t{instrument}", file=fp)
     if tech == "illumina":
         print(f"INSERT_SIZE\t{insert_size}", file=fp)
