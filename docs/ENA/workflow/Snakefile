@@ -8,6 +8,7 @@ import pandas as pd
 configfile: "config/config.yaml"
 
 
+GB = 1_024
 samplesheet = pd.read_csv(config["samplesheet"])
 data_dir = Path(config["data_dir"])
 reads_dir = Path(config["reads_dir"])
@@ -163,6 +164,8 @@ rule submit_read_data:
         uname=os.environ["UNAME"],
         passwd_envvar="PASSWD",
         opts="-validate",
+    resources:
+        mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
     shell:
         """
         ena-webin-cli {params.opts} -context {params.context} -manifest {input.manifest} \
