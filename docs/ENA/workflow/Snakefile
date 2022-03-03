@@ -163,7 +163,7 @@ rule submit_read_data:
     input:
         manifest=rules.create_read_manifest.output.manifest,
     output:
-        receipt=results / "reads/{tech}/{sample}/reads/{sample}-{tech}/receipt.xml",
+        receipt=results / "reads/{tech}/{sample}/reads/{sample}-{tech}/submit/receipt.xml",
     log:
         results / "reads/{tech}/{sample}/mresponse.{tech}.{sample}.log",
     conda:
