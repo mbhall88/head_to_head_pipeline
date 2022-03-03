@@ -26,14 +26,15 @@ for i, row in samplesheet.iterrows():
     sample = row["sample"]
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
     if row["pacbio"] == 1:
-        output.add(results / f"asm/{sample}.fa.gz")
+        output.add(results / f"asm/{sample}.manifest.tsv")
         receipts.add(
             results / f"reads/pacbio/{sample}/reads/{sample}-pacbio/submit/receipt.xml"
         )
 
     if pd.isna(row["illumina_run_accession"]):  # illumina data hasn't been submitted
         receipts.add(
-            results / f"reads/illumina/{sample}/reads/{sample}-illumina/submit/receipt.xml"
+            results
+            / f"reads/illumina/{sample}/reads/{sample}-illumina/submit/receipt.xml"
         )
 
     receipts.add(
@@ -192,3 +193,21 @@ rule add_run_accessions_to_sheet:
         containers["python"]
     script:
         "scripts/add_run_accessions_to_sheet.py"
+
+
+rule create_asm_manifest:
+    input:
+        asm=rules.unwrap_and_compress_assemblies.output.asm,
+        samples=rules.add_sample_accessions_to_sheet.output.csv,
+        runs=rules.add_run_accessions_to_sheet.output.sheet,
+    output:
+        manifest=results / "asm/{sample}.manifest.tsv",
+    log:
+        log_dir / "create_asm_manifest/{sample}.log",
+    conda:
+        "envs/create_asm_manifest.yaml"
+    params:
+        project=config["project"],
+        data_dir=data_dir,
+    script:
+        "scripts/create_asm_manifest.py"
