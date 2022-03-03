@@ -1,4 +1,5 @@
 import sys
+from typing import Tuple
 
 sys.stderr = open(snakemake.log[0], "w")
 
