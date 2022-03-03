@@ -4,6 +4,7 @@ from typing import Tuple
 sys.stderr = open(snakemake.log[0], "w")
 
 import pandas as pd
+import gzip
 import pysam
 from pathlib import Path
 
@@ -34,7 +35,7 @@ def create_chromosome_list(asm_file: Path, outpath: Path):
         chrom_name = "1"
         chrom_type = "Circular-Chromosome"
 
-    with open(outpath, "w") as ofp:
+    with gzip.open(outpath, "wt") as ofp:
         print(f"{obj_name}\t{chrom_name}\t{chrom_type}", file=ofp)
 
 
@@ -50,7 +51,7 @@ run = run_acc_df.at[(alias, "pacbio"), "run"]
 n_contigs, n_bases = asm_stats(asm_path)
 
 if n_contigs == 1:
-    chrom_list_file = asm_path.parent / f"{alias}.chrom_list.tsv"
+    chrom_list_file = asm_path.parent / f"{alias}.chrom_list.tsv.gz"
     create_chromosome_list(asm_path, chrom_list_file)
 
 fastq = data_dir / f"madagascar/pacbio/{alias}/{alias}.pacbio.fastq.gz"
