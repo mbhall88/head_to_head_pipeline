@@ -81,4 +81,4 @@ with open(snakemake.output.manifest, "w") as fp:
     print(f"FASTA\t{asm_path.resolve()}", file=fp)
     # CHROMOSOME_LIST: list of chromosomes
     if n_contigs == 1:
-        print(f"CHROMOSOME_LIST\t{chrom_list_file.resolve()}")
+        print(f"CHROMOSOME_LIST\t{chrom_list_file.resolve()}", file=fp)
