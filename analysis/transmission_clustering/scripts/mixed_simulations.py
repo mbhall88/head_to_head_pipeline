@@ -3,6 +3,7 @@ import sys
 sys.stderr = open(snakemake.log[0], "w")
 from itertools import chain, combinations, product
 from typing import Tuple, Set, List, Dict
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -236,6 +237,8 @@ fig.tight_layout()
 # we only want one legend for the whole figure
 ax = axes.flatten()[0]
 fig.savefig(snakemake.output.plot)
+svg_path = Path(snakemake.output.plot).with_suffix(".svg")
+fig.savefig(svg_path)
 # also save a HTML summary of the data
 summary = pd.concat(dfs).groupby(["ratio", "threshold", "metric"]).describe()
 with open(snakemake.output.summary, "w") as ostream:
