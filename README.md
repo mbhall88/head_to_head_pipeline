@@ -28,3 +28,5 @@ The following pipelines are not relevant to the work in the final paper.
 # Data availability
 
 All data is submitted under the Project accession **PRJEB49093**.
+
+The accessions and all relevant sample metadata for this study can be found at <https://doi.org/10.6084/m9.figshare.19304648>.
