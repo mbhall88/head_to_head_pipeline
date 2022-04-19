@@ -1,3 +1,11 @@
+### Preprint
+
+> Hall, M. B. *et al*. Nanopore sequencing for *Mycobacterium tuberculosis* drug susceptibility testing and outbreak investigation. *Medrxiv* 2022.03.04.22271870 (2022) [doi:10.1101/2022.03.04.22271870][doi].
+
+[doi]: https://doi.org/10.1101/2022.03.04.22271870
+
+---
+
 This repository holds the pipelines/scripts used for our project analysing Illumina and
 Nanopore for Mtb drug resistance calling and tranmission clustering.
 
