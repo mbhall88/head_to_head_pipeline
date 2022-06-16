@@ -24,6 +24,16 @@ for site, sample in zip(samplesheet["site"], samplesheet["sample"]):
             str(DST_RESULTS / f"concordance/mykrobe/{tech}/{site}/{sample}.mykrobe.csv")
         )
 
+required_files = set()
+
+for ext in FIGURE_EXTS:
+    required_files.add(FIGURES / f"figure_1{ext}")
+
+
+rule all:
+    input:
+        required_files,
+
 
 rule figure_1:
     input:
@@ -32,7 +42,7 @@ rule figure_1:
     output:
         multiext(str(FIGURES / "figure_1"), *FIGURE_EXTS),
     log:
-        LOGDIR / "figure_1.log"
+        LOGDIR / "figure_1.log",
     conda:
         str(ENVSDIR / "figure_1.yaml")
     params:
@@ -40,7 +50,6 @@ rule figure_1:
         figsize=(10, 10),
         dpi=DPI,
         xticks=[],
-        exclude= {"pyrazinamide","moxifloxacin"}
+        exclude={"pyrazinamide", "moxifloxacin"},
     script:
         str(SCRIPTSDIR / "figure_1.py")
-
