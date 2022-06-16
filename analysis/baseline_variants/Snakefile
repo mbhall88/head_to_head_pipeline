@@ -102,8 +102,6 @@ rule index_reference:
         H37RV["genome"] + ".fai",
     log:
         rule_log_dir / "index_reference.log",
-    container:
-        containers["conda"]
     wrapper:
         "0.63.0/bio/samtools/faidx"
 
