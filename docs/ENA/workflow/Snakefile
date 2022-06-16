@@ -26,7 +26,7 @@ for i, row in samplesheet.iterrows():
     sample = row["sample"]
     output.add(Path(data_dir / f"archive/{site}.{run}.md5"))
     if row["pacbio"] == 1:
-        output.add(results / f"asm/genome/{sample}/receipt.xml")
+        output.add(results / f"asm/genome/{sample}/submit/receipt.xml")
         receipts.add(
             results / f"reads/pacbio/{sample}/reads/{sample}-pacbio/submit/receipt.xml"
         )
@@ -217,7 +217,7 @@ rule submit_asm_data:
     input:
         manifest=rules.create_asm_manifest.output.manifest,
     output:
-        receipt=results / "asm/genome/{sample}/receipt.xml",
+        receipt=results / "asm/genome/{sample}/submit/receipt.xml",
     log:
         log_dir / "submit_asm_data/{sample}.log",
     conda:
@@ -226,7 +226,7 @@ rule submit_asm_data:
         context="genome",
         uname=os.environ["UNAME"],
         passwd_envvar="PASSWD",
-        opts="-test -submit",
+        opts="-submit",
     resources:
         mem_mb=lambda wildcards, attempt: int(4 * GB) * attempt,
     shell:
