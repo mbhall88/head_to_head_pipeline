@@ -9,12 +9,15 @@ inclusion_expr = "failed_qc == 0 and excluded == 0"
 samplesheet = pd.read_csv("../samples.paper.csv").query(inclusion_expr)
 TECHS = ["illumina", "nanopore"]
 DST_RESULTS = Path("../../analysis/resistance_prediction/results")
+VARIANT_RESULTS = Path("../../analysis/baseline_variants/")
 PHENOTYPES = Path("../phenotypes.csv")
 FIGURES = Path("figures")
 FIGURE_EXTS = [".png", ".svg"]
 LOGDIR = Path("logs/rules")
 ENVSDIR = Path("envs")
 SCRIPTSDIR = Path("scripts")
+ILLUMINA_DIST_THRESHOLDS = (5, 12)
+NANOPORE_DIST_THRESHOLDS = (6, 12)
 DPI = 300
 
 dst_concordance_files = set()
@@ -28,6 +31,7 @@ required_files = set()
 
 for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_1{ext}")
+    required_files.add(FIGURES / f"figure_3{ext}")
 
 
 rule all:
@@ -36,6 +40,7 @@ rule all:
 
 
 rule figure_1:
+    """Phenotype availability"""
     input:
         phenosheet=PHENOTYPES,
         concordance=dst_concordance_files,
@@ -53,3 +58,30 @@ rule figure_1:
         exclude={"pyrazinamide", "moxifloxacin"},
     script:
         str(SCRIPTSDIR / "figure_1.py")
+
+
+rule figure_3:
+    """Close dotplot"""
+    input:
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+        bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_3"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_3.log",
+    conda:
+        str(ENVSDIR / "figure_3.yaml")
+    params:
+        style="ggplot",
+        figsize=(10, 10),
+        dpi=DPI,
+        marker_size=75,
+        illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
+        nanopore_thresholds=NANOPORE_DIST_THRESHOLDS,
+        close_threshold=20,
+        xaxis_label="COMPASS SNP distance",
+        yaxis_label="BCFtools SNP distance",
+        false_marker="s",
+        font_size=14,
+    script:
+        str(SCRIPTSDIR / "figure_3.py")
