@@ -11,7 +11,7 @@ fi
 
 MEMORY=4000
 THREADS=4
-PROFILE="lsf"
+PROFILE="lsf-dev"
 BINDS="/tmp,$HOME"
 case $HOSTNAME in
     *noah*)
