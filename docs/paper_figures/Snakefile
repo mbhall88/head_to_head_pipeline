@@ -56,7 +56,7 @@ rule figure_1:
         figsize=(10, 10),
         dpi=DPI,
         xticks=[],
-        exclude={"pyrazinamide", "moxifloxacin"},
+        exclude=("pyrazinamide", "moxifloxacin"),
     script:
         str(SCRIPTSDIR / "figure_1.py")
 
