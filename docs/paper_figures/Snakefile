@@ -18,7 +18,9 @@ ENVSDIR = Path("envs")
 SCRIPTSDIR = Path("scripts")
 ILLUMINA_DIST_THRESHOLDS = (5, 12)
 NANOPORE_DIST_THRESHOLDS = (6, 12)
+MIXED_DIST_THRESHOLDS = (6, 12)
 DPI = 300
+GB = 1_024
 
 dst_concordance_files = set()
 for site, sample in zip(samplesheet["site"], samplesheet["sample"]):
@@ -33,6 +35,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_1{ext}")
     required_files.add(FIGURES / f"figure_3{ext}")
     required_files.add(FIGURES / f"figure_4{ext}")
+    required_files.add(FIGURES / f"figure_5{ext}")
 
 
 rule all:
@@ -87,6 +90,7 @@ rule figure_3:
     script:
         str(SCRIPTSDIR / "figure_3.py")
 
+
 rule figure_4:
     """Transmission clusters"""
     input:
@@ -106,3 +110,41 @@ rule figure_4:
         nanopore_thresholds=NANOPORE_DIST_THRESHOLDS,
     script:
         str(SCRIPTSDIR / "figure_4.py")
+
+
+rule figure_5:
+    """Mixed simulations"""
+    input:
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+        bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
+        mixed_matrix=VARIANT_RESULTS / "distance/mixed.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_5"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_5.log",
+    conda:
+        str(ENVSDIR / "figure_5.yaml")
+    resources:
+        mem_mb=int(2 * GB),
+    params:
+        style="default",
+        figsize=(10, 10),
+        dpi=DPI,
+        seed=1988,
+        thresholds={
+            ILLUMINA_DIST_THRESHOLDS[i]: {
+                "ont": NANOPORE_DIST_THRESHOLDS[i],
+                "mixed": MIXED_DIST_THRESHOLDS[i],
+            }
+            for i in range(len(ILLUMINA_DIST_THRESHOLDS))
+        },
+        ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9],
+        num_simulations=1000,
+        legend_loc="lower left",
+        nrows=2,
+        ncols=1,
+        sharex=True,
+        sharey=False,
+        xaxis_label="Nanopore:Illumina ratio",
+    script:
+        str(SCRIPTSDIR / "figure_5.py")
