@@ -32,6 +32,7 @@ required_files = set()
 for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_1{ext}")
     required_files.add(FIGURES / f"figure_3{ext}")
+    required_files.add(FIGURES / f"figure_4{ext}")
 
 
 rule all:
@@ -85,3 +86,23 @@ rule figure_3:
         font_size=14,
     script:
         str(SCRIPTSDIR / "figure_3.py")
+
+rule figure_4:
+    """Transmission clusters"""
+    input:
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+        bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_4"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_4.log",
+    conda:
+        str(ENVSDIR / "figure_4.yaml")
+    params:
+        style="default",
+        figsize=(10, 10),
+        dpi=DPI,
+        illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
+        nanopore_thresholds=NANOPORE_DIST_THRESHOLDS,
+    script:
+        str(SCRIPTSDIR / "figure_4.py")
