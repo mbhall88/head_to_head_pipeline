@@ -1,0 +1,46 @@
+"""Note: the figure numbers used here are based on the preprint stage
+https://doi.org/10.1101/2022.03.04.22271870
+"""
+from pathlib import Path
+
+import pandas as pd
+
+inclusion_expr = "failed_qc == 0 and excluded == 0"
+samplesheet = pd.read_csv("../samples.paper.csv").query(inclusion_expr)
+TECHS = ["illumina", "nanopore"]
+DST_RESULTS = Path("../../analysis/resistance_prediction/results")
+PHENOTYPES = Path("../phenotypes.csv")
+FIGURES = Path("figures")
+FIGURE_EXTS = [".png", ".svg"]
+LOGDIR = Path("logs/rules")
+ENVSDIR = Path("envs")
+SCRIPTSDIR = Path("scripts")
+DPI = 300
+
+dst_concordance_files = set()
+for site, sample in zip(samplesheet["site"], samplesheet["sample"]):
+    for tech in TECHS:
+        dst_concordance_files.add(
+            str(DST_RESULTS / f"concordance/mykrobe/{tech}/{site}/{sample}.mykrobe.csv")
+        )
+
+
+rule figure_1:
+    input:
+        phenosheet=PHENOTYPES,
+        concordance=dst_concordance_files,
+    output:
+        multiext(str(FIGURES / "figure_1"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_1.log"
+    conda:
+        str(ENVSDIR / "figure_1.yaml")
+    params:
+        style="ggplot",
+        figsize=(10, 10),
+        dpi=DPI,
+        xticks=[],
+        exclude= {"pyrazinamide","moxifloxacin"}
+    script:
+        str(SCRIPTSDIR / "figure_1.py")
+
