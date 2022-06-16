@@ -171,8 +171,8 @@ ax.axvspan(
     hatch="//",
     edgecolor="black",
 )
-ont_fns = good_data.query(f"{YCOL}>@lower_yt and {XCOL}<=@lower_xt")
-ont_fps = good_data.query(f"{YCOL}<=@lower_yt and {XCOL}>@lower_xt")
+ont_fns = good_data.query(f"{YCOL}>@lower_nanopore_t and {XCOL}<=@lower_illumina_t")
+ont_fps = good_data.query(f"{YCOL}<=@lower_nanopore_t and {XCOL}>@lower_illumina_t")
 good_data = good_data[~good_data.index.isin(ont_fns.index)]
 good_data = good_data[~good_data.index.isin(ont_fps.index)]
 ax = sns.scatterplot(
