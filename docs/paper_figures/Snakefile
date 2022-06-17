@@ -9,6 +9,7 @@ inclusion_expr = "failed_qc == 0 and excluded == 0"
 samplesheet = pd.read_csv("../samples.paper.csv").query(inclusion_expr)
 TECHS = ["illumina", "nanopore"]
 DST_RESULTS = Path("../../analysis/resistance_prediction/results")
+QC_RESULTS = Path("../../data/QC")
 VARIANT_RESULTS = Path("../../analysis/baseline_variants/")
 PHENOTYPES = Path("../phenotypes.csv")
 FIGURES = Path("figures")
@@ -36,6 +37,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_3{ext}")
     required_files.add(FIGURES / f"figure_4{ext}")
     required_files.add(FIGURES / f"figure_5{ext}")
+    required_files.add(FIGURES / f"figure_6{ext}")
 
 
 rule all:
@@ -148,3 +150,26 @@ rule figure_5:
         xaxis_label="Nanopore:Illumina ratio",
     script:
         str(SCRIPTSDIR / "figure_5.py")
+
+
+rule figure_6:
+    """Phenotype DST concordance bar plot"""
+    input:
+        phenosheet=PHENOTYPES,
+        concordance=dst_concordance_files,
+        coverage=QC_RESULTS / "report/coverage.csv",
+    output:
+        multiext(str(FIGURES / "figure_6"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_6.log",
+    conda:
+        str(ENVSDIR / "figure_6.yaml")
+    params:
+        style="ggplot",
+        figsize=(13, 8),
+        dpi=DPI,
+        conf_interval=0.95,
+        minor_is_susceptible=False,
+        ignore_drugs={"pyrazinamide", "moxifloxacin"},
+    script:
+        str(SCRIPTSDIR / "figure_6.py")
