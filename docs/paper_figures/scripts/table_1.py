@@ -5,7 +5,7 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import Tuple
 from collections import defaultdict
-from numpy import np
+import numpy as np
 from scipy import stats
 from math import sqrt
 from itertools import product
