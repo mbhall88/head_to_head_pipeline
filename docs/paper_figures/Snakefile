@@ -229,7 +229,7 @@ rule figure_S3:
         illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
         nanopore_dist_range=(2, 17),
     script:
-        str(SCRIPTSDIR / "figure_S3.yaml")
+        str(SCRIPTSDIR / "figure_S3.py")
 
 
 rule figure_S4:
