@@ -57,7 +57,7 @@ def load_matrix(fpath, delim: str = ",", name: str = "") -> pd.DataFrame:
 
 # load the data
 compass_df = load_matrix(snakemake.input.compass_matrix, name=XCOL)
-ont_df = load_matrix(snakemake.input.bcftools.matrix, name=YCOL)
+ont_df = load_matrix(snakemake.input.bcftools_matrix, name=YCOL)
 # merge the matrices
 data = pd.concat([compass_df, ont_df], axis=1)
 data = data.reset_index().rename(
