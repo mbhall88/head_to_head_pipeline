@@ -10,6 +10,10 @@ import seaborn as sns
 PAIR_IDX = ("sample1", "sample2")
 
 
+def eprint(msg: str):
+    print(msg, file=sys.stderr)
+
+
 def main():
     # set aesthetics
     plt.style.use(snakemake.params.style)
@@ -30,10 +34,10 @@ def main():
     m = np.array(matrix)[idx]
     self_dists = m.diagonal()
 
-    print(pd.DataFrame(self_dists).describe())
+    eprint(pd.DataFrame(self_dists).describe())
 
     largest_outlier = sorted_names[self_dists.argmax()]
-    print(
+    eprint(
         f"Largest outlier is {largest_outlier} with a self-distance of {self_dists.max()}",
     )
 
@@ -56,7 +60,7 @@ def main():
 
     for i in range(1, 10):
         numerator = sum(self_dists < i)
-        print(
+        eprint(
             f"{numerator / len(self_dists):.0%} ({numerator}/{len(self_dists)}) samples below {i} distance"
         )
 

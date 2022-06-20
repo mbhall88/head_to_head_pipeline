@@ -43,6 +43,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_S2{ext}")
     required_files.add(FIGURES / f"figure_S3{ext}")
     required_files.add(FIGURES / f"figure_S4{ext}")
+    required_files.add(FIGURES / f"figure_S5{ext}")
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
@@ -249,6 +250,33 @@ rule figure_S4:
         xaxis_label="Self SNP distance",
     script:
         str(SCRIPTSDIR / "figure_S4.py")
+
+
+rule figure_S5:
+    """Mixed dotplot"""
+    input:
+        mixed_matrix=VARIANT_RESULTS / "distance/mixed.matrix.csv",
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_S5"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_S5.log",
+    conda:
+        str(ENVSDIR / "figure_S5.yaml")
+    params:
+        style="ggplot",
+        figsize=(10, 10),
+        dpi=DPI,
+        xaxis_label="COMPASS SNP distance",
+        yaxis_label="Mixed SNP distance",
+        font_size=14,
+        alpha=0.25,
+        linewidth=0.1,
+        close_threshold=rules.figure_3.params.close_threshold,
+        illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
+        mixed_thresholds=MIXED_DIST_THRESHOLDS,
+    script:
+        str(SCRIPTSDIR / "figure_S5.py")
 
 
 # ===============================
