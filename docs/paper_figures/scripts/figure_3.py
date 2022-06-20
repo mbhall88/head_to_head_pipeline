@@ -99,7 +99,7 @@ ax.tick_params(color=BLACK, labelcolor=BLACK)
 illumina_t = ILLUMINA_DIST_THRESHOLDS[1]
 nanopore_t = NANOPORE_DIST_THRESHOLDS[1]
 lower_illumina_t = ILLUMINA_DIST_THRESHOLDS[0]
-lower_nanopore_t = NANOPORE_DIST_THRESHOLDS[1]
+lower_nanopore_t = NANOPORE_DIST_THRESHOLDS[0]
 
 kwargs = dict(alpha=0.9, linewidth=0.1, s=marker_size)
 # partition data into the quadrants
