@@ -13,7 +13,9 @@ QC_RESULTS = Path("../../data/QC")
 VARIANT_RESULTS = Path("../../analysis/baseline_variants/")
 PHENOTYPES = Path("../phenotypes.csv")
 FIGURES = Path("figures")
+TABLES = Path("tables")
 FIGURE_EXTS = [".png", ".svg"]
+TABLE_EXTS = [".csv", ".tex"]
 LOGDIR = Path("logs/rules")
 ENVSDIR = Path("envs")
 SCRIPTSDIR = Path("scripts")
@@ -39,12 +41,18 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_5{ext}")
     required_files.add(FIGURES / f"figure_6{ext}")
 
+for ext in TABLE_EXTS:
+    required_files.add(TABLES / f"table_1{ext}")
+
 
 rule all:
     input:
         required_files,
 
 
+# ===============================
+# FIGURES
+# ===============================
 rule figure_1:
     """Phenotype availability"""
     input:
@@ -173,3 +181,16 @@ rule figure_6:
         ignore_drugs={"pyrazinamide", "moxifloxacin"},
     script:
         str(SCRIPTSDIR / "figure_6.py")
+
+
+# ===============================
+# TABLES
+# ===============================
+rule table_1:
+    input:
+        concordance=dst_concordance_files,
+    output:
+        csv=TABLES / "table_1.csv",
+        latex=TABLES / "table_1.tex",
+    script:
+        str(SCRIPTSDIR / "table_1.py")
