@@ -40,6 +40,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_4{ext}")
     required_files.add(FIGURES / f"figure_5{ext}")
     required_files.add(FIGURES / f"figure_6{ext}")
+    required_files.add(FIGURES / f"figure_S2{ext}")
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
@@ -183,10 +184,38 @@ rule figure_6:
         str(SCRIPTSDIR / "figure_6.py")
 
 
+rule figure_S2:
+    """Full dotplot"""
+    input:
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+        bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_S2"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_S2.log",
+    conda:
+        str(ENVSDIR / "figure_S2.yaml")
+    params:
+        style="ggplot",
+        figsize=(10, 10),
+        dpi=DPI,
+        xaxis_label="COMPASS SNP distance",
+        yaxis_label="BCFtools SNP distance",
+        font_size=14,
+        alpha=0.25,
+        linewidth=0.1,
+        marker_size=20,
+    script:
+        str(SCRIPTSDIR / "figure_S2.py")
+
+
 # ===============================
 # TABLES
 # ===============================
 rule table_1:
+    """Comparison of Mykrobe-derived Nanopore drug resistance predictions with 
+    Illumina predictions
+    """
     input:
         concordance=dst_concordance_files,
     output:
