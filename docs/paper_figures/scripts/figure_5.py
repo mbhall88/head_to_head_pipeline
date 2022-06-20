@@ -188,61 +188,66 @@ THRESHOLDS: Dict[int, Dict[str, int]] = snakemake.params.thresholds
 
 SAMPLES = np.unique(np.array(list(chain.from_iterable(ILLUMINA_DF.index))))
 
-# setup plotting canvas
-fig, axes = plt.subplots(
-    nrows=snakemake.params.nrows,
-    ncols=snakemake.params.ncols,
-    sharex=snakemake.params.sharex,
-    sharey=snakemake.params.sharey,
-    squeeze=True,
-)
-kwargs = dict(
-    x="ratio",
-    y="value",
-    hue="metric",
-    split=False,
-    scale="width",
-    inner="quartile",
-    cut=0,
-    linewidth=0.5,
-)
 
-dfs: List[pd.DataFrame] = []
-for ax, t in zip(axes.flatten(), THRESHOLDS):
-    frames = []
-    G = truth_graph(ILLUMINA_DF, t)
-    for r in RATIOS:
-        frame = run_simulation(r, t, G, NUM_SIMULATIONS)
-        frame["threshold"] = t
-        frames.append(frame)
-    data = pd.concat(frames)
-    dfs.append(data)
-    ax = sns.violinplot(data=data, ax=ax, **kwargs)
-    np_t = THRESHOLDS[t]["ont"]
-    mix_t = THRESHOLDS[t]["mixed"]
-    ax.set_title(
-        f"SNP threshold = {'/'.join(map(str, sorted({t, np_t, mix_t})))}",
-        fontdict={"fontsize": 14},
+def main():
+    # setup plotting canvas
+    fig, axes = plt.subplots(
+        nrows=snakemake.params.nrows,
+        ncols=snakemake.params.ncols,
+        sharex=snakemake.params.sharex,
+        sharey=snakemake.params.sharey,
+        squeeze=True,
     )
-    ax.label_outer()
-    # we only want one legend for the whole figure
-    #  ax.get_legend().remove()
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=16))
-    ax.tick_params("y", labelsize=16)
-    ax.set_ylabel("")
+    kwargs = dict(
+        x="ratio",
+        y="value",
+        hue="metric",
+        split=False,
+        scale="width",
+        inner="quartile",
+        cut=0,
+        linewidth=0.5,
+    )
 
-ax.tick_params("x", labelsize=16)
+    dfs: List[pd.DataFrame] = []
+    for ax, t in zip(axes.flatten(), THRESHOLDS):
+        frames = []
+        G = truth_graph(ILLUMINA_DF, t)
+        for r in RATIOS:
+            frame = run_simulation(r, t, G, NUM_SIMULATIONS)
+            frame["threshold"] = t
+            frames.append(frame)
+        data = pd.concat(frames)
+        dfs.append(data)
+        ax = sns.violinplot(data=data, ax=ax, **kwargs)
+        np_t = THRESHOLDS[t]["ont"]
+        mix_t = THRESHOLDS[t]["mixed"]
+        ax.set_title(
+            f"SNP threshold = {'/'.join(map(str, sorted({t, np_t, mix_t})))}",
+            fontdict={"fontsize": 14},
+        )
+        ax.label_outer()
+        # we only want one legend for the whole figure
+        #  ax.get_legend().remove()
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, labels, loc=snakemake.params.legend_loc, prop=dict(size=16))
+        ax.tick_params("y", labelsize=16)
+        ax.set_ylabel("")
 
-xticklabels = []
-for r in RATIOS:
-    f = Fraction(r).limit_denominator()
-    nanopore_r, illumina_r = f.as_integer_ratio()
-    xticklabels.append(f"{nanopore_r}:{illumina_r}")
+    ax.tick_params("x", labelsize=16)
 
-ax.set_xticklabels(xticklabels)
-ax.set_xlabel(snakemake.params.xaxis_label, fontsize=16)
-fig.tight_layout()
+    xticklabels = []
+    for r in RATIOS:
+        f = Fraction(r).limit_denominator()
+        nanopore_r, illumina_r = f.as_integer_ratio()
+        xticklabels.append(f"{nanopore_r}:{illumina_r}")
 
-for fpath in snakemake.output:
-    fig.savefig(fpath)
+    ax.set_xticklabels(xticklabels)
+    ax.set_xlabel(snakemake.params.xaxis_label, fontsize=16)
+    fig.tight_layout()
+
+    for fpath in snakemake.output:
+        fig.savefig(fpath)
+
+
+main()

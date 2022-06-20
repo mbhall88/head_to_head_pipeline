@@ -221,183 +221,186 @@ drug_abbrev = {
     "ciprofloxacin": "Cfx",
 }
 
-covdf = pd.read_csv(snakemake.input.coverage, index_col="sample")
 
-frames = []
-for p in map(Path, snakemake.input.concordance):
-    sample, tool = p.name.split(".")[0:2]
-    tech = p.parts[-3]
-    site = p.parts[-2]
-    table = pd.read_csv(p)
-    table["sample"] = sample
-    table["tool"] = tool
-    table["tech"] = tech
-    table["site"] = site
-    frames.append(table)
+def main():
+    covdf = pd.read_csv(snakemake.input.coverage, index_col="sample")
 
-calls = pd.concat(frames)
-calls.reset_index(drop=True, inplace=True)
-valid_samples = set(calls["sample"])
+    frames = []
+    for p in map(Path, snakemake.input.concordance):
+        sample, tool = p.name.split(".")[0:2]
+        tech = p.parts[-3]
+        site = p.parts[-2]
+        table = pd.read_csv(p)
+        table["sample"] = sample
+        table["tool"] = tool
+        table["tech"] = tech
+        table["site"] = site
+        frames.append(table)
 
-pheno = pd.read_csv(snakemake.input.phenosheet).melt(
-    id_vars=["sample"], var_name="drug", value_name="phenotype"
-)
-arr = []
-for r in pheno["phenotype"]:
-    if pd.isna(r):
-        arr.append(r)
-    elif r.upper() in ("R", "S"):
-        arr.append(r.upper())
-    else:
-        arr.append(None)
-pheno["phenotype"] = arr
-pheno = pheno.loc[pheno["sample"].isin(valid_samples)]
-pheno.set_index(["sample", "drug"], drop=False, inplace=True)
-pheno.sort_index(inplace=True)
+    calls = pd.concat(frames)
+    calls.reset_index(drop=True, inplace=True)
+    valid_samples = set(calls["sample"])
 
-pheno_clf = []
-minor_is_susceptible = snakemake.params.minor_is_susceptible
-unknown_is_resistant = False
-failed_is_resistant = False
-ignore_drugs = snakemake.params.ignore_drugs
-classifier = Classifier(
-    unknown_is_resistant=unknown_is_resistant, minor_is_susceptible=minor_is_susceptible
-)
-
-for ix, row in calls.iterrows():
-    drug = row["drug"].lower()
-    if drug in ignore_drugs:
-        continue
-
-    sample = row["sample"]
-    try:
-        ph = pheno.loc[(sample, drug), "phenotype"]
-        if pd.isna(ph).all():
-            continue
+    pheno = pd.read_csv(snakemake.input.phenosheet).melt(
+        id_vars=["sample"], var_name="drug", value_name="phenotype"
+    )
+    arr = []
+    for r in pheno["phenotype"]:
+        if pd.isna(r):
+            arr.append(r)
+        elif r.upper() in ("R", "S"):
+            arr.append(r.upper())
         else:
-            truth = Prediction(ph[0])
-    except KeyError:
-        continue
+            arr.append(None)
+    pheno["phenotype"] = arr
+    pheno = pheno.loc[pheno["sample"].isin(valid_samples)]
+    pheno.set_index(["sample", "drug"], drop=False, inplace=True)
+    pheno.sort_index(inplace=True)
 
-    tech = row["tech"]
-    if tech == "illumina":
-        covg = covdf.loc[sample]["illumina_covg"]
-    else:
-        covg = covdf.loc[sample]["nanopore_covg"]
-
-    pred = Prediction(row["test_call"])
-    clf = classifier.from_predictions(truth, pred)
-
-    pheno_clf.append((sample, drug, str(clf), tech, covg, row["tool"], row["site"]))
-clf_df = pd.DataFrame(
-    pheno_clf,
-    columns=[
-        "sample",
-        "drug",
-        "classification",
-        "technology",
-        "coverage",
-        "tool",
-        "site",
-    ],
-)
-
-pheno_cms = defaultdict()
-TOOLS = ["mykrobe"]
-TECHS = ["nanopore", "illumina"]
-PHENO_DRUGS = set()
-
-for drug, tech, tool in product(set(clf_df["drug"]), TECHS, TOOLS):
-    s = clf_df.query(
-        "drug == @drug and technology == @tech and tool == @tool"
-    ).value_counts(subset=["classification"])
-    cm = ConfusionMatrix.from_series(s)
-    pheno_cms[(drug, tech, tool)] = cm
-    PHENO_DRUGS.add(drug)
-
-PHENO_DRUGS = sorted(PHENO_DRUGS)
-
-fig, axes = plt.subplots(ncols=2, sharey=True)
-axR = axes.flatten()[0]
-axS = axes.flatten()[1]
-
-# plot details
-bar_width = 0.25
-epsilon = 0.05
-line_width = 0.5
-alpha = 1.0
-hatch = ""
-
-all_positions = []
-for i, (tech, tool) in enumerate(product(TECHS, TOOLS)):
-    tps = [pheno_cms[(d, tech, tool)].tp for d in PHENO_DRUGS]
-    fps = [pheno_cms[(d, tech, tool)].fp for d in PHENO_DRUGS]
-    tns = [pheno_cms[(d, tech, tool)].tn for d in PHENO_DRUGS]
-    fns = [pheno_cms[(d, tech, tool)].fn for d in PHENO_DRUGS]
-
-    positions = [p + ((bar_width + epsilon) * i) for p in np.arange(len(tps))]
-    all_positions.append(positions)
-
-    colour = cmap[tech]
-
-    # resistance bar plots
-    tps_bar = axR.bar(
-        positions,
-        tps,
-        bar_width,
-        color=colour,
-        edgecolor=edgecol,
-        linewidth=line_width,
-    )
-    fns_bar = axR.bar(
-        positions,
-        fns,
-        bar_width,
-        bottom=tps,
-        color=red,
-        edgecolor=edgecol,
-        linewidth=line_width,
+    pheno_clf = []
+    minor_is_susceptible = snakemake.params.minor_is_susceptible
+    unknown_is_resistant = False
+    ignore_drugs = snakemake.params.ignore_drugs
+    classifier = Classifier(
+        unknown_is_resistant=unknown_is_resistant,
+        minor_is_susceptible=minor_is_susceptible,
     )
 
-    # susceptible bar plots
-    tns_bar = axS.bar(
-        positions,
-        tns,
-        bar_width,
-        color=colour,
-        edgecolor=edgecol,
-        linewidth=line_width,
+    for ix, row in calls.iterrows():
+        drug = row["drug"].lower()
+        if drug in ignore_drugs:
+            continue
+
+        sample = row["sample"]
+        try:
+            ph = pheno.loc[(sample, drug), "phenotype"]
+            if pd.isna(ph).all():
+                continue
+            else:
+                truth = Prediction(ph[0])
+        except KeyError:
+            continue
+
+        tech = row["tech"]
+        if tech == "illumina":
+            covg = covdf.loc[sample]["illumina_covg"]
+        else:
+            covg = covdf.loc[sample]["nanopore_covg"]
+
+        pred = Prediction(row["test_call"])
+        clf = classifier.from_predictions(truth, pred)
+
+        pheno_clf.append((sample, drug, str(clf), tech, covg, row["tool"], row["site"]))
+    clf_df = pd.DataFrame(
+        pheno_clf,
+        columns=[
+            "sample",
+            "drug",
+            "classification",
+            "technology",
+            "coverage",
+            "tool",
+            "site",
+        ],
     )
-    fps_bar = axS.bar(
-        positions,
-        fps,
-        bar_width,
-        bottom=tns,
-        color=red,
-        edgecolor=edgecol,
-        linewidth=line_width,
-    )
 
-    tps_bar.set_label(tech.capitalize())
+    pheno_cms = defaultdict()
+    TOOLS = ["mykrobe"]
+    TECHS = ["nanopore", "illumina"]
+    PHENO_DRUGS = set()
 
-fps_bar.set_label("FP")
-fns_bar.set_label("FN")
-labels = [drug_abbrev[d] for d in PHENO_DRUGS]
-label_pos = [np.mean(ps) for ps in zip(*all_positions)]
-plt.xticks(label_pos, labels, rotation=0, fontsize=12)
-axR.set_ylabel("samples")
-axR.set_xticks(label_pos)
-axR.set_xticklabels(axS.get_xticklabels(), rotation=0, fontsize=12)
-axR.tick_params("both", labelsize=12)
-axR.set_title("Resistant")
-axS.set_title("Susceptible")
+    for drug, tech, tool in product(set(clf_df["drug"]), TECHS, TOOLS):
+        s = clf_df.query(
+            "drug == @drug and technology == @tech and tool == @tool"
+        ).value_counts(subset=["classification"])
+        cm = ConfusionMatrix.from_series(s)
+        pheno_cms[(drug, tech, tool)] = cm
+        PHENO_DRUGS.add(drug)
 
-axS.legend(loc="best", prop={"size": 12})
-leghandles, leglabels = axR.get_legend_handles_labels()
+    PHENO_DRUGS = sorted(PHENO_DRUGS)
 
-axR.legend(leghandles, leglabels, loc="best", prop={"size": 12})
-sns.despine()
-plt.tight_layout()
+    fig, axes = plt.subplots(ncols=2, sharey=True)
+    axR = axes.flatten()[0]
+    axS = axes.flatten()[1]
 
-for fpath in snakemake.output:
-    fig.savefig(fpath)
+    # plot details
+    bar_width = 0.25
+    epsilon = 0.05
+    line_width = 0.5
+
+    all_positions = []
+    for i, (tech, tool) in enumerate(product(TECHS, TOOLS)):
+        tps = [pheno_cms[(d, tech, tool)].tp for d in PHENO_DRUGS]
+        fps = [pheno_cms[(d, tech, tool)].fp for d in PHENO_DRUGS]
+        tns = [pheno_cms[(d, tech, tool)].tn for d in PHENO_DRUGS]
+        fns = [pheno_cms[(d, tech, tool)].fn for d in PHENO_DRUGS]
+
+        positions = [p + ((bar_width + epsilon) * i) for p in np.arange(len(tps))]
+        all_positions.append(positions)
+
+        colour = cmap[tech]
+
+        # resistance bar plots
+        tps_bar = axR.bar(
+            positions,
+            tps,
+            bar_width,
+            color=colour,
+            edgecolor=edgecol,
+            linewidth=line_width,
+        )
+        fns_bar = axR.bar(
+            positions,
+            fns,
+            bar_width,
+            bottom=tps,
+            color=red,
+            edgecolor=edgecol,
+            linewidth=line_width,
+        )
+
+        # susceptible bar plots
+        tns_bar = axS.bar(
+            positions,
+            tns,
+            bar_width,
+            color=colour,
+            edgecolor=edgecol,
+            linewidth=line_width,
+        )
+        fps_bar = axS.bar(
+            positions,
+            fps,
+            bar_width,
+            bottom=tns,
+            color=red,
+            edgecolor=edgecol,
+            linewidth=line_width,
+        )
+
+        tps_bar.set_label(tech.capitalize())
+
+    fps_bar.set_label("FP")
+    fns_bar.set_label("FN")
+    labels = [drug_abbrev[d] for d in PHENO_DRUGS]
+    label_pos = [np.mean(ps) for ps in zip(*all_positions)]
+    plt.xticks(label_pos, labels, rotation=0, fontsize=12)
+    axR.set_ylabel("samples")
+    axR.set_xticks(label_pos)
+    axR.set_xticklabels(axS.get_xticklabels(), rotation=0, fontsize=12)
+    axR.tick_params("both", labelsize=12)
+    axR.set_title("Resistant")
+    axS.set_title("Susceptible")
+
+    axS.legend(loc="best", prop={"size": 12})
+    leghandles, leglabels = axR.get_legend_handles_labels()
+
+    axR.legend(leghandles, leglabels, loc="best", prop={"size": 12})
+    sns.despine()
+    plt.tight_layout()
+
+    for fpath in snakemake.output:
+        fig.savefig(fpath)
+
+
+main()
