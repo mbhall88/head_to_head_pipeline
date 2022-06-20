@@ -42,6 +42,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_6{ext}")
     required_files.add(FIGURES / f"figure_S2{ext}")
     required_files.add(FIGURES / f"figure_S3{ext}")
+    required_files.add(FIGURES / f"figure_S4{ext}")
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
@@ -229,6 +230,25 @@ rule figure_S3:
         nanopore_dist_range=(2, 17),
     script:
         str(SCRIPTSDIR / "figure_S3.yaml")
+
+
+rule figure_S4:
+    """Mixed self distance"""
+    input:
+        mixed_matrix=VARIANT_RESULTS / "distance/mixed.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_S4"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_S4.log",
+    conda:
+        str(ENVSDIR / "figure_S4.yaml")
+    params:
+        style="ggplot",
+        figsize=(10, 10),
+        dpi=DPI,
+        xaxis_label="Self SNP distance",
+    script:
+        str(SCRIPTSDIR / "figure_S4.py")
 
 
 # ===============================

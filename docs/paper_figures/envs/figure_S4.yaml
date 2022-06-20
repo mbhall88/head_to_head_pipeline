@@ -1,0 +1,9 @@
+name: figure_S4
+channels:
+  - conda-forge
+dependencies:
+  - pandas=1.2
+  - numpy=1.21
+  - matplotlib-base=3
+  - python>=3.8
+  - seaborn=0.11
