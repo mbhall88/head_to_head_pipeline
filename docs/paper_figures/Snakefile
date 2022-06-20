@@ -106,7 +106,7 @@ rule figure_4:
         str(ENVSDIR / "figure_4.yaml")
     params:
         style="default",
-        figsize=(10, 10),
+        figsize=(13, 13),
         dpi=DPI,
         illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
         nanopore_thresholds=NANOPORE_DIST_THRESHOLDS,
