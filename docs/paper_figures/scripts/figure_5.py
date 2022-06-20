@@ -3,7 +3,7 @@ import sys
 sys.stderr = open(snakemake.log[0], "w")
 from itertools import chain, combinations, product
 from typing import Tuple, Set, List, Dict
-from pathlib import Path
+from fractions import Fraction
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -233,9 +233,16 @@ for ax, t in zip(axes.flatten(), THRESHOLDS):
     ax.set_ylabel("")
 
 ax.tick_params("x", labelsize=16)
+
+xticklabels = []
+for r in RATIOS:
+    f = Fraction(r).limit_denominator()
+    nanopore_r, illumina_r = f.limit_denominator()
+    xticklabels.append(f"{nanopore_r}:{illumina_r}")
+
+ax.set_xticklabels(xticklabels)
 ax.set_xlabel(snakemake.params.xaxis_label, fontsize=16)
 fig.tight_layout()
 
 for fpath in snakemake.output:
     fig.savefig(fpath)
-

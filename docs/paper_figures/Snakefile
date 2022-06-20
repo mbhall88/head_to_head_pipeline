@@ -129,7 +129,7 @@ rule figure_5:
     resources:
         mem_mb=int(2 * GB),
     params:
-        style="default",
+        style="ggplot",
         figsize=(10, 10),
         dpi=DPI,
         seed=1988,
