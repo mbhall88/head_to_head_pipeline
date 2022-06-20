@@ -41,6 +41,7 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_5{ext}")
     required_files.add(FIGURES / f"figure_6{ext}")
     required_files.add(FIGURES / f"figure_S2{ext}")
+    required_files.add(FIGURES / f"figure_S3{ext}")
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
@@ -207,6 +208,27 @@ rule figure_S2:
         marker_size=20,
     script:
         str(SCRIPTSDIR / "figure_S2.py")
+
+
+rule figure_S3:
+    """SNP threshold distance sweep"""
+    input:
+        compass_matrix=VARIANT_RESULTS / "distance/compass.matrix.csv",
+        bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
+    output:
+        multiext(str(FIGURES / "figure_S3"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_S3.log",
+    conda:
+        str(ENVSDIR / "figure_S3.yaml")
+    params:
+        style="ggplot",
+        figsize=(13, 15),
+        dpi=DPI,
+        illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
+        nanopore_dist_range=(2, 17),
+    script:
+        str(SCRIPTSDIR / "figure_S3.yaml")
 
 
 # ===============================
