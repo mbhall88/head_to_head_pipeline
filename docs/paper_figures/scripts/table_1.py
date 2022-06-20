@@ -11,7 +11,7 @@ from math import sqrt
 from itertools import product
 from pathlib import Path
 
-CONF = 0.95
+CONF = snakemake.params.conf_interval
 
 
 def confidence_interval(n_s: int, n_f: int, conf: float = CONF) -> Tuple[float, float]:

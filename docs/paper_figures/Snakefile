@@ -192,5 +192,11 @@ rule table_1:
     output:
         csv=TABLES / "table_1.csv",
         latex=TABLES / "table_1.tex",
+    log:
+        LOGDIR / "table_1.log",
+    conda:
+        str(ENVSDIR / "table_1.yaml")
+    params:
+        conf_interval=0.95,
     script:
         str(SCRIPTSDIR / "table_1.py")
