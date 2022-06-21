@@ -49,7 +49,7 @@ def load_mixed_matrix(fpath: str, delim: str = ",", name: str = "") -> pd.DataFr
 def main():
     # load the data
     compass_df = load_mixed_matrix(snakemake.input.compass_matrix, name=XCOL)
-    mixed_df = load_mixed_matrix(snakemake.params.mixed_matrix, name=YCOL)
+    mixed_df = load_mixed_matrix(snakemake.input.mixed_matrix, name=YCOL)
     # merge the matrices
     data = pd.concat([compass_df, mixed_df], axis=1)
     data = data.reset_index().rename(

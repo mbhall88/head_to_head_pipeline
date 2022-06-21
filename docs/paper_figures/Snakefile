@@ -305,7 +305,7 @@ rule figure_S6:
         font_size=14,
         xaxis_labek="read depth",
     script:
-        str(SCRIPTSDIR / "figure_S5.py")
+        str(SCRIPTSDIR / "figure_S6.py")
 
 
 # ===============================
