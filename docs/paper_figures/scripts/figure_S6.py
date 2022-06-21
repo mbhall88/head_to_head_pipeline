@@ -239,6 +239,7 @@ def plot_a(clf_df):
     print(stop)
     coverages = np.arange(start=start, stop=stop, step=step)
     for i, covg in enumerate(coverages[:-1]):
+        next_cov = coverages[i + 1]
         subdf = clf_df.query(
             "coverage > @covg and coverage <= @next_cov and technology == @tech"
         )
@@ -262,6 +263,7 @@ def plot_a(clf_df):
     )
     coverages = np.arange(start=start, stop=stop, step=step)
     for i, covg in enumerate(coverages[:-1]):
+        next_cov = coverages[i + 1]
         subdf = clf_df.query(
             "coverage > @covg and coverage <= @next_cov and technology == @tech"
         )
