@@ -303,7 +303,7 @@ rule figure_S6:
         conf_interval=rules.figure_6.params.conf_interval,
         minor_is_susceptible=rules.figure_6.params.minor_is_susceptible,
         font_size=14,
-        xaxis_labek="read depth",
+        xaxis_label="read depth",
     script:
         str(SCRIPTSDIR / "figure_S6.py")
 
