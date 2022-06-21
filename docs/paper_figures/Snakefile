@@ -44,6 +44,8 @@ for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_S3{ext}")
     required_files.add(FIGURES / f"figure_S4{ext}")
     required_files.add(FIGURES / f"figure_S5{ext}")
+    required_files.add(FIGURES / f"figure_S6a{ext}")
+    required_files.add(FIGURES / f"figure_S6b{ext}")
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
@@ -271,10 +273,36 @@ rule figure_S5:
         yaxis_label="Mixed SNP distance",
         font_size=14,
         alpha=0.25,
-        linewidth=0.1,
+        line_width=0.1,
         close_threshold=rules.figure_3.params.close_threshold,
         illumina_thresholds=ILLUMINA_DIST_THRESHOLDS,
         mixed_thresholds=MIXED_DIST_THRESHOLDS,
+    script:
+        str(SCRIPTSDIR / "figure_S5.py")
+
+
+rule figure_S6:
+    """Effect of depth on DST prediction"""
+    input:
+        phenosheet=PHENOTYPES,
+        concordance=dst_concordance_files,
+        coverage=QC_RESULTS / "report/coverage.csv",
+    output:
+        a=multiext(str(FIGURES / "figure_S6a"), *FIGURE_EXTS),
+        b=multiext(str(FIGURES / "figure_S6b"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_S6.log",
+    conda:
+        str(ENVSDIR / "figure_S6.yaml")
+    params:
+        style="ggplot",
+        figsize=(13, 8),
+        dpi=DPI,
+        ignore_drugs=rules.figure_6.params.ignore_drugs,
+        conf_interval=rules.figure_6.params.conf_interval,
+        minor_is_susceptible=rules.figure_6.params.minor_is_susceptible,
+        font_size=14,
+        xaxis_labek="read depth",
     script:
         str(SCRIPTSDIR / "figure_S5.py")
 
