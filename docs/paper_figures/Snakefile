@@ -49,6 +49,7 @@ for ext in FIGURE_EXTS:
 
 for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_1{ext}")
+    required_files.add(TABLES / f"table_S2{ext}")
 
 
 rule all:
@@ -325,5 +326,39 @@ rule table_1:
         str(ENVSDIR / "table_1.yaml")
     params:
         conf_interval=0.95,
+        drug_order=[
+            "Isoniazid",
+            "Rifampicin",
+            "Ethambutol",
+            "Pyrazinamide",
+            "Streptomycin",
+            "Amikacin",
+            "Capreomycin",
+            "Kanamycin",
+            "Ciprofloxacin",
+            "Moxifloxacin",
+            "Ofloxacin",
+        ],
     script:
         str(SCRIPTSDIR / "table_1.py")
+
+
+rule table_S2:
+    """Comparison of gDST predictions with pDST"""
+    input:
+        phenosheet=PHENOTYPES,
+        concordance=dst_concordance_files,
+        coverage=QC_RESULTS / "report/coverage.csv",
+    output:
+        csv=TABLES / "table_S2.csv",
+        latex=TABLES / "table_S2.tex",
+    log:
+        LOGDIR / "table_S2.log",
+    conda:
+        str(ENVSDIR / "table_S2.yaml")
+    params:
+        conf_interval=rules.table_1.params.conf_interval,
+        drug_order=rules.table_1.params.drug_order,
+        ignore_drugs=rules.figure_6.params.ignore_drugs,
+    script:
+        str(SCRIPTSDIR / "table_S2.py")

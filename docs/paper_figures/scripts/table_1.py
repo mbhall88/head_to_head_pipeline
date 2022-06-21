@@ -217,19 +217,7 @@ pretty_cols = [
     "PPV(95% CI)",
     "NPV(95% CI)",
 ]
-drug_order = [
-    "Isoniazid",
-    "Rifampicin",
-    "Ethambutol",
-    "Pyrazinamide",
-    "Streptomycin",
-    "Amikacin",
-    "Capreomycin",
-    "Kanamycin",
-    "Ciprofloxacin",
-    "Moxifloxacin",
-    "Ofloxacin",
-]
+drug_order = snakemake.params.drug_order
 table = pd.DataFrame(rows, columns=pretty_cols)
 table.sort_values(
     by="Drug", inplace=True, key=lambda ds: [drug_order.index(d) for d in ds]
