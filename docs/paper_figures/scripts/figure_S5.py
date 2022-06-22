@@ -8,6 +8,10 @@ import numpy as np
 from matplotlib.scale import scale_factory
 import matplotlib.patches as mpatches
 
+# set aesthetics
+plt.style.use(snakemake.params.style)
+plt.rcParams["figure.figsize"] = snakemake.params.figsize
+plt.rcParams["figure.dpi"] = snakemake.params.dpi
 
 GGPLOT_CM = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 FONT_SIZE = snakemake.params.font_size
@@ -55,11 +59,6 @@ def main():
     data = data.reset_index().rename(
         columns={"level_0": PAIR_IDX[0], "level_1": PAIR_IDX[1]}
     )
-
-    # set aesthetics
-    plt.style.use(snakemake.params.style)
-    plt.rcParams["figure.figsize"] = snakemake.params.figsize
-    plt.rcParams["figure.dpi"] = snakemake.params.dpi
 
     fig, ax = plt.subplots()
 
