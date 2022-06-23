@@ -632,7 +632,7 @@ def get_strand_depths(
     ),
     type=click.IntRange(0, 50),
     metavar="INT",
-    default=25,
+    default=0,
     show_default=True,
 )
 @click.option(
