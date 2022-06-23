@@ -2,6 +2,8 @@
 https://doi.org/10.1101/2022.03.04.22271870
 """
 from pathlib import Path
+import re
+from typing import List
 
 import pandas as pd
 
@@ -36,6 +38,7 @@ required_files = set()
 
 for ext in FIGURE_EXTS:
     required_files.add(FIGURES / f"figure_1{ext}")
+    required_files.add(FIGURES / f"figure_2{ext}")
     required_files.add(FIGURES / f"figure_3{ext}")
     required_files.add(FIGURES / f"figure_4{ext}")
     required_files.add(FIGURES / f"figure_5{ext}")
@@ -362,3 +365,174 @@ rule table_S2:
         ignore_drugs=rules.figure_6.params.ignore_drugs,
     script:
         str(SCRIPTSDIR / "table_S2.py")
+
+
+# =====================
+# SUBWORKFLOW FOR FIGURE 2
+# =====================
+TRUTH_SAMPLES = [
+    "mada_1-44",
+    "mada_102",
+    "mada_104",
+    "mada_116",
+    "mada_125",
+    "mada_130",
+    "mada_132",
+]
+FILTERS = [
+    ("unfiltered", "#nofilter"),
+    ("q25", "-QUAL<25"),
+    ("q25K0.9", "-FRS<90%"),
+    ("q25K0.9x0.2", "-FED<20%"),
+    ("q25K0.9x0.2d5", "-DP<5"),
+    ("q25K0.9x0.2d5s1", "-SR<1%"),
+    ("q25K0.9x0.2d5s1M30", "-MQ<30"),
+    ("q25K0.9x0.2d5s1M30V0.00001", "-VDB<1e-5"),
+]
+FILTER_OPT_REGEX = re.compile(r"(?P<opt>[a-zA-Z])(?P<val>\d+(\.\d*)?)")
+
+
+def filter_options(wildcards) -> List[str]:
+    filters = wildcards.filters.strip()
+    opts = []
+
+    if filters == "unfiltered":
+        return opts
+
+    it = FILTER_OPT_REGEX.finditer(filters)
+    for m in it:
+        val = m.group("val")
+        try:
+            val = int(val)
+        except ValueError:
+            try:
+                val = float(val)
+            except ValueError:
+                raise ValueError(f"Can't convert {val} to an int or float")
+
+        if isinstance(val, float):
+            val = format(val, "f")
+        else:
+            val = str(val)
+
+        opts.append(f"-{m.group('opt')} {val}")
+
+    return opts
+
+
+rule filter_snps:
+    input:
+        vcf=VARIANT_RESULTS / "snp_calls/madagascar/{sample}.snps.bcf",
+    output:
+        vcf="filtered_snps/{filters}/{sample}.snps.filtered.bcf",
+    threads: 1
+    resources:
+        mem_mb=int(GB),
+    params:
+        options=" ".join(["-P", "--verbose", "--overwrite"]),
+        script=VARIANT_RESULTS / "scripts/apply_filters.py",
+        filter_opts=lambda wildcards: " ".join(filter_options(wildcards)),
+    log:
+        LOGDIR / "filter_snps/{filters}/{sample}.log",
+    conda:
+        str(VARIANT_RESULTS / "envs/filter.yaml")
+    shell:
+        """
+        python {params.script} {params.options}  {params.filter_opts} \
+            -i {input.vcf} \
+            -o {output.vcf} 2> {log}
+        """
+
+
+rule index_snps_vcf:
+    input:
+        vcf=rules.filter_snps.output.vcf,
+    output:
+        index="filtered_snps/{filters}/{sample}.snps.filtered.bcf.csi",
+    container:
+        "docker://quay.io/biocontainers/bcftools:1.13--h3a49de5_0"
+    log:
+        LOGDIR / "index_snps_vcf/{filters}/{sample}.log",
+    shell:
+        "bcftools index -f -o {output.index} {input.vcf} 2> {log}"
+
+
+rule evaluate_snps:
+    input:
+        truth_vcf=VARIANT_RESULTS
+        / "truth_eval/compass/{sample}/varifier/recall/truth_vcf/04.truth.bcf",
+        truth_idx=VARIANT_RESULTS
+        / "truth_eval/compass/{sample}/varifier/recall/truth_vcf/04.truth.bcf.csi",
+        query_vcf=rules.index_snps_vcf.input.vcf,
+        query_idx=rules.index_snps_vcf.output.index,
+        ref=VARIANT_RESULTS / "resources/h37rv.fa",
+        ref_idx=VARIANT_RESULTS / "resources/h37rv.fa.fai",
+        mask=VARIANT_RESULTS / "resources/compass-mask.bed",
+    output:
+        summary="evaluate_snps/{filters}/{sample}/{sample}.summary.csv",
+        outdir=directory("evaluate_snps/{filters}/{sample}"),
+    resources:
+        mem_mb=lambda wildcards, attempt: int(8 * GB) * attempt,
+    threads: 8
+    log:
+        LOGDIR / "evaluate_snps/{filters}/{sample}.log",
+    container:
+        "docker://quay.io/biocontainers/hap.py:0.3.14--py27h5c5a3ab_0"
+    params:
+        opts=" ".join(
+            (
+                "--set-gt hom",
+                "--pass-only",
+                "--write-vcf",
+                "--leftshift",
+            )
+        ),
+    shell:
+        """
+        hap.py {params.opts} -o {output.outdir}/{wildcards.sample} --threads {threads} \
+          -r {input.ref} -T ^{input.mask} {input.truth_vcf} {input.query_vcf} 2> {log}
+        """
+
+
+rule figure_2:
+    input:
+        bcftools_results=expand(
+            "evaluate_snps/{filters}/{sample}/{sample}.summary.csv",
+            filters=[t[0] for t in FILTERS],
+            sample=TRUTH_SAMPLES,
+        ),
+        compass_results=expand(
+            VARIANT_RESULTS / "truth_eval/compass/{sample}/happy/{sample}.summary.csv",
+            sample=TRUTH_SAMPLES,
+        ),
+    output:
+        multiext(str(FIGURES / "figure_2"), *FIGURE_EXTS),
+    log:
+        LOGDIR / "figure_2.log",
+    conda:
+        str(ENVSDIR / "figure_2.yaml")
+    params:
+        style="ggplot",
+        dpi=DPI,
+        figsize=(13, 13),
+        yticks=[
+            0.80,
+            0.85,
+            0.9,
+            0.95,
+            0.97,
+            0.99,
+            0.995,
+            0.997,
+            0.999,
+            0.9995,
+            0.9997,
+            0.9999,
+        ],
+        font_size=14,
+        xrotation=90,
+        left_fig="recall",
+        right_fig="precision",
+        filters=FILTERS,
+    script:
+        str(SCRIPTSDIR / "figure_2.py")
