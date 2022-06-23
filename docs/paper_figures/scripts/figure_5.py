@@ -238,8 +238,8 @@ def main():
 
     xticklabels = []
     for r in RATIOS:
-        f = Fraction(r).limit_denominator()
-        nanopore_r, illumina_r = f.as_integer_ratio()
+        f = Fraction(1 / r - 1).limit_denominator()
+        illumina_r, nanopore_r = f.as_integer_ratio()
         xticklabels.append(f"{nanopore_r}:{illumina_r}")
 
     ax.set_xticklabels(xticklabels)
