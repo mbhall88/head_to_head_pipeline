@@ -422,7 +422,7 @@ def filter_options(wildcards) -> List[str]:
 
 rule filter_snps:
     input:
-        vcf=VARIANT_RESULTS / "snp_calls/madagascar/{sample}.snps.bcf",
+        vcf=VARIANT_RESULTS / "nanopore/snp_calls/madagascar/{sample}.snps.bcf",
     output:
         vcf="filtered_snps/{filters}/{sample}.snps.filtered.bcf",
     threads: 1
