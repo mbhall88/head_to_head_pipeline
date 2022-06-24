@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from matplotlib.scale import scale_factory
 import matplotlib.patches as mpatches
+from scipy import stats
 
 # set aesthetics
 plt.style.use(snakemake.params.style)
@@ -50,6 +51,13 @@ def load_mixed_matrix(fpath: str, delim: str = ",", name: str = "") -> pd.DataFr
     return df
 
 
+def tinv(p, df):
+    """Two-sided inverse Students t-distribution
+    p - probability; df - degress of freedom
+    """
+    return abs(stats.t.ppf(p / 2, df))
+
+
 def main():
     # load the data
     compass_df = load_mixed_matrix(snakemake.input.compass_matrix, name=XCOL)
@@ -67,9 +75,33 @@ def main():
     sns.scatterplot(data=data, x=XCOL, y=YCOL, color=BLUE, ax=ax, **kwargs)
 
     xs = data[XCOL]
+    ys = data[YCOL]
+
+    # fit linear regression
+    lr_result = stats.linregress(xs, ys)
+    print(lr_result, file=sys.stderr)
+    r2 = lr_result.rvalue ** 2
+    print(f"R-squared: {r2:.6f}", file=sys.stderr)
+    ts = tinv(0.05, len(xs) - 2)
+    slope = lr_result.slope
+    slope_conf_int = ts * lr_result.stderr
+    print(
+        f"slope (95% CI): {slope:.6f} ({slope - slope_conf_int:.6f} - {slope + slope_conf_int:.6f})",
+        file=sys.stderr,
+    )
 
     # plot identity line
     sns.lineplot(x=xs, y=xs, ax=ax, label="y=x", color=BLACK, linestyle="--")
+    # plot line of best fit
+    y_hat = lr_result.intercept + lr_result.slope * xs
+    sns.lineplot(
+        x=xs,
+        y=y_hat,
+        color=RED,
+        label=f"fitted line ($R^2$={r2:.3f})",
+        linestyle="--",
+        ax=ax,
+    )
     ax.set_xlabel(snakemake.params.xaxis_label, fontsize=FONT_SIZE)
     ax.set_ylabel(snakemake.params.yaxis_label, fontsize=FONT_SIZE)
     ax.legend(loc="lower right", prop=dict(size=FONT_SIZE))
