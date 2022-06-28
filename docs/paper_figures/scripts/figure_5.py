@@ -246,8 +246,13 @@ def main():
     ax.set_xlabel(snakemake.params.xaxis_label, fontsize=16)
     fig.tight_layout()
 
-    for fpath in snakemake.output:
+    for fpath in snakemake.output.plots:
         fig.savefig(fpath)
+
+    # also save a CSV summary of the data
+    summary = pd.concat(dfs).groupby(["ratio", "threshold", "metric"]).describe()
+    with open(snakemake.output.summary, "w") as ostream:
+        summary.to_csv(ostream)
 
 
 main()

@@ -55,6 +55,9 @@ for ext in TABLE_EXTS:
     required_files.add(TABLES / f"table_S2{ext}")
 
 
+required_files.add(TABLES / "figure_5.csv")
+
+
 rule all:
     input:
         required_files,
@@ -139,7 +142,8 @@ rule figure_5:
         bcftools_matrix=VARIANT_RESULTS / "distance/bcftools.matrix.csv",
         mixed_matrix=VARIANT_RESULTS / "distance/mixed.matrix.csv",
     output:
-        multiext(str(FIGURES / "figure_5"), *FIGURE_EXTS),
+        plots=multiext(str(FIGURES / "figure_5"), *FIGURE_EXTS),
+        summary=str(TABLES / "figure_5.csv"),
     log:
         LOGDIR / "figure_5.log",
     conda:
