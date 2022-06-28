@@ -192,7 +192,7 @@ rule figure_6:
         dpi=DPI,
         conf_interval=0.95,
         minor_is_susceptible=False,
-        ignore_drugs={"pyrazinamide", "moxifloxacin"},
+        ignore_drugs=("pyrazinamide", "moxifloxacin"),
     script:
         str(SCRIPTSDIR / "figure_6.py")
 
