@@ -38,3 +38,5 @@ The following pipelines are not relevant to the work in the final paper.
 All data is submitted under the Project accession **PRJEB49093**.
 
 The accessions and all relevant sample metadata for this study can be found at <https://doi.org/10.6084/m9.figshare.19304648>.
+
+The raw Nanopore data is available to download from: <https://ftp.ebi.ac.uk/pub/databases/ont_tb_eval2022/>. See the sample metadata file for mappings between samples and the relevant Nanopore runs and barcode numbers.
