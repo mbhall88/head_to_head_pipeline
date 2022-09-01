@@ -6,10 +6,8 @@
 
 ---
 
-This repository holds the pipelines/scripts used for our project analysing Illumina and
-Nanopore for Mtb drug resistance calling and tranmission clustering.
-
-It is currently in progress.
+This repository holds the pipelines/scripts used for our paper analysing Illumina and
+Nanopore for *M.tuberculosis* drug resistance calling and transmission clustering.
 
 All pipelines require the following dependencies to be installed:
 - [Snakemake](https://snakemake.github.io/)
@@ -32,6 +30,8 @@ The following pipelines are not relevant to the work in the final paper.
 - [H37Rv PRG construction](data/H37Rv_PRG)
 - [Pandora variant analysis](analysis/pandora_variants)
 
+
+For people wanting to analyse their Nanopore data in the same manner as we did in this paper, we would suggest using https://github.com/mbhall88/tbpore, which is a python program that runs the drug resistance prediction and clustering (with a smaller decontamination database).
 
 # Data availability
 
