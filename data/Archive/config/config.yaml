@@ -1,0 +1,6 @@
+data_dir:    "/nfs/research/zi/mbhall/tech_wars/data"
+archive:     "/nfs/research/zi/mbhall/tech_wars/data/archive/"
+samplesheet: "../../docs/samples.paper.csv"
+containers:
+  slow5: "docker://quay.io/biocontainers/slow5tools:0.6.0--h0326b38_2"
+  base:  "docker://bash:5.1"
