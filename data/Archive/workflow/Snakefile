@@ -41,7 +41,7 @@ rule fast5_to_blow5:
     container:
         CONTAINERS["slow5"]
     params:
-        opts="--to blow5 --retain",
+        opts="--to blow5 --retain --allow",
     shell:
         "slow5tools f2s {params.opts} -p {threads} -d {output.outdir} {input.fast5_dir} 2> {log}"
 
