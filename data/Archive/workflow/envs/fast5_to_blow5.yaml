@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - hdf5
+  - slow5tools=0.6
+  - parallel
+  - ont-fast5-api

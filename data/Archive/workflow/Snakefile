@@ -1,5 +1,8 @@
 from pathlib import Path
 import pandas as pd
+from snakemake.utils import min_version
+
+min_version("7.14.1")
 
 
 configfile: "config/config.yaml"
@@ -8,6 +11,8 @@ configfile: "config/config.yaml"
 CONTAINERS = config["containers"]
 DATA = Path(config["data_dir"])
 ARCHIVE = Path(config["archive"])
+SCRIPTS = Path("workflow/scripts").resolve()
+ENVS = Path("workflow/envs").resolve()
 LOGS = Path("logs/").resolve()
 GB = 1_024
 
@@ -32,34 +37,16 @@ rule fast5_to_blow5:
     input:
         fast5_dir=DATA / "{site}/nanopore/raw_data/{run}/multi_fast5s",
     output:
-        outdir=temp(directory(ARCHIVE / "nanopore/blow5/{site}/{run}")),
+        blow5=ARCHIVE / "nanopore/{site}.{run}.blow5",
     log:
         LOGS / "fast5_to_slow5/{site}/{run}.log",
     threads: 8
     resources:
-        mem_mb=int(4 * GB),
-    container:
-        CONTAINERS["slow5"]
-    params:
-        opts="--to blow5 --retain --allow",
-    shell:
-        "slow5tools f2s {params.opts} -p {threads} -d {output.outdir} {input.fast5_dir} 2> {log}"
-
-
-rule merge_blow5:
-    input:
-        indir=rules.fast5_to_blow5.output.outdir,
-    output:
-        blow5=ARCHIVE / "nanopore/{site}.{run}.blow5",
-    log:
-        LOGS / "merge_blow5/{site}/{run}.log",
-    threads: 8
-    resources:
-        mem_mb=int(4 * GB),
-    container:
-        CONTAINERS["slow5"]
-    shell:
-        "slow5tools merge -t {threads} -o {output.blow5} {input.indir} 2> {log}"
+        mem_mb=int(16 * GB),
+    conda:
+        ENVS / "fast5_to_blow5.yaml"
+    script:
+        SCRIPTS / "mixed-multi-fast5-to-blow5.sh"
 
 
 rule checksum:
