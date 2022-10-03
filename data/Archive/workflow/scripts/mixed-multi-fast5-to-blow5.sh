@@ -35,10 +35,6 @@ die() {
     exit 1
 }
 
-if [ "$#" -ne 1 ]; then
-    die "Usage: $0 <fast5_dir>"
-fi
-
 test -d "$FAST5_DIR" || die "Directory $FAST5_DIR does not exist"
 test -d "$SINGLE_FAST5" && die "Directory $SINGLE_FAST5 already exists. Please delete that first."
 test -d "$TMP_FAST5" && die "Directory $TMP_FAST5 already exists. Please delete that first."
