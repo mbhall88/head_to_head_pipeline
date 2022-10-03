@@ -22,9 +22,9 @@ set -euo pipefail
 exec 2> "${snakemake_log[0]}"
 
 FAST5_DIR="${snakemake_input[fast5_dir]}"
-TMP_FAST5=$(mktmp -du)
-SINGLE_FAST5=$(mktmp -du)
-TMP_BLOW5=$(mktmp -du)
+TMP_FAST5=$(mktemp -du)
+SINGLE_FAST5=$(mktemp -du)
+TMP_BLOW5=$(mktemp -du)
 MERGED_BLOW5="${snakemake_output[blow5]}"
 [ -z ${SLOW5TOOLS} ] && SLOW5TOOLS=slow5tools
 [ -z ${NUM_THREADS} ] && NUM_THREADS="${snakemake[threads]}"
