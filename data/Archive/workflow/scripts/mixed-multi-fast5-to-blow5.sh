@@ -26,8 +26,7 @@ TMP_FAST5=$(mktemp -du)
 SINGLE_FAST5=$(mktemp -du)
 TMP_BLOW5=$(mktemp -du)
 MERGED_BLOW5="${snakemake_output[blow5]}"
-[ -z ${SLOW5TOOLS} ] && SLOW5TOOLS=slow5tools
-[ -z ${NUM_THREADS} ] && NUM_THREADS="${snakemake[threads]}"
+NUM_THREADS="${snakemake[threads]}"
 
 # terminate script
 die() {
@@ -49,7 +48,7 @@ test -e "$MERGED_BLOW5" && die "$MERGED_BLOW5 already exists. Please delete that
 multi_to_single_fast5 --version || die "Could not find single_to_multi_fast5. Check if ont_fast5_api [https://github.com/nanoporetech/ont_fast5_api] is installed"
 h5dump --version || die "Could not find h5dump. Install using  sudo apt-get install hdf5-tools"
 parallel --version || die "Could not find command 'parallel'. On Ubuntu, install using  sudo apt-get install parallel"
-$SLOW5TOOLS --version || die "Could not find $SLOW5TOOLS. Add slow5tools to PATH or set SLOW5TOOLS environment variable"
+slow5tools --version || die "Could not find slow5tools. Add slow5tools to PATH"
 
 mkdir "$TMP_FAST5" "$TMP_BLOW5" || die "Creating directory $TMP_FAST5 and $TMP_BLOW5 failed"
 
