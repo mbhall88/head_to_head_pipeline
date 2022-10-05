@@ -101,4 +101,4 @@ fi
 #check if unique read id
 slow5tools index "$MERGED_BLOW5" || die "Indexing BLOW5 failed"
 
-rm -r "$SINGLE_FAST5" "$TMP_FAST5" "$TMP_BLOW5" || die "Removing temporary directories failed"
+rm -rf "$SINGLE_FAST5" "$TMP_FAST5" "$TMP_BLOW5" || die "Removing temporary directories failed"
