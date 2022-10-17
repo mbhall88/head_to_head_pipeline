@@ -1,3 +1,6 @@
 __default__:
   - "-E '${SOFTWAREDIR}/singularity_preexec_test/singularity_test.sh -t 20s /'"
 
+fast5_to_blow5:
+  - "-q long"
+
